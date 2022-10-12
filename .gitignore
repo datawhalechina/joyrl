@@ -1,0 +1,10 @@
+.DS_Store
+.ipynb_checkpoints
+__pycache__
+.vscode
+test.py
+pseudocodes.aux
+pseudocodes.log
+pseudocodes.synctex.gz
+pseudocodes.out
+pseudocodes.toc

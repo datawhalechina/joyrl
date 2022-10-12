@@ -1,0 +1,20 @@
+{
+    "algo_name": "A2C",
+    "env_name": "CartPole-v0",
+    "train_eps": 1600,
+    "test_eps": 20,
+    "max_steps": 100000,
+    "gamma": 0.99,
+    "actor_lr": 0.0003,
+    "critic_lr": 0.001,
+    "actor_hidden_dim": 256,
+    "critic_hidden_dim": 256,
+    "device": "cuda",
+    "seed": 10,
+    "show_fig": false,
+    "save_fig": true,
+    "result_path": "C:\\Users\\24438\\Desktop\\rl-tutorials\\codes\\A2C/outputs/CartPole-v0/20220921-001655/results/",
+    "model_path": "C:\\Users\\24438\\Desktop\\rl-tutorials\\codes\\A2C/outputs/CartPole-v0/20220921-001655/models/",
+    "n_states": 4,
+    "n_actions": 2
+}
