@@ -1,7 +1,5 @@
 [EN](./README.md)|中文
-
-[中文](./README_cn.md)|EN
-## JoyRL
+# JoyRL
 
 ## 安装说明
 

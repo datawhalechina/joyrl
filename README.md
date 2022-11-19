@@ -1,5 +1,5 @@
 [中文](./README_cn.md)|EN
-## JoyRL
+# JoyRL
 
 ## Install
 
