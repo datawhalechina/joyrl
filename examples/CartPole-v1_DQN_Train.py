@@ -1,28 +1,3 @@
-[EN](./README.md)|中文
-
-[中文](./README_cn.md)|EN
-## JoyRL
-
-## 安装说明
-
-```bash
-conda create -n joyrl python=3.7
-pip install joyrl
-```
-Torch:
-
-```bash
-# CPU
-conda install pytorch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0 cpuonly -c pytorch
-# GPU
-conda install pytorch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0 cudatoolkit=11.3 -c pytorch -c conda-forge
-# GPU镜像安装
-pip install torch==1.10.0+cu113 torchvision==0.11.0+cu113 torchaudio==0.10.0 --extra-index-url https://download.pytorch.org/whl/cu113
-```
-## 使用说明
-
-下述代码演示了如何使用`joyrl`，仅仅只需要设置参数(包括`GeneralConfig`和`AlgoConfig`两个类)，在[examples](./examples/)文件夹中也给出了一些示例, 并且在[benchmarks](./benchmarks/)文件夹中也给出了一些训好的结果.
-```python
 import joyrl as jj
 import gym
 class GeneralConfig():
@@ -65,10 +40,4 @@ if __name__ == "__main__":
     algo_cfg = AlgoConfig()
     env = gym.make(general_cfg.env_name,new_step_api=True)
     jj.run.run(env,general_cfg,algo_cfg)
-```
-
-## 算法列表
-
-| 算法名称 |                          参考文献                           |                     作者                      | 备注 |
-| :------: | :---------------------------------------------------------: | :-------------------------------------------: | :--: |
-|   DQN    | [DQN Paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) | [johnjim0816](https://github.com/johnjim0816) |      |
+    

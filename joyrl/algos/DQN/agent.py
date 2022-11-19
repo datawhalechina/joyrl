@@ -5,7 +5,7 @@
 @Email: johnjim0816@gmail.com
 @Date: 2020-06-12 00:50:49
 @LastEditor: John
-LastEditTime: 2022-11-19 17:20:02
+LastEditTime: 2022-11-20 00:02:59
 @Discription: 
 @Environment: python 3.7.7
 '''
@@ -18,8 +18,8 @@ import torch.optim as optim
 import random
 import math
 import numpy as np
-from common.layers import ValueNetwork
-from common.memories import ReplayBuffer
+from joyrl.common.layers import ValueNetwork
+from joyrl.common.memories import ReplayBuffer
 class Agent:
     def __init__(self,cfg):
 
