@@ -1,53 +1,39 @@
+[中文](./README_cn.md)|EN
 ## JoyRL
 
-## 4. 运行环境
+## Install
 
-主要依赖：Python 3.7、PyTorch 1.10.0、Gym 0.21.0。
-
-### 4.1. 创建Conda环境
 ```bash
 conda create -n easyrl python=3.7
-conda activate easyrl # 激活环境
+conda activate easyrl
+pip install -r requirements
 ```
-### 4.2. 安装Torch
+Torch:
 
-安装CPU版本：
 ```bash
+# CPU
 conda install pytorch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0 cpuonly -c pytorch
-```
-安装CUDA版本：
-```bash
+# GPU
 conda install pytorch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0 cudatoolkit=11.3 -c pytorch -c conda-forge
-```
-如果安装Torch需要镜像加速的话，点击[清华镜像链接](https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch/)，选择对应的操作系统，如```win-64```，然后复制链接，执行：
-```bash
-conda install pytorch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0 cudatoolkit=11.3 -c https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch/win-64/
-```
-也可以使用PiP镜像安装（仅限CUDA版本）：
-```bash
+# GPU with mirrors
 pip install torch==1.10.0+cu113 torchvision==0.11.0+cu113 torchaudio==0.10.0 --extra-index-url https://download.pytorch.org/whl/cu113
 ```
-### 4.3. 检验CUDA版本Torch安装
+## Usage
 
-CPU版本Torch请忽略此步，执行如下Python脚本，如果返回True说明CUDA版本安装成功:
-```python
-import torch
-print(torch.cuda.is_available())
-```
-### 4.4. 安装Gym
-
+you can simply change the parameters (like env_name, algo_name) in `config.config.GeneralConfig()` and run:
 ```bash
-pip install gym==0.21.0
+python main.py
 ```
-如需安装Atari环境，则需另外安装
+then it will a new folder named `tasks` to save results and models.
 
+Or you can custom parameters with a `yaml` file as you can seen in  `config/custom_config_Train.yaml` and run:
 ```bash
-pip install gym[atari,accept-rom-license]==0.21.0
+python main.py --yaml config/custom_config_Train.yaml
 ```
+And there are presets yaml files in the [defaults](./defaults/) folder and well trained results in the [benchmarks](./benchmarks/) folder.
 
-### 4.5. 安装其他依赖
+## Algorithms
 
-项目根目录下执行：
-```bash
-pip install -r requirements.txt
-```
+|       Name       |                          Reference                           |                    Author                     | Notes |
+| :--------------: | :----------------------------------------------------------: | :-------------------------------------------: | :---: |
+| DQN | [DQN Paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) | [johnjim0816](https://github.com/johnjim0816) |       |

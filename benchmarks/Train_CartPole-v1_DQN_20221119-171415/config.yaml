@@ -1,0 +1,40 @@
+general_cfg:
+  algo_name: DQN
+  device: cpu
+  env_name: CartPole-v1
+  eval_eps: 10
+  eval_per_episode: 5
+  load_checkpoint: false
+  load_path: tasks
+  max_steps: 200
+  mode: train
+  save_fig: true
+  seed: 0
+  show_fig: false
+  test_eps: 20
+  train_eps: 100
+algo_cfg:
+  batch_size: 64
+  buffer_size: 100000
+  epsilon_decay: 500
+  epsilon_end: 0.01
+  epsilon_start: 0.95
+  gamma: 0.95
+  lr: 0.0001
+  target_update: 4
+  value_layers:
+  - activation: relu
+    layer_dim:
+    - n_states
+    - 256
+    layer_type: linear
+  - activation: relu
+    layer_dim:
+    - 256
+    - 256
+    layer_type: linear
+  - activation: none
+    layer_dim:
+    - 256
+    - n_actions
+    layer_type: linear
