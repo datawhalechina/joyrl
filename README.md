@@ -1,5 +1,6 @@
-[中文](./README_cn.md)|EN
 # JoyRL
+
+[![PyPI](https://img.shields.io/pypi/v/joyrl)](https://pypi.org/project/joyrl/)  [![GitHub issues](https://img.shields.io/github/issues/datawhalechina/joyrl)](https://github.com/datawhalechina/joyrl/issues) [![GitHub stars](https://img.shields.io/github/stars/datawhalechina/joyrl)](https://github.com/datawhalechina/joyrl/stargazers) [![GitHub forks](https://img.shields.io/github/forks/datawhalechina/joyrl)](https://github.com/datawhalechina/joyrl/network) [![GitHub license](https://img.shields.io/github/license/datawhalechina/joyrl)](https://github.com/datawhalechina/joyrl/blob/master/LICENSE)
 
 ## Install
 
@@ -19,7 +20,7 @@ conda install pytorch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0 cudatoolkit
 pip install torch==1.10.0+cu113 torchvision==0.11.0+cu113 torchaudio==0.10.0 --extra-index-url https://download.pytorch.org/whl/cu113
 ```
 ## Usage
-the following presents a demo to use joyrl, all your need is just to set parameters including `GeneralConfig()` and `AlgoConfig()`, which is also shown in [examples](./examples/) folder, and well trained results are shown in the [benchmarks](./benchmarks/) folder as well.
+the following presents a demo to use joyrl, you donot need to care about complicated details of code. All your need is just to set hyper parameters including `GeneralConfig()` and `AlgoConfig()`, which is also shown in [examples](./examples/) folder, and well trained results are shown in the [benchmarks](./benchmarks/) folder as well.
 ```python
 import joyrl as jj
 import gym
@@ -61,8 +62,7 @@ class AlgoConfig():
 if __name__ == "__main__":
     general_cfg = GeneralConfig()
     algo_cfg = AlgoConfig()
-    env = gym.make(general_cfg.env_name,new_step_api=True)
-    jj.run.run(env,general_cfg,algo_cfg)
+    jj.run(general_cfg,algo_cfg)
 ```
 
 ## Algorithms

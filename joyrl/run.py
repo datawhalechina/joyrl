@@ -1,5 +1,6 @@
 from pathlib import Path
 import datetime
+import gym
 from joyrl.common.utils import merge_class_attrs,all_seed,get_logger,save_results,save_cfgs,plot_rewards
 
 class MergedConfig:
@@ -26,12 +27,13 @@ def evaluate(cfg,trainer,env, agent):
             sum_eval_reward += eval_ep_reward
         mean_eval_reward = sum_eval_reward/cfg.eval_eps
         return mean_eval_reward
-def run(env,general_cfg,algo_cfg):
+def run(general_cfg,algo_cfg):
     cfgs = {'general_cfg':general_cfg,'algo_cfg':algo_cfg}
     cfg = MergedConfig() # merge config
     cfg = merge_class_attrs(cfg,cfgs['general_cfg'])
     cfg = merge_class_attrs(cfg,cfgs['algo_cfg'])
     print_cfgs(cfg) # print the configuration
+    env = gym.make(cfg.env_name,new_step_api=True)
     all_seed(env,seed = cfg.seed) # set seed
     # create dirs
     curr_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")  # obtain current time

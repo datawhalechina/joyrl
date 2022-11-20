@@ -38,6 +38,5 @@ class AlgoConfig():
 if __name__ == "__main__":
     general_cfg = GeneralConfig()
     algo_cfg = AlgoConfig()
-    env = gym.make(general_cfg.env_name,new_step_api=True)
-    jj.run.run(env,general_cfg,algo_cfg)
+    jj.run(general_cfg,algo_cfg)
     
