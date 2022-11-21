@@ -1,8 +1,4 @@
-# import sys,os
-# os.environ["KMP_DUPLICATE_LIB_OK"]  =  "TRUE" # avoid "OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized."
-# curr_path = os.path.dirname(os.path.abspath(__file__))  # current path
-# parent_path = os.path.dirname(curr_path)  # parent path 
-# sys.path.append(parent_path)  # add path to system path
+# to test the trained model, you need to modify the "load_checkpoint=True" and the right "load_path" in the class GeneralConfig
 import joyrl as jj
 import gym
 
@@ -45,4 +41,4 @@ class AlgoConfig():
 if __name__ == "__main__":
     general_cfg = GeneralConfig()
     algo_cfg = AlgoConfig()
-    jj.run.run(general_cfg,algo_cfg)
+    jj.run(general_cfg,algo_cfg)
