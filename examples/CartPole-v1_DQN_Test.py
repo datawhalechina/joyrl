@@ -1,6 +1,5 @@
 # to test the trained model, you need to modify the "load_checkpoint=True" and the right "load_path" in the class GeneralConfig
 import joyrl as jj
-import gym
 
 class GeneralConfig():
     def __init__(self) -> None:

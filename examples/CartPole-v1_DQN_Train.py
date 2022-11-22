@@ -1,5 +1,4 @@
 import joyrl as jj
-import gym
 class GeneralConfig():
     def __init__(self) -> None:
         self.env_name = "CartPole-v1" # name of environment
