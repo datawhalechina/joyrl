@@ -24,7 +24,7 @@ pip install torch==1.10.0+cu113 torchvision==0.11.0+cu113 torchaudio==0.10.0 --e
 ## Usage
 the following presents a demo to use joyrl, you donot need to care about complicated details of code. All your need is just to set hyper parameters including `GeneralConfig()` and `AlgoConfig()`, which is also shown in [examples](./examples/) folder, and well trained results are shown in the [benchmarks](./benchmarks/) folder as well.
 ```python
-import joyrl as jj
+import joyrl
 class GeneralConfig():
     def __init__(self) -> None:
         self.env_name = "CartPole-v1" # name of environment
@@ -63,7 +63,7 @@ class AlgoConfig():
 if __name__ == "__main__":
     general_cfg = GeneralConfig()
     algo_cfg = AlgoConfig()
-    jj.run(general_cfg,algo_cfg)
+    joyrl.run(general_cfg,algo_cfg)
 ```
 ## Documentation
 

@@ -1,4 +1,4 @@
-import joyrl as jj
+import joyrl
 class GeneralConfig():
     def __init__(self) -> None:
         self.env_name = "CartPole-v1" # name of environment
@@ -37,5 +37,5 @@ class AlgoConfig():
 if __name__ == "__main__":
     general_cfg = GeneralConfig()
     algo_cfg = AlgoConfig()
-    jj.run(general_cfg,algo_cfg)
+    joyrl.run(general_cfg,algo_cfg)
     
