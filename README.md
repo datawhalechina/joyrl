@@ -5,10 +5,12 @@
 ## Install
 
 ```bash
-conda create -n easyrl python=3.7
-conda activate easyrl
-pip install -r requirements
+# you need to install Anaconda first
+conda create -n joyrl python=3.7
+conda activate joyrl
+pip install -U joyrl
 ```
+
 Torch:
 
 ```bash
@@ -23,7 +25,6 @@ pip install torch==1.10.0+cu113 torchvision==0.11.0+cu113 torchaudio==0.10.0 --e
 the following presents a demo to use joyrl, you donot need to care about complicated details of code. All your need is just to set hyper parameters including `GeneralConfig()` and `AlgoConfig()`, which is also shown in [examples](./examples/) folder, and well trained results are shown in the [benchmarks](./benchmarks/) folder as well.
 ```python
 import joyrl as jj
-import gym
 class GeneralConfig():
     def __init__(self) -> None:
         self.env_name = "CartPole-v1" # name of environment
@@ -64,7 +65,9 @@ if __name__ == "__main__":
     algo_cfg = AlgoConfig()
     jj.run(general_cfg,algo_cfg)
 ```
+## Documentation
 
+More tutorials and API documentation are hosted on [https://datawhalechina.github.io/joyrl/](https://datawhalechina.github.io/joyrl/)
 ## Algorithms
 
 |       Name       |                          Reference                           |                    Author                     | Notes |
