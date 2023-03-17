@@ -5,7 +5,7 @@
 @Email: johnjim0816@gmail.com
 @Date: 2020-06-12 00:50:49
 @LastEditor: John
-LastEditTime: 2022-08-29 23:34:20
+LastEditTime: 2022-11-22 12:33:47
 @Discription: 
 @Environment: python 3.7.7
 '''
@@ -20,26 +20,31 @@ import torch.nn.functional as F
 import random
 import math
 import numpy as np
-class DoubleDQN:
-    def __init__(self,models, memories, cfg):
-        self.n_actions = cfg['n_actions']  
-        self.device = torch.device(cfg['device']) 
-        self.gamma = cfg['gamma'] 
+from common.memories import ReplayBufferQue
+from common.layers import ValueNetwork
+
+class Agent:
+    def __init__(self,cfg):
+        self.n_actions = cfg.n_actions
+        self.device = torch.device(cfg.device) 
+        self.gamma = cfg.gamma  
         ## e-greedy parameters
         self.sample_count = 0  # sample count for epsilon decay
-        self.epsilon_start = cfg['epsilon_start']
-        self.epsilon_end = cfg['epsilon_end']
-        self.epsilon_decay = cfg['epsilon_decay']
-        self.batch_size = cfg['batch_size']
-        self.policy_net = models['Qnet'].to(self.device)
-        self.target_net = models['Qnet'].to(self.device)
+        self.epsilon_start = cfg.epsilon_start
+        self.epsilon_end = cfg.epsilon_end
+        self.epsilon_decay = cfg.epsilon_decay
+        self.batch_size = cfg.batch_size
+        self.target_update = cfg.target_update
+        self.policy_net = ValueNetwork(cfg).to(self.device)
+        # summary(self.policy_net, (1,4))
+        self.target_net = ValueNetwork(cfg).to(self.device)
         # target_net copy from policy_net
         for target_param, param in zip(self.target_net.parameters(), self.policy_net.parameters()):
             target_param.data.copy_(param.data)
         # self.target_net.eval()  # donnot use BatchNormalization or Dropout
         # the difference between parameters() and state_dict() is that parameters() require_grad=True
-        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=cfg['lr'])
-        self.memory = memories['Memory']
+        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=cfg.lr)
+        self.memory = ReplayBufferQue(cfg.buffer_size)
         self.update_flag = False 
         
     def sample_action(self, state):
@@ -48,10 +53,7 @@ class DoubleDQN:
         self.sample_count += 1
         self.epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * math.exp(-1. * self.sample_count / self.epsilon_decay)
         if random.random() > self.epsilon:
-            with torch.no_grad():
-                state = torch.tensor(state, device=self.device, dtype=torch.float32).unsqueeze(0)
-                q_value = self.policy_net(state)
-                action = q_value.max(1)[1].item()  
+            action = self.predict_action(state)  
         else:
             action = random.randrange(self.n_actions)
         return action
@@ -93,6 +95,9 @@ class DoubleDQN:
         for param in self.policy_net.parameters(): 
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()  
+
+        if self.sample_count % self.target_update == 0: # target net update, target_update means "C" in pseucodes
+            self.target_net.load_state_dict(self.policy_net.state_dict()) 
     
     def save_model(self,path):
         from pathlib import Path
