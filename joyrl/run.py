@@ -1,6 +1,6 @@
 
-import datetime,time
-import importlib
+import argparse
+import datetime, importlib, time, yaml
 import os
 import ray
 import gymnasium as gym
@@ -14,6 +14,8 @@ from joyrl.framework.learners import Learner
 from joyrl.utils.utils import merge_class_attrs, all_seed, save_cfgs
 
 def load_cfgs(**kwargs):
+    ''' load config from config class
+    '''
     general_cfg = kwargs.get('general_cfg',None) # general config
     if general_cfg is None: general_cfg = GeneralConfig() # if not specified, use default config
     algo_cfg = kwargs.get('algo_cfg',None) # algorithm config
@@ -21,6 +23,31 @@ def load_cfgs(**kwargs):
     env_cfg = kwargs.get('env_cfg',None) # environment config
     if env_cfg is None: env_cfg = importlib.import_module(f"joyrl.envs.{general_cfg.env_name}.config").EnvConfig()
     return general_cfg,algo_cfg,env_cfg
+
+def load_yaml_cfg(target_cfg, load_cfg, item):
+    if load_cfg[item] is not None:
+        for k, v in load_cfg[item].items():
+            setattr(target_cfg, k, v)
+    return target_cfg
+
+def process_yaml_cfgs(general_cfg, algo_cfg, env_cfg):
+    parser = argparse.ArgumentParser(description="hyperparameters")
+    parser.add_argument('--yaml', default=None, type=str,
+
+                        help='the path of config file')
+    args = parser.parse_args()
+    # load config from yaml file
+    if args.yaml is not None:
+        with open(args.yaml) as f:
+            load_cfg = yaml.load(f, Loader=yaml.FullLoader)
+            # load general config
+            general_cfg = load_yaml_cfg(general_cfg, load_cfg, 'general_cfg')
+            # load algo config
+            algo_cfg = load_yaml_cfg(algo_cfg, load_cfg, 'algo_cfg')
+            # load env config
+            env_cfg = load_yaml_cfg(env_cfg, load_cfg, 'env_cfg')
+    return general_cfg, algo_cfg, env_cfg
+
 def merge_cfgs(general_cfg, algo_cfg, env_cfg):
     cfg = MergedConfig() # merge config
     cfg.general_cfg = general_cfg
@@ -73,6 +100,7 @@ def print_cfgs(cfg, logger):
     print_cfg(cfg.general_cfg,name = 'General Configs')
     print_cfg(cfg.algo_cfg,name = 'Algo Configs')
     print_cfg(cfg.env_cfg,name = 'Env Configs')
+
 def check_n_workers(cfg):
     ''' check n_workers
     '''
@@ -95,6 +123,7 @@ def create_single_env(cfg):
         env_wapper = __import__('.'.join(wrapper_class_path), fromlist=[wrapper_class_name])
         env = getattr(env_wapper, wrapper_class_name)(env)
     return env
+
 def envs_config(cfg,logger):
     ''' configure environment
     '''
@@ -122,6 +151,7 @@ def policy_config(cfg):
 
 def run(**kwargs):
     general_cfg,algo_cfg,env_cfg = load_cfgs(**kwargs)
+    general_cfg,algo_cfg,env_cfg = process_yaml_cfgs(general_cfg,algo_cfg,env_cfg)
     cfg = merge_cfgs(general_cfg, algo_cfg, env_cfg)
     cfg = create_dirs(cfg)
     ray.shutdown()

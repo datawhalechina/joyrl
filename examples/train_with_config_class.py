@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-05-28 20:07:56
 LastEditor: JiangJi
-LastEditTime: 2023-05-28 20:08:00
+LastEditTime: 2023-05-29 00:21:36
 Discription: 
 '''
 import joyrl
@@ -60,6 +60,7 @@ class EnvConfig:
         self.render_mode = None # render mode: None, rgb_array, human
         self.wrapper = None # 
         self.ignore_params = ["wrapper", "ignore_params"]
+        
 if __name__ == "__main__":
     general_cfg = GeneralConfig()
     algo_cfg = AlgoConfig()

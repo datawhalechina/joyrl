@@ -6,7 +6,7 @@
 
 ```bash
 # you need to install Anaconda first
-conda create -n joyrl python=3.7
+conda create -n joyrl python=3.8
 conda activate joyrl
 pip install -U joyrl
 ```
@@ -22,6 +22,7 @@ conda install pytorch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0 cudatoolkit
 pip install torch==1.10.0+cu113 torchvision==0.11.0+cu113 torchaudio==0.10.0 --extra-index-url https://download.pytorch.org/whl/cu113
 ```
 ## Usage
+
 the following presents a demo to use joyrl, you donot need to care about complicated details of code. All your need is just to set hyper parameters including `GeneralConfig()` and `AlgoConfig()`, which is also shown in [examples](./examples/) folder, and well trained results are shown in the [benchmarks](./benchmarks/) folder as well.
 ```python
 import joyrl
