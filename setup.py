@@ -10,16 +10,24 @@ def get_version() -> str:
 
 def get_install_requires() -> str:
     return [
-        "gym==0.25.2",
-        "pyyaml==6.0",
-        "matplotlib==3.5.3",
-        "seaborn==0.12.1",
-        "dill==0.3.5.1",
         "argparse==1.4.0",
-        "pandas==1.3.5",
-        "pyglet==1.5.26",
+        "dill==0.3.5.1",
+        "glfw==2.5.5",
+        "gymnasium==0.28.1",
+        "imageio==2.22.4",
         "importlib-metadata<5.0",
-        "setuptools==65.2.0"
+        "matplotlib==3.5.3",
+        "numpy==1.24.3",
+        "pandas==1.3.5",
+        "Pillow==9.4.0",
+        "pygame==2.1.2",
+        "pyglet==2.0.0",
+        "pyyaml==6.0",
+        "ray==2.3.0",
+        "six==1.16.0",
+        "seaborn==0.12.1",
+        "setuptools==59.5.0",
+        "tensorboard==2.11.2",
     ]
 
 

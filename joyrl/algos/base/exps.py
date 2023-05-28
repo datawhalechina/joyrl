@@ -3,16 +3,15 @@
 '''
 Author: JiangJi
 Email: johnjim0816@gmail.com
-Date: 2023-04-16 00:24:50
+Date: 2023-04-16 23:50:53
 LastEditor: JiangJi
-LastEditTime: 2023-04-16 00:30:48
+LastEditTime: 2023-05-27 20:51:28
 Discription: 
 '''
 
-class BaseExp:
-    def __init__(self,state=None, action=None, reward=None, next_state=None, terminated=None, **kwargs):
-        self.state = state
-        self.action = action
-        self.reward = reward
-        self.next_state = next_state
-        self.terminated = terminated
+class Exp:
+    def __init__(self, **kwargs) -> None:
+        for k,v in kwargs.items():
+            setattr(self,k,v)
+
+            

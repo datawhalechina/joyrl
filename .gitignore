@@ -3,7 +3,9 @@
 __pycache__
 .vscode
 .pypirc
-test.py
 dist
 build
 joyrl.egg-info
+tasks
+test
+test.py

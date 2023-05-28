@@ -3,11 +3,8 @@
 '''
 Author: JiangJi
 Email: johnjim0816@gmail.com
-Date: 2023-04-16 00:55:08
+Date: 2023-05-28 18:49:38
 LastEditor: JiangJi
-LastEditTime: 2023-04-16 00:55:12
+LastEditTime: 2023-05-28 18:49:39
 Discription: 
 '''
-class BaseAgent:
-    def __init__(self) -> None:
-        pass
