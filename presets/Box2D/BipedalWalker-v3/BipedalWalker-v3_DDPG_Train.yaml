@@ -1,0 +1,30 @@
+general_cfg:
+  algo_name: DDPG
+  device: cpu
+  env_name: gym
+  mode: train
+  eval_per_episode: 20
+  load_checkpoint: false
+  load_path: Train_BipedalWalker-v3_DDPG_20230414-214211
+  max_steps: 300
+  save_fig: true
+  seed: 2023
+  show_fig: false
+  test_eps: 3
+  train_eps: 700
+  n_workers: 1
+  render: false
+  render_mode: rgb_array
+algo_cfg:
+  critic_hidden_dim: 128
+  actor_hidden_dim: 128
+  gamma: 0.99
+  actor_lr: 5.0e-5
+  critic_lr: 1.0e-3
+  buffer_size: 20480
+  tau: 0.01
+  batch_size: 256
+env_cfg:
+  id: BipedalWalker-v3
+  new_step_api: true
+  render_mode: rgb_array

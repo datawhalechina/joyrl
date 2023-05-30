@@ -1,0 +1,44 @@
+general_cfg:
+  algo_name: DDPG
+  env_name: gym # env name, differ from env_id in env_cfgs
+  device: cuda # device, cpu or cuda
+  mode: train # run mode: train, test
+  collect_traj: false # if collect trajectories or not
+  mp_backend: single # multi-processing mode: single(default), ray
+  n_workers: 4 # number of workers if using multi-processing, default 1
+  load_checkpoint: true # if load checkpoint or not
+  load_path: Train_ray_Pendulum-v1_DDPG_20230527-001715 # if load checkpoint, then config path in 'tasks' dir
+  load_model_step: best # load model step
+  max_episode: 400 # max episodes, set -1 to keep running
+  max_step: 200 # max steps per episode, set -1 means unlimited steps
+  seed: 10 # random seed, set 0 not to use seed
+  online_eval: true # if online eval or not
+  online_eval_episode: 20 # online eval episodes
+  model_save_fre: 2000 # update step frequency of saving model
+algo_cfg:
+  action_type: dpg
+  actor_layers:
+    - layer_type: linear
+      layer_size: [256]
+      activation: relu
+    - layer_type: linear
+      layer_size: [256]
+      activation: relu
+  critic_layers:
+    - layer_type: linear
+      layer_size: [256]
+      activation: relu
+    - layer_type: linear
+      layer_size: [256]
+      activation: relu
+  batch_size: 128
+  buffer_type: REPLAY_QUE
+  buffer_size: 8000
+  actor_lr: 0.0001
+  critic_lr: 0.001
+  policy_loss_weight: 0.002
+  gamma: 0.99
+  tau: 0.001
+env_cfg:
+  id: Pendulum-v1
+  render_mode: null # null, rgb_array, human

@@ -1,0 +1,23 @@
+general_cfg:
+  algo_name: SAC_D
+  device: cuda
+  env_name: CartPole-v1
+  mode: test
+  load_checkpoint: true
+  load_path: Train_CartPole-v1_SAC_D_20230305-112849 # model path under tasks folder
+  max_steps: 200
+  save_fig: true
+  seed: 0
+  show_fig: false
+  test_eps: 10
+  train_eps: 200
+algo_cfg:
+  batch_size: 64
+  buffer_size: 100000
+  alpha: 0.2
+  epsilon_decay: 500
+  epsilon_end: 0.01
+  epsilon_start: 0.95
+  gamma: 0.95
+  lr: 0.0001  
+  target_update: 1

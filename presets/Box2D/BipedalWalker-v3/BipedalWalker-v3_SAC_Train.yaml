@@ -1,0 +1,38 @@
+general_cfg:
+  algo_name: SAC
+  continous: true
+  device: cuda
+  env_name: gym
+  eval_eps: 10
+  eval_per_episode: 5
+  load_checkpoint: false
+  load_path: Train_gym_SAC_20230415-140928
+  max_steps: 500
+  mode: train
+  mp_backend: mp
+  new_step_api: true
+  render: false
+  render_mode: human
+  save_fig: true
+  seed: 666
+  show_fig: false
+  test_eps: 20
+  train_eps: 2000
+  wrapper: null
+algo_cfg:
+  alpha: 0.01
+  automatic_entropy_tuning: false
+  batch_size: 64
+  buffer_size: 1000000
+  gamma: 0.98
+  hidden_dim: 256
+  lr: 0.0004
+  n_epochs: 1
+  policy_type: Gaussian
+  start_steps: 10000
+  target_update_fre: 1
+  tau: 0.01
+env_cfg:
+  id: BipedalWalker-v3
+  new_step_api: true
+  render_mode: null

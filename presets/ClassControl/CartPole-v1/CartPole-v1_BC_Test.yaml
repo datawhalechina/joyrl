@@ -1,0 +1,26 @@
+general_cfg:
+  algo_name: BC
+  device: cuda
+  env_name: CartPole-v1
+  eval_eps: 10
+  eval_per_episode: 1
+  load_checkpoint: True
+  load_path: Train_CartPole-v1_BC_20230319-190431
+  max_steps: 200
+  mode: test
+  render: false
+  save_fig: true
+  seed: 1
+  show_fig: false
+  test_eps: 10
+  train_eps: 1
+  wrapper: null
+algo_cfg:
+  actor_hidden_dim: 256
+  lr: 0.0003
+  critic_hidden_dim: 256
+  batch_size: 256
+  train_iterations: 500 
+  expert_path: tasks/Collect_CartPole-v1_PPO_20230319-170351/traj/traj.pkl # 专家数据路径
+
+  

@@ -1,0 +1,29 @@
+general_cfg:
+  algo_name: PPO
+  device: cuda
+  env_name: Pendulum-v1
+  eval_eps: 5
+  eval_per_episode: 10
+  load_checkpoint: false
+  load_path: Train_CartPole-v1_DQN_20221026-054757
+  max_steps: 200
+  mode: train
+  new_step_api: true
+  render: false
+  save_fig: true
+  seed: 1
+  show_fig: false
+  test_eps: 10
+  train_eps: 400
+  wrapper: null
+algo_cfg:
+  continuous: true
+  actor_hidden_dim: 64
+  actor_lr: 0.003
+  critic_hidden_dim: 64
+  critic_lr: 0.01 
+  entropy_coef: 0.02
+  eps_clip: 0.2
+  gamma: 0.99
+  k_epochs: 10
+  update_freq: 200
