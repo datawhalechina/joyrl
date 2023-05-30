@@ -101,15 +101,25 @@ def print_cfgs(cfg, logger):
     print_cfg(cfg.algo_cfg,name = 'Algo Configs')
     print_cfg(cfg.env_cfg,name = 'Env Configs')
 
-def check_n_workers(cfg):
-    ''' check n_workers
-    '''
+def check_resources(cfg):
+    # check cpu resources
     if cfg.__dict__.get('n_workers',None) is None: # set n_workers to 1 if not set
         setattr(cfg, 'n_workers', 1)
-    if not isinstance(cfg.n_workers,int) or cfg.n_workers <= 0: # n_workers must >0
+    if not isinstance(cfg.n_workers,int) or cfg.n_workers<=0: # n_workers must >0
         raise ValueError("the parameter 'n_workers' must >0!")
     if cfg.n_workers > mp.cpu_count() - 1:
         raise ValueError("the parameter 'n_workers' must less than total numbers of cpus on your machine!")
+    # check gpu resources
+    if cfg.device == "cuda" and cfg.n_learners > 1:
+        raise ValueError("the parameter 'n_learners' must be 1 when using gpu!")
+    if cfg.device == "cuda":
+        n_gpus_tester = 0.05
+        n_gpus_learner = 0.9
+    else:
+        n_gpus_tester = 0
+        n_gpus_learner = 0
+    return n_gpus_tester, n_gpus_learner
+
 def create_single_env(cfg):
     ''' create single env
     '''
@@ -158,16 +168,17 @@ def run(**kwargs):
     ray.init(include_dashboard=True)
     logger = RayLogger.remote(cfg.log_dir) # create ray logger 
     print_cfgs(cfg,logger)
+    n_gpus_tester, n_gpus_learner = check_resources(cfg)
     all_seed(cfg.seed) # set seed
     envs = envs_config(cfg,logger) # configure environment
     test_env = create_single_env(cfg) # create test environment
-    online_tester = RayTester.remote(cfg,test_env) # create online tester
+    online_tester = RayTester.options(num_gpus= n_gpus_tester).remote(cfg,test_env) # create online tester
     policy, data_handler = policy_config(cfg) # create policy and data_handler
     stats_recorder = StatsRecorder.remote(cfg) # create stats recorder
     data_server = DataServer.remote(cfg) # create data server
     learners = []
     for i in range(cfg.n_learners):
-        learner = Learner.remote(cfg, learner_id = i, policy = policy,data_handler = data_handler, online_tester = online_tester)
+        learner = Learner.options(num_gpus= n_gpus_learner / cfg.n_learners).remote(cfg, learner_id = i, policy = policy,data_handler = data_handler, online_tester = online_tester)
         learners.append(learner)
     workers = []
     for i in range(cfg.n_workers):
