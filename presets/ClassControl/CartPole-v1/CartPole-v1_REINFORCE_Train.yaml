@@ -1,0 +1,23 @@
+general_cfg:
+  algo_name: REINFORCE
+  device: cpu
+  env_name: CartPole-v1
+  eval_eps: 10
+  eval_per_episode: 5
+  load_checkpoint: false
+  load_path: Train_CartPole-v1_DQN_20221026-054757
+  max_steps: 200
+  mode: train
+  new_step_api: true
+  render: false
+  save_fig: true
+  seed: 1
+  show_fig: false
+  test_eps: 10
+  train_eps: 200
+  wrapper: null
+algo_cfg:
+  gamma: 0.99
+  hidden_dim: 36
+  lr: 0.01
+  update_freq: 200

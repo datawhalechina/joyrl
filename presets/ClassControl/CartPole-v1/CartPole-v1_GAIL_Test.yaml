@@ -1,0 +1,29 @@
+general_cfg:
+  algo_name: GAIL
+  batch_size: 2048
+  device: cuda
+  discount: 0.99
+  env_name: CartPole-v1
+  eval_eps: 10
+  eval_per_episode: 5
+  load_checkpoint: true
+  load_path: Train_CartPole-v1_GAIL_20221207-160945
+  max_steps: 200
+  mode: test
+  hidden_dim: 32
+  lr: 0.001
+  imitation_replay_size: 4
+  imitation_epochs: 5
+  imitation_batch_size: 128
+  new_step_api: true
+  ppo_epochs: 5
+  render: false
+  r1_reg_coeff: 1
+  save_fig: true
+  seed: 1
+  show_fig: false
+  test_eps: 10
+  train_eps: 400
+  wrapper: null
+algo_cfg:
+

@@ -1,0 +1,26 @@
+general_cfg:
+  algo_name: TD3
+  device: cpu
+  env_name: gym
+  eval_eps: 10
+  eval_per_episode: 5
+  load_checkpoint: true
+  load_path: Train_gym_TD3_20230416-110359
+  max_steps: 200
+  collect_eps: 10
+  min_reward: -0.7
+  mode: collect
+  new_step_api: true
+  render: false
+  save_fig: true
+  seed: 1
+  show_fig: false
+  test_eps: 10
+  train_eps: 100
+  wrapper: null
+algo_cfg:
+
+env_cfg:
+  id: Pendulum-v1
+  new_step_api: true
+

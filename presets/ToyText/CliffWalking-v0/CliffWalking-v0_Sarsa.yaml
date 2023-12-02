@@ -1,0 +1,22 @@
+general_cfg:
+  algo_name: Sarsa # algo name
+  env_name: gym # env name, differ from env_id in env_cfgs
+  mode: test # run mode: train, test
+  collect_traj: false # if collect trajectories or not
+  load_checkpoint: true # if load checkpoint or not
+  load_path: Train_single_CliffWalking-v0_Sarsa_20230519-010804 # if load checkpoint, then config path in 'tasks' dir
+  load_model_step: 12000 # load model step
+  max_episode: 10 # max episodes, set -1 to keep running
+  max_step: 100 # max steps per episode
+  seed: 1 # random seed, set 0 not to use seed
+
+algo_cfg:
+  epsilon_decay: 300
+  epsilon_end: 0.01
+  epsilon_start: 0.95
+  gamma: 0.99
+  lr: 0.1
+
+env_cfg:
+  id: CliffWalking-v0
+  render_mode: null

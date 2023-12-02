@@ -1,0 +1,43 @@
+general_cfg:
+  algo_name: TD3
+  device: cuda
+  env_name: gym
+  mode: train
+  load_checkpoint: false
+  load_path: Train_single_BipedalWalkerHardcore-v3_TD3_20230528-151042
+  eval_per_episode: 50
+  max_episode: 10000
+  max_step: 1000
+  seed: 2023 
+  model_save_fre: 70000
+  online_eval: true
+algo_cfg:
+  action_type: DPG
+  buffer_type: REPLAY_QUE
+  actor_layers: 
+    - layer_type: linear
+      layer_size: [200]
+      activation: relu  
+    - layer_type: linear
+      layer_size: [200]
+      activation: relu
+  actor_lr: 1.0e-4
+  batch_size: 256 
+  buffer_size: 60000
+  critic_layers: 
+    - layer_type: linear
+      layer_size: [200]
+      activation: relu
+    - layer_type: linear
+      layer_size: [200]
+      activation: relu
+  critic_lr: 1.2e-4
+  expl_noise: 0.25
+  explore_steps: 2048
+  gamma: 0.99
+  noise_clip: 0.5
+  policy_freq: 2
+  policy_noise: 0.2
+  tau: 0.005
+env_cfg:
+  id:  BipedalWalkerHardcore-v3

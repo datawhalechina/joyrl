@@ -1,0 +1,44 @@
+general_cfg:
+  algo_name: CQL
+  device: cpu
+  env_name: CartPole-v1
+  eval_eps: 10
+  eval_per_episode: 5
+  load_checkpoint: true
+  load_path: Train_CartPole-v1_CQL_20230408-183652
+  max_steps: 200
+  mode: test
+  new_step_api: true
+  render: false
+  save_fig: true
+  seed: 1
+  show_fig: true
+  test_eps: 10
+  train_eps: 300
+  wrapper: null
+algo_cfg:
+  batch_size: 64
+  buffer_size: 100000
+  epsilon_decay: 500
+  epsilon_end: 0.01
+  epsilon_start: 0.95
+  gamma: 0.99
+  lr: 0.001
+  target_update: 4
+  tau: 0.001
+  value_layers:
+  - activation: relu
+    layer_dim:
+    - n_states
+    - 256
+    layer_type: linear
+  - activation: relu
+    layer_dim:
+    - 256
+    - 256
+    layer_type: linear
+  - activation: none
+    layer_dim:
+    - 256
+    - n_actions
+    layer_type: linear

@@ -1,0 +1,46 @@
+general_cfg:
+  algo_name: PPO # algo name
+  env_name: gym # env name, differ from env_id in env_cfgs
+  device: cuda # device, cpu or cuda
+  mode: train # run mode: train, test
+  collect_traj: false # if collect trajectories or not
+  mp_backend: single # multi-processing mode: single(default), ray
+  n_workers: 2 # number of workers if using multi-processing, default 1
+  load_checkpoint: false # if load checkpoint or not
+  load_path: Train_single_CartPole-v1_DQN_20230515-211721 # if load checkpoint, then config path in 'tasks' dir
+  load_model_step: best # load model step
+  max_episode: 2000 # max episodes, set -1 to keep running
+  max_step: 1000 # max steps per episode
+  seed: 1 # random seed, set 0 not to use seed
+  online_eval: true # if online eval or not
+  online_eval_episode: 10 # online eval episodes
+  model_save_fre: 500 # update step frequency of saving model
+algo_cfg:
+  actor_layers:
+    - layer_type: linear
+      layer_size: [256]
+      activation: relu
+    - layer_type: linear
+      layer_size: [256]
+      activation: relu
+  critic_layers:
+    - layer_type: linear
+      layer_size: [256]
+      activation: relu
+    - layer_type: linear
+      layer_size: [256]
+      activation: relu
+  batch_size: 256
+  sgd_batch_size: 128
+  k_epochs: 8
+  buffer_type: ONPOLICY_QUE
+  buffer_size: 100000
+  epsilon_decay: 500
+  epsilon_end: 0.01
+  epsilon_start: 0.95
+  gamma: 0.95
+  lr: 0.0001
+  target_update: 4
+env_cfg:
+  id: Ant-v4
+  render_mode: null

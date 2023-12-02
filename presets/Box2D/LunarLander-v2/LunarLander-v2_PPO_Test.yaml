@@ -1,0 +1,32 @@
+general_cfg:
+  algo_name: PPO
+  device: cpu
+  env_name: LunarLander-v2
+  eval_eps: 10
+  eval_per_episode: 5
+  load_checkpoint: true
+  load_path: Train_LunarLander-v2_PPO_20230402-223154
+  max_steps: 1000
+  mode: test
+  mp_backend: mp
+  new_step_api: true
+  render: false
+  save_fig: true
+  seed: 1
+  show_fig: false
+  test_eps: 20
+  train_eps: 600
+  wrapper: null
+algo_cfg:
+  actor_hidden_dim: 256
+  actor_lr: 0.0003
+  continuous: false
+  critic_hidden_dim: 256
+  critic_lr: 0.001
+  entropy_coef: 0.01
+  eps_clip: 0.2
+  gamma: 0.99
+  k_epochs: 4
+  ppo_type: clip
+  sgd_batch_size: 32
+  train_batch_size: 256

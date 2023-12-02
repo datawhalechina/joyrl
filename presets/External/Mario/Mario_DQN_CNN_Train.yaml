@@ -1,0 +1,24 @@
+general_cfg:
+  algo_name: DQN_CNN
+  device: cuda
+  env_name: Mario
+  mode: train
+  load_checkpoint: false
+  load_path: Train_Mario_DQN_CNN_20221207-155552
+  max_steps: 1000
+  save_fig: true
+  seed: 1
+  show_fig: false
+  test_eps: 10
+  train_eps: 200
+  wrapper: envs.wrappers.MarioWrappers
+  new_step_api: True
+algo_cfg:
+  batch_size: 64
+  buffer_size: 100000
+  epsilon_decay: 500
+  epsilon_end: 0.01
+  epsilon_start: 0.95
+  gamma: 0.99
+  lr: 0.0001
+  target_update: 4

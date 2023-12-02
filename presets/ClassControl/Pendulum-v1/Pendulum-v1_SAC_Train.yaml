@@ -1,0 +1,19 @@
+general_cfg:
+  algo_name: SAC
+  device: cuda
+  env_name: Pendulum-v1
+  new_step_api: True
+  wrapper: null
+  mode: train
+  load_checkpoint: false
+  load_path: Train_CartPole-v1_DQN_20221026-054757
+  max_steps: 200
+  save_fig: true
+  seed: 10
+  show_fig: false
+  test_eps: 10
+  train_eps: 400
+algo_cfg:
+  continous: false
+  alpha: 0.2
+  

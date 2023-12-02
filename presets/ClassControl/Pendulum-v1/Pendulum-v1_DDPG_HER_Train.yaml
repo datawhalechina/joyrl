@@ -1,0 +1,33 @@
+general_cfg:
+  algo_name: DDPG_HER
+  device: cpu
+  env_name: gym
+  eval_eps: 10
+  eval_per_episode: 5
+  her_sample_num: 4
+  load_checkpoint: false
+  load_path: tasks
+  max_steps: 200
+  mode: train
+  mp_backend: mp
+  new_step_api: true
+  render: false
+  render_mode: human
+  save_fig: true
+  seed: 0
+  show_fig: false
+  test_eps: 20
+  train_eps: 100
+  update_every: 100
+  wrapper: null
+algo_cfg:
+  actor_hidden_dim: 256
+  actor_lr: 0.0001
+  batch_size: 128
+  buffer_size: 8000
+  critic_hidden_dim: 256
+  critic_lr: 0.001
+  gamma: 0.99
+  tau: 0.001
+env_cfg:
+  id: Pendulum-v1

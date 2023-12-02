@@ -1,0 +1,34 @@
+general_cfg:
+  algo_name: SAC
+  continous: true
+  device: cuda
+  env_name: gym
+  eval_eps: 10
+  eval_per_episode: 5
+  load_checkpoint: false
+  load_path: Train_LunarLanderContinuous-v2_PPO_20230401-102521
+  max_steps: 500
+  mode: train
+  new_step_api: true
+  render: false
+  save_fig: true
+  seed: 666
+  show_fig: false
+  test_eps: 20
+  train_eps: 2000
+  wrapper: null
+algo_cfg:
+  alpha: 0.1
+  automatic_entropy_tuning: false
+  batch_size: 64
+  buffer_size: 1000000
+  gamma: 0.99
+  hidden_dim: 256
+  lr: 0.001
+  n_epochs: 1
+  policy_type: Gaussian
+  start_steps: 10000
+  target_update_fre: 1
+  tau: 0.005
+env_cfg:
+  id: LunarLanderContinuous-v2

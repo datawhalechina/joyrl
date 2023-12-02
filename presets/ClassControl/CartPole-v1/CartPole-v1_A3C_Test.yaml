@@ -1,0 +1,29 @@
+general_cfg:
+  algo_name: A3C
+  device: cpu
+  env_name: CartPole-v1
+  wrapper: null
+  n_workers: 1 # number of workers for parallel training
+  train_eps: 400
+  test_eps: 10
+  eval_eps: 10
+  eval_per_episode: 5
+  load_checkpoint: true
+  load_path: Train_CartPole-v1_A3C_20230111-132542
+  max_steps: 200
+  mode: test
+  new_step_api: true
+  render: false
+  save_fig: true
+  seed: 1
+  show_fig: false
+
+algo_cfg:
+  actor_hidden_dim: 256
+  actor_lr: 0.0003
+  continuous: false
+  critic_hidden_dim: 256
+  critic_lr: 0.001
+  entropy_coef: 0.001
+  gamma: 0.99
+  update_freq: 20

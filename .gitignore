@@ -1,0 +1,11 @@
+.DS_Store
+.ipynb_checkpoints
+__pycache__
+.vscode
+.pypirc
+dist
+build
+joyrl.egg-info
+tasks
+test
+test.py
