@@ -1,19 +1,9 @@
-#!/usr/bin/env python
-# coding=utf-8
-'''
-Author: JiangJi
-Email: johnjim0816@gmail.com
-Date: 2023-04-16 22:34:27
-LastEditor: JiangJi
-LastEditTime: 2023-05-28 19:05:12
-Discription: 
-'''
 import random
 import torch
 import numpy as np
 from enum import Enum
 from collections import deque
-from joyrl.config.config import MergedConfig
+from joyrl.framework.config import MergedConfig
 from joyrl.utils.utils import get_shape_from_obs_space, get_shape_from_act_space
 
 def _cast(x):
@@ -117,15 +107,16 @@ class OnPolicyBufferQue(ReplayBufferQue):
     '''
     def __init__(self, cfg: MergedConfig):
         self.cfg = cfg
-        self.batch_size = cfg.batch_size
-        self.buffer = deque()
+        self.buffer = deque(maxlen=128)
+    def push(self, exps: list):
+        self.buffer.append(exps)
     def sample(self):
         ''' sample all the transitions
         '''
-        if len(self.buffer) < self.batch_size:
-            return None
-        batch = list(self.buffer)
-        self.buffer.clear() # on policy buffer will clear the buffer after sampling
+        if len(self.buffer) == 0: return None
+        batch = self.buffer.popleft()
+        # batch = list(self.buffer)
+        # self.buffer.clear() # on policy buffer will clear the buffer after sampling
         return batch
     
 class SumTree:
@@ -1641,7 +1632,7 @@ class SharedReplayBuffer(object):
         
 
 if __name__ == "__main__":
-    from config.config import MergedConfig
+    from config.general_config import MergedConfig
     cfg = MergedConfig()
     cfg.buffer_type = 'REPLAY'
     cfg.buffer_size = 100

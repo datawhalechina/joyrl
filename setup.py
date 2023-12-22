@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# coding=utf-8
+'''
+Author: JiangJi
+Email: johnjim0816@gmail.com
+Date: 2023-12-22 13:01:23
+LastEditor: JiangJi
+LastEditTime: 2023-12-22 14:07:48
+Discription: 
+'''
 import sys,os
 from setuptools import setup, find_packages
 curr_path = os.path.dirname(os.path.abspath(__file__))  # current path
@@ -6,7 +16,6 @@ def get_version() -> str:
     # https://packaging.python.org/guides/single-sourcing-package-version/
     init = open(os.path.join("joyrl", "__init__.py"), "r").read().split()
     return init[init.index("__version__") + 2][1:-1]
-
 
 def get_install_requires() -> str:
     return [
@@ -23,13 +32,12 @@ def get_install_requires() -> str:
         "pygame==2.1.2",
         "pyglet==2.0.0",
         "pyyaml==6.0",
-        "ray==2.3.0",
+        "ray==2.6.3",
         "six==1.16.0",
         "seaborn==0.12.1",
         "setuptools==59.5.0",
         "tensorboard==2.11.2",
     ]
-
 
 def get_extras_require() -> str:
     req = {
@@ -57,4 +65,9 @@ setup(
     platforms = "any",
     install_requires=get_install_requires(),
     extras_require=get_extras_require(),
+    entry_points={
+        "console_scripts": [
+            "joyrl=joyrl.scripts.scripts:main",
+        ],
+    },
 )

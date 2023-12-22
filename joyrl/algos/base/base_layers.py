@@ -1,13 +1,3 @@
-#!/usr/bin/env python
-# coding=utf-8
-'''
-Author: JiangJi
-Email: johnjim0816@gmail.com
-Date: 2023-04-16 22:30:15
-LastEditor: JiangJi
-LastEditTime: 2023-05-27 20:52:44
-Discription: 
-'''
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -30,11 +20,11 @@ def get_output_size_with_batch(layers,input_size,dtype=torch.float):
     ''' get output size of a layer with batch size 
     '''
     with torch.no_grad():
-        x = torch.zeros(10, *input_size[1:], dtype=dtype)
+        x = torch.zeros([10] + list(input_size[1:]), dtype=dtype)
         out = layers(x)
     output_size = [None] + list(out.size())[1:]
-    return output_size      
-  
+    return output_size 
+         
 def embedding_layer(input_size, layer_cfg: LayerConfig):
     n_embeddings = layer_cfg.n_embeddings
     embedding_dim = layer_cfg.embedding_dim
@@ -141,13 +131,35 @@ def dense_layer(in_dim,out_dim,act_name='relu'):
         activation: 激活函数
     """
     
-def conv2d_layer(in_channel, out_channel, kernel_size, stride, padding, act_name='relu'):
-    """ 生成一个卷积层
-        layer_size: 卷积层的输入输出维度
-        activation: 激活函数
-    """
+def conv2d_layer(input_size, layer_cfg: LayerConfig):
+    ''' conv2d layer
+    '''
+    in_channel = layer_cfg.in_channel
+    out_channel = layer_cfg.out_channel
+    kernel_size = layer_cfg.kernel_size if hasattr(layer_cfg,'kernel_size') else 4
+    stride = layer_cfg.stride if hasattr(layer_cfg,'stride') else 4
     padding = 'same' if stride == 1 else 'valid'
-    return nn.Sequential(nn.Conv2d(in_channel,out_channel,kernel_size,stride,padding),activation_dics[act_name]() )
+    class Conv2dLayer(nn.Module):
+        def __init__(self,in_channel,out_channel,kernel_size,stride,padding):
+            super(Conv2dLayer,self).__init__()
+            self.conv = nn.Conv2d(in_channel,out_channel,kernel_size,stride,padding)
+        def forward(self,x):
+            return self.conv(x)
+    layer = Conv2dLayer(in_channel,out_channel,kernel_size,stride,padding)
+    output_size = get_output_size_with_batch(layer, input_size)
+    return layer, output_size
+
+def flatten_layer(input_size, layer_cfg: LayerConfig):
+    ''' flatten layer
+    '''
+    # class FlattenLayer(nn.Module):
+    #     def __init__(self):
+    #         super(FlattenLayer,self).__init__()
+    #     def forward(self,x):
+    #         return x.view(x.size(0),-1)
+    layer = nn.Sequential(nn.Flatten())
+    output_size = get_output_size_with_batch(layer, input_size)
+    return layer, output_size
 
 def create_layer(input_size: list, layer_cfg: LayerConfig):
     """ 生成一个层
@@ -164,5 +176,7 @@ def create_layer(input_size: list, layer_cfg: LayerConfig):
         return conv2d_layer(input_size, layer_cfg)
     elif layer_type == "embed":
         return embedding_layer(input_size, layer_cfg)
+    elif layer_type == "flatten":
+        return flatten_layer(input_size, layer_cfg)
     else:
         raise NotImplementedError

@@ -3,9 +3,9 @@
 '''
 Author: JiangJi
 Email: johnjim0816@gmail.com
-Date: 2023-05-17 11:29:47
+Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2023-05-18 23:17:47
+LastEditTime: 2023-12-03 14:43:23
 Discription: 
 '''
 import numpy as np
@@ -24,7 +24,11 @@ class BaseDataHandler:
         '''
         exp = self._create_exp(transition)
         self.buffer.push(exp)
-    def add_data_after_train(self, data):
+
+    def add_exps(self, exps):
+        self.buffer.push(exps)
+        
+    def add_data_after_learn(self, data):
         ''' add update data
         '''
         self.data_after_train = data

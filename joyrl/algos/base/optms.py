@@ -1,13 +1,3 @@
-#!/usr/bin/env python
-# coding=utf-8
-'''
-Author: JiangJi
-Email: johnjim0816@gmail.com
-Date: 2023-05-17 12:52:16
-LastEditor: JiangJi
-LastEditTime: 2023-05-17 12:52:18
-Discription: 
-'''
 import torch
 import math
 class SharedAdam(torch.optim.Adam):
