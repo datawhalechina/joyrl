@@ -5,14 +5,14 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2022-11-14 23:50:59
 LastEditor: JiangJi
-LastEditTime: 2023-05-30 12:46:03
+LastEditTime: 2023-12-24 00:15:26
 Discription: 
 '''
 import torch
 import torch.nn as nn
 import math,random
 import numpy as np
-from algos.base.policies import BasePolicy
+from joyrl.algos.base.policy import BasePolicy
 from algos.base.networks import QNetwork
         
 class Policy(BasePolicy):

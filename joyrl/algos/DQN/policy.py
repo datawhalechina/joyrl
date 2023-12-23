@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import math,random
 import numpy as np
-from joyrl.algos.base.policies import BasePolicy
+from joyrl.algos.base.policy import BasePolicy
 from joyrl.algos.base.networks import QNetwork
 
 class Policy(BasePolicy):

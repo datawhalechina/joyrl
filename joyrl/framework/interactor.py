@@ -53,7 +53,7 @@ class Interactor:
             self.curr_obs, self.curr_info = obs, info
             self.ep_reward += reward
             self.ep_step += 1
-            if terminated or truncated or self.ep_step >= self.cfg.max_step:
+            if terminated or truncated or self.ep_step >= self.cfg.max_step > 0:
                 global_episode = self.tracker.pub_msg(Msg(MsgType.TRACKER_GET_EPISODE))
                 self.tracker.pub_msg(Msg(MsgType.TRACKER_INCREASE_EPISODE))
                 if global_episode % self.cfg.interact_summary_fre == 0: 

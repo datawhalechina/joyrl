@@ -3,9 +3,9 @@
 '''
 Author: JiangJi
 Email: johnjim0816@gmail.com
-Date: 2023-12-02 15:02:30
+Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2023-12-03 18:14:54
+LastEditTime: 2023-12-24 00:15:15
 Discription: 
 '''
 import time
@@ -16,7 +16,7 @@ import torch
 from typing import Dict, List
 from queue import Queue
 from joyrl.framework.message import Msg, MsgType
-from joyrl.algos.base.policies import BasePolicy
+from joyrl.algos.base.policy import BasePolicy
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
 

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-23 10:45:01
 LastEditor: JiangJi
-LastEditTime: 2023-12-23 10:48:54
+LastEditTime: 2023-12-24 00:05:32
 Discription: 
 '''
 import joyrl
@@ -39,6 +39,7 @@ class GeneralConfig:
 class EnvConfig(object):
     def __init__(self) -> None:
         self.id = "CartPole-v1" # environment id
+        
 if __name__ == "__main__":
     general_cfg = GeneralConfig()
     env_cfg = EnvConfig()

@@ -7,7 +7,7 @@ import torch.utils.data as Data
 import numpy as np
 
 from algos.base.networks import ValueNetwork, CriticNetwork, ActorNetwork
-from algos.base.policies import BasePolicy
+from joyrl.algos.base.policy import BasePolicy
 
 class Policy(BasePolicy):
     def __init__(self, cfg) -> None:
