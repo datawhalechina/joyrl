@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="Description">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.$docsify = {
+      name: 'JoyRL Offline',
+      repo: 'https://github.com/johnjim0816/joyrl-offline',
+      loadSidebar: true,
+      subMaxLevel: 4,
+      latex: {
+        inlineMath   : [['$', '$'], ['\\(', '\\)']], // default
+        displayMath  : [['$$', '$$']],               // default
+      },
+      search:{
+        placeholder:'搜索',
+        noData:'找不到结果',
+        paths:'auto',
+        depth:6
+      },
+      plugins: [
+        function(hook, vm) {
+          hook.beforeEach(function(content) {
+            // 每次开始解析 Markdown 内容时调用
+            // 将所有../figs替换成figs，解决github pages下图片无法显示的问题
+            // https://github.com/docsifyjs/docsify/issues/936
+            return content.replace(/..\/figs/g, "figs");
+          })
+
+          // hook.doneEach(function () {
+          //   window.MathJax.Hub.Queue(["Typeset", MathJax.Hub, document.getElementById('app')]);
+          // }) 
+        }
+      ]
+    }
+  </script>
+  <!-- Docsify v4 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <!-- LaTeX display engine -->
+  <script src="//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <!--  docsify-latex plugin -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-latex@0"></script>
+</body>
+</html>

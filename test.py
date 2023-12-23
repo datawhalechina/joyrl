@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2023-12-22 13:37:50
+LastEditTime: 2023-12-23 11:17:10
 Discription: 
 '''
 import sys,os
@@ -96,12 +96,10 @@ class Launcher(object):
                 # load general config
                 self._load_yaml_cfg(self.general_cfg,load_cfg,'general_cfg')
                 # load algo config
-                self.algo_name = self.general_cfg.algo_name
-                self.algo_cfg = importlib.import_module(f"joyrl.algos.{self.algo_name}.config").AlgoConfig()
+                self.algo_cfg = importlib.import_module(f"joyrl.algos.{self.general_cfg.algo_name}.config").AlgoConfig()
                 self._load_yaml_cfg(self.algo_cfg,load_cfg,'algo_cfg')
                 # load env config
-                self.env_name = self.general_cfg.env_name
-                self.env_cfg = importlib.import_module(f"joyrl.envs.{self.env_name}.config").EnvConfig()
+                self.env_cfg = importlib.import_module(f"joyrl.envs.{self.general_cfg.env_name}.config").EnvConfig()
                 self._load_yaml_cfg(self.env_cfg, load_cfg, 'env_cfg')
 
     def _merge_cfgs(self):
@@ -165,9 +163,9 @@ class Launcher(object):
     def policy_config(self):
         ''' configure policy and data_handler
         '''
-        policy_mod = importlib.import_module(f"joyrl.algos.{self.algo_name}.policy")
+        policy_mod = importlib.import_module(f"joyrl.algos.{self.general_cfg.algo_name}.policy")
          # create agent
-        data_handler_mod = importlib.import_module(f"joyrl.algos.{self.algo_name}.data_handler")
+        data_handler_mod = importlib.import_module(f"joyrl.algos.{self.general_cfg.algo_name}.data_handler")
         policy = policy_mod.Policy(self.cfg) 
         if self.cfg.load_checkpoint:
             policy.load_model(f"tasks/{self.cfg.load_path}/models/{self.cfg.load_model_step}")
