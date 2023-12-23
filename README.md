@@ -3,7 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/joyrl)](https://pypi.org/project/joyrl/)  [![GitHub issues](https://img.shields.io/github/issues/datawhalechina/joyrl)](https://github.com/datawhalechina/joyrl/issues) [![GitHub stars](https://img.shields.io/github/stars/datawhalechina/joyrl)](https://github.com/datawhalechina/joyrl/stargazers) [![GitHub forks](https://img.shields.io/github/forks/datawhalechina/joyrl)](https://github.com/datawhalechina/joyrl/network) [![GitHub license](https://img.shields.io/github/license/datawhalechina/joyrl)](https://github.com/datawhalechina/joyrl/blob/master/LICENSE)
 
 
-`JoyRL` 是一个基于 `PyTorch` 和 `Ray` 开发的强化学习(`RL`)框架，支持串行和并行等方式。相比于其他`RL`库，`JoyRL` 旨在帮助用户摆脱繁琐的算法实现细节、不友好的`API`等问题。`JoyRL`设计的宗旨是，用户只需要通过**超参数配置**就可以训练和测试强化学习算法，这对于初学者来说更加容易上手，并且支持大量的强化学习算法。`JoyRL` 为用户提供了一个**模块化**的接口，用户可以自定义自己的算法和环境并使用该框架训练。
+`JoyRL` 是一个基于 `PyTorch` 和 `Ray` 开发的强化学习(`RL`)框架，支持串行和并行等方式。相比于其他`RL`库，`JoyRL` 旨在帮助用户摆脱算法实现繁琐、`API`不友好等问题。`JoyRL`设计的宗旨是，用户只需要通过**超参数配置**就可以训练和测试强化学习算法，这对于初学者来说更加容易上手，并且`JoyRL`支持大量的强化学习算法。`JoyRL` 为用户提供了一个**模块化**的接口，用户可以自定义自己的算法和环境并使用该框架训练。
 
 ## 安装
 
