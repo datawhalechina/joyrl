@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:30:09
 LastEditor: JiangJi
-LastEditTime: 2023-12-19 23:12:20
+LastEditTime: 2023-12-23 10:45:52
 Discription: 
 '''
 class DefaultConfig:
@@ -18,7 +18,7 @@ class DefaultConfig:
         '''
         print(self.__dict__)
         
-class MergedConfig:
+class MergedConfig(object):
     ''' Merge general, algorithm and environment config
     '''
     def __init__(self) -> None:
@@ -26,7 +26,7 @@ class MergedConfig:
         self.algo_cfg = None
         self.env_cfg = None
         
-class GeneralConfig():
+class GeneralConfig(object):
     ''' General parameters for running
     '''
     def __init__(self) -> None:
@@ -34,8 +34,6 @@ class GeneralConfig():
         self.env_name = "gym" # name of environment
         self.algo_name = "DQN" # name of algorithm
         self.mode = "train" # train, test
-        self.worker_mode = "dummy" # dummy, only works when learner_mode is serial
-        self.learner_mode = "serial" # serial, parallel, whether workers and learners are in parallel
         self.device = "cpu" # device to use
         self.seed = 0 # random seed
         self.max_episode = -1 # number of episodes for training, set -1 to keep running
@@ -43,6 +41,8 @@ class GeneralConfig():
         self.collect_traj = False # if collect trajectory or not
         # multiprocessing settings
         self.n_interactors = 1 # number of workers
+        self.interactor_mode = "dummy" # dummy, only works when learner_mode is serial
+        self.learner_mode = "serial" # serial, parallel, whether workers and learners are in parallel
         self.n_learners = 1 # number of learners if using multi-processing, default 1
         self.share_buffer = True # if all learners share the same buffer
         # online evaluation settings

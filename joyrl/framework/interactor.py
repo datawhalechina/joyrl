@@ -118,11 +118,11 @@ class InteractorMgr(Moduler):
             self.interactors = [Interactor(self.cfg, id = i, env = copy.deepcopy(self.env), policy = copy.deepcopy(self.policy), *args, **kwargs) for i in range(self.n_interactors)]
     
     def run(self):
-        if self.cfg.worker_mode == 'dummy':
+        if self.cfg.interactor_mode == 'dummy':
             for i in range(self.n_interactors):
                 self.interactors[i].run()
         else:
-            raise NotImplementedError(f"[InteractorMgr.run] worker_mode {self.cfg.worker_mode} is not implemented!")
+            raise NotImplementedError(f"[InteractorMgr.run] interactor_mode {self.cfg.interactor_mode} is not implemented!")
             
     def ray_run(self): 
         self.logger.info.remote(f"[InteractorMgr.run] Start interactors!")
