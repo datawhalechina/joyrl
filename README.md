@@ -43,7 +43,7 @@ conda install pytorch==1.10.0 torchvision==0.11.0 torchaudio==0.10.0 cudatoolkit
 joyrl --yaml ./presets/ClassControl/CartPole-v1/CartPole-v1_DQN.yaml
 ```
 
-或者你可以在你的 `python` 文件中运行以下代码。
+或者你可以在`python` 文件中运行以下代码。
 
 ```python
 import joyrl
