@@ -73,7 +73,7 @@ python offline_run.py --yaml ./presets/ClassControl/CartPole-v1/CartPole-v1_DQN.
 
 ## Documentation
 
-More tutorials and API documentation are hosted on [JoyRL docs](https://datawhalechina.github.io/joyrl/) or [JoyRL 中文文档](https://johnjim0816.com/joyrl-book/#/joyrl_docs/main).
+More tutorials and API documentation are hosted on [JoyRL docs](https://datawhalechina.github.io/joyrl/) or [JoyRL 中文文档](https://datawhalechina.github.io/joyrl-book/#/joyrl_docs/main).
 
 ## Algorithms
 
