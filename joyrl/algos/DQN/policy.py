@@ -3,7 +3,7 @@ import torch.nn as nn
 import math,random
 import numpy as np
 from joyrl.algos.base.policy import BasePolicy
-from joyrl.algos.base.networks import QNetwork
+from joyrl.algos.base.network import QNetwork
 
 class Policy(BasePolicy):
     def __init__(self,cfg) -> None:
@@ -11,11 +11,11 @@ class Policy(BasePolicy):
         self.cfg = cfg
         self.gamma = cfg.gamma  
         # e-greedy parameters
-        self.sample_count = 0
         self.epsilon_start = cfg.epsilon_start
         self.epsilon_end = cfg.epsilon_end
         self.epsilon_decay = cfg.epsilon_decay
         self.target_update = cfg.target_update
+        self.sample_count = 0
         self.update_step = 0
         self.create_graph() # create graph and optimizer
         self.create_summary() # create summary

@@ -5,11 +5,10 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-03-15 22:04:42
 LastEditor: JiangJi
-LastEditTime: 2023-05-30 23:47:43
+LastEditTime: 2023-12-24 19:57:09
 Discription: 
 '''
-from config.config import DefaultConfig
-class AlgoConfig(DefaultConfig):
+class AlgoConfig(object):
     ''' algorithm parameters
     '''
     def __init__(self) -> None:

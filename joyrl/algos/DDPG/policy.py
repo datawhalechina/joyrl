@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from joyrl.algos.base.policy import BasePolicy
-from joyrl.algos.base.networks import CriticNetwork, ActorNetwork
+from joyrl.algos.base.network import CriticNetwork, ActorNetwork
 from joyrl.algos.base.noises import OUNoise
 
 class Policy(BasePolicy):

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2022-11-14 23:50:59
 LastEditor: JiangJi
-LastEditTime: 2023-12-24 00:15:26
+LastEditTime: 2023-12-24 20:35:14
 Discription: 
 '''
 import torch
@@ -13,7 +13,7 @@ import torch.nn as nn
 import math,random
 import numpy as np
 from joyrl.algos.base.policy import BasePolicy
-from algos.base.networks import QNetwork
+from joyrl.algos.base.network import QNetwork
         
 class Policy(BasePolicy):
     def __init__(self,cfg) -> None:
@@ -21,14 +21,15 @@ class Policy(BasePolicy):
         self.cfg = cfg
         self.gamma = cfg.gamma  
         # e-greedy parameters
-        self.sample_count = None
         self.epsilon_start = cfg.epsilon_start
         self.epsilon_end = cfg.epsilon_end
         self.epsilon_decay = cfg.epsilon_decay
         self.target_update = cfg.target_update
-        self.dueling = cfg.dueling
+        self.sample_count = 0
+        self.update_step = 0
         self.create_graph() # create graph and optimizer
         self.create_summary() # create summary
+        self.to(self.device)
 
     def create_graph(self):
         self.state_size, self.action_size = self.get_state_action_size()
@@ -41,7 +42,7 @@ class Policy(BasePolicy):
         ''' sample action
         '''
         # epsilon must decay(linear,exponential and etc.) for balancing exploration and exploitation
-        self.sample_count = kwargs.get('sample_count')
+        self.sample_count += 1
         self.epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * \
             math.exp(-1. * self.sample_count / self.epsilon_decay) 
         if random.random() > self.epsilon:
@@ -49,6 +50,7 @@ class Policy(BasePolicy):
         else:
             action = self.action_space.sample()
         return action
+    
     def predict_action(self,state, **kwargs):
         ''' predict action
         '''
@@ -58,11 +60,10 @@ class Policy(BasePolicy):
             action = q_values.max(1)[1].item() # choose action corresponding to the maximum q value
         return action  
     
-    def train(self, **kwargs):
+    def learn(self, **kwargs):
         ''' train policy
         '''
         states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
-        update_step = kwargs.get('update_step')
         # convert numpy to tensor
         states = torch.tensor(states, device=self.device, dtype=torch.float32)
         actions = torch.tensor(actions, device=self.device, dtype=torch.int64).unsqueeze(dim=1)
@@ -84,7 +85,8 @@ class Policy(BasePolicy):
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
         # update target net every C steps
-        if update_step % self.target_update == 0: 
+        if self.update_step % self.target_update == 0: 
             self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.update_step += 1
         self.update_summary() # update summary
  

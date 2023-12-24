@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# coding=utf-8
+'''
+Author: JiangJi
+Email: johnjim0816@gmail.com
+Date: 2023-12-22 23:02:13
+LastEditor: JiangJi
+LastEditTime: 2023-12-24 20:11:46
+Discription: 
+'''
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,7 +16,7 @@ from torch.distributions import Categorical,Normal
 import torch.utils.data as Data
 import numpy as np
 
-from algos.base.networks import ValueNetwork, CriticNetwork, ActorNetwork
+from joyrl.algos.base.network import ValueNetwork, CriticNetwork, ActorNetwork
 from joyrl.algos.base.policy import BasePolicy
 
 class Policy(BasePolicy):

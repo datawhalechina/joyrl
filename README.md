@@ -81,4 +81,6 @@ More tutorials and API documentation are hosted on [JoyRL docs](https://datawhal
 | :--------------: | :----------------------------------------------------------: | :-------------------------------------------: | :---: |
 | Q-learning | [RL introduction](https://web.stanford.edu/class/psych209/Readings/SuttonBartoIPRLBook2ndEd.pdf) | [johnjim0816](https://github.com/johnjim0816) |       |
 | DQN | [DQN Paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) | [johnjim0816](https://github.com/johnjim0816) | |
+| Double DQN  |     [DoubleDQN Paper](https://arxiv.org/abs/1509.06461)      | [johnjim0816](https://github.com/johnjim0816) | |
+| Dueling DQN | [DuelingDQN Paper](https://arxiv.org/abs/1511.06581) | [johnjim0816](https://github.com/johnjim0816) | |
 | DDPG | [DDPG Paper](https://arxiv.org/abs/1509.02971) | [johnjim0816](https://github.com/johnjim0816) | |

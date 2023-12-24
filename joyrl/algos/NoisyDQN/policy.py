@@ -21,7 +21,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from joyrl.algos.base.policy import BasePolicy
-from algos.base.networks import QNetwork
+from joyrl.algos.base.network import QNetwork
 
 class Policy(BasePolicy):
     def __init__(self,cfg) -> None:
