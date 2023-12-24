@@ -56,9 +56,9 @@ class BasePolicy(nn.Module):
     def get_action(self,state, mode = 'sample',**kwargs):
         ''' get action
         '''
-        if mode == 'sample':
+        if self.cfg.mode == 'train':
             return self.sample_action(state, **kwargs)
-        elif mode == 'predict':
+        elif self.cfg.mode == 'test':
             return self.predict_action(state, **kwargs)
         else:
             raise NameError('mode must be sample or predict')

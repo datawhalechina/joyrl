@@ -8,8 +8,7 @@ LastEditor: JiangJi
 LastEditTime: 2023-05-18 13:38:56
 Discription: 
 '''
-from config.config import DefaultConfig
-class AlgoConfig(DefaultConfig):
+class AlgoConfig(object):
     ''' algorithm parameters
     '''
     def __init__(self) -> None:

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-04-17 11:23:49
 LastEditor: JiangJi
-LastEditTime: 2023-05-18 22:55:52
+LastEditTime: 2023-12-25 00:18:41
 Discription: 
 '''
 import torch
@@ -15,10 +15,6 @@ import torch.nn.functional as F
 import numpy as np
 import math
 import random
-import ray
-import torch
-import torch.nn as nn
-import torch.optim as optim
 
 from joyrl.algos.base.policy import BasePolicy
 from joyrl.algos.base.network import QNetwork
@@ -30,12 +26,13 @@ class Policy(BasePolicy):
         self.device = torch.device(cfg.device) 
         self.gamma = cfg.gamma  
         # e-greedy parameters
-        self.sample_count = None
         self.epsilon_start = cfg.epsilon_start
         self.epsilon_end = cfg.epsilon_end
         self.epsilon_decay = cfg.epsilon_decay
         self.batch_size = cfg.batch_size
         self.target_update = cfg.target_update
+        self.sample_count = 0
+        self.update_step = 0
         self.create_graph() # create graph and optimizer
         self.create_summary() # create summary
 
@@ -45,7 +42,7 @@ class Policy(BasePolicy):
         self.target_net = QNetwork(self.cfg, self.state_size, self.action_size).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict()) # or use this to copy parameters
         # for noise parameters
-        # if self.cfg.mode == 'train':
+        # if self.cfg.mode == 'train': 
         #     self.policy_net.train()
         #     self.target_net.train()
         # elif self.cfg.mode == 'test':
@@ -57,7 +54,7 @@ class Policy(BasePolicy):
         ''' sample action
         '''
         # epsilon must decay(linear,exponential and etc.) for balancing exploration and exploitation
-        self.sample_count = kwargs.get('sample_count')
+        self.sample_count += 1
         self.epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * \
             math.exp(-1. * self.sample_count / self.epsilon_decay) 
         if random.random() > self.epsilon:
@@ -74,7 +71,7 @@ class Policy(BasePolicy):
             action = q_values.max(1)[1].item() # choose action corresponding to the maximum q value
         return action  
 
-    def train(self, **kwargs):
+    def learn(self, **kwargs):
         ''' train policy
         '''
         states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
@@ -100,8 +97,9 @@ class Policy(BasePolicy):
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
         # update target net every C steps
-        if update_step % self.target_update == 0: 
+        if self.update_step % self.target_update == 0: 
             self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.update_step += 1
         self.policy_net.reset_noise()
         self.target_net.reset_noise()
         self.update_summary() # update summary

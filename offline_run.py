@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2023-12-24 22:51:05
+LastEditTime: 2023-12-25 00:19:54
 Discription: 
 '''
 import sys,os
@@ -173,6 +173,7 @@ class Launcher(object):
         policy = policy_mod.Policy(self.cfg) 
         if self.cfg.load_checkpoint:
             policy.load_model(f"tasks/{self.cfg.load_path}/models/{self.cfg.load_model_step}")
+            policy.save_model(f"{self.cfg.model_dir}/{self.cfg.load_model_step}")
         data_handler = data_handler_mod.DataHandler(self.cfg)
         return policy, data_handler
     

@@ -7,10 +7,8 @@ general_cfg:
   collect_traj: false
   max_episode: 100
   max_step: 200
-  mp_backend: ray
-  n_workers: 2
   load_checkpoint: false
-  load_path: Train_single_CartPole-v1_NoisyDQN_20230518-133737
+  load_path: Train_CartPole-v1_NoisyDQN_20231225-000846
   load_model_step: best
   online_eval: true 
   online_eval_episode: 10
@@ -25,7 +23,7 @@ algo_cfg:
       layer_size: [256]
       activation: relu
       std_init: 0.4
-  batch_size: 64
+  batch_size: 128
   buffer_type: REPLAY_QUE
   buffer_size: 100000
   epsilon_decay: 500
