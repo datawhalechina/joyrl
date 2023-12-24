@@ -32,7 +32,8 @@ class Interactor:
     def _init_n_sample_steps(self):
         ''' when learner_mode is serial, learner will run after interact finishes n_sample_steps
         '''
-        if self.cfg.buffer_type.lower().startswith('onpolicy'):
+        buffer_type = getattr(self.cfg, 'buffer_type', None)
+        if buffer_type is not None and buffer_type.lower().startswith('onpolicy'):
             self.n_sample_steps = self.cfg.batch_size 
         else:
             self.n_sample_steps = 1

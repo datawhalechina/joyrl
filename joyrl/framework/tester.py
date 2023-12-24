@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2023-12-02 23:28:23
+LastEditTime: 2023-12-24 17:31:15
 Discription: 
 '''
 import ray
@@ -24,7 +24,7 @@ class OnlineTester(Moduler):
         super().__init__(cfg, *args, **kwargs)
         self.logger = kwargs['logger']
         self.env = kwargs['env']
-        self.policy = kwargs['policy']
+        self.policy = copy.deepcopy(kwargs['policy'])
         self.best_eval_reward = -float('inf')
         self.curr_test_step = -1
 
@@ -58,8 +58,7 @@ class OnlineTester(Moduler):
             updated, model_step = self._check_updated_model()
             if updated:
                 self.curr_test_step = model_step
-                model_params = torch.load(f"{self.cfg.model_dir}/{self.curr_test_step}")
-                self.policy.put_model_params(model_params)
+                self.policy.load_model(f"{self.cfg.model_dir}/{self.curr_test_step}")
                 sum_eval_reward = 0
                 for _ in range(self.cfg.online_eval_episode):
                     state, info = self.env.reset()
@@ -79,7 +78,7 @@ class OnlineTester(Moduler):
                 if mean_eval_reward >= self.best_eval_reward:
                     logger_info = f"current test step obtain a better online_eval_reward: {mean_eval_reward:.3f}, save the best model!"
                     self.logger.info.remote(logger_info) if self.use_ray else self.logger.info(logger_info)
-                    torch.save(model_params, f"{self.cfg.model_dir}/best")
+                    self.policy.save_model(f"{self.cfg.model_dir}/best")
                     self.best_eval_reward = mean_eval_reward
             time.sleep(1)
         

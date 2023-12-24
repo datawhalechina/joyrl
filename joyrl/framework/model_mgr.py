@@ -5,11 +5,11 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2023-12-24 00:15:15
+LastEditTime: 2023-12-24 15:15:28
 Discription: 
 '''
 import time
-import ray
+import copy
 from ray.util.queue import Queue as RayQueue
 import threading
 import torch
@@ -26,7 +26,8 @@ class ModelMgr(Moduler):
     def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
         super().__init__(cfg, *args, **kwargs)
         self.logger = kwargs['logger']
-        self._latest_model_params_dict = {'step': 0, 'model_params': kwargs['model_params']} #
+        self.policy = copy.deepcopy(kwargs['policy'])
+        self._latest_model_params_dict = {'step': 0, 'model_params': self.policy.get_model_params()}
         self._saved_model_que = RayQueue(maxsize = 128) if self.use_ray else Queue(maxsize = 128)
         
     def _t_start(self):
@@ -82,7 +83,8 @@ class ModelMgr(Moduler):
         while True:
             while not self._saved_model_que.empty():
                 update_step, model_params = self._saved_model_que.get()
-                torch.save(model_params, f"{self.cfg.model_dir}/{update_step}")
+                self.policy.put_model_params(model_params)
+                self.policy.save_model(f"{self.cfg.model_dir}/{update_step}")
             time.sleep(0.05)
     
 

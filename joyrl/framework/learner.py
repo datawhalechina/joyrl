@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2023-12-03 17:25:51
+LastEditTime: 2023-12-24 15:46:55
 Discription: 
 '''
 import ray
@@ -31,6 +31,7 @@ class Learner:
     
     def run(self):
         training_data = self.collector.pub_msg(Msg(type = MsgType.COLLECTOR_GET_TRAINING_DATA))
+        # print("====",training_data)
         if training_data is None: return
         self.policy.learn(**training_data)
         global_update_step = self.tracker.pub_msg(Msg(type = MsgType.TRACKER_GET_UPDATE_STEP))

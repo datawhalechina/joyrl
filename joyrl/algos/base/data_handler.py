@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2023-12-03 14:43:23
+LastEditTime: 2023-12-24 15:31:23
 Discription: 
 '''
 import numpy as np
@@ -19,11 +19,6 @@ class BaseDataHandler:
         self.cfg = cfg
         self.buffer = BufferCreator(cfg)()
         self.data_after_train = {}
-    def add_transition(self, transition):
-        ''' add transition to buffer
-        '''
-        exp = self._create_exp(transition)
-        self.buffer.push(exp)
 
     def add_exps(self, exps):
         self.buffer.push(exps)
@@ -40,10 +35,7 @@ class BaseDataHandler:
             return self.handle_exps_before_train(exps)
         else:
             return None
-    def _create_exp(self,transtion):
-        ''' create experience
-        '''
-        return [Exp(**transtion)]
+
     def handle_exps_before_train(self, exps, **kwargs):
         ''' convert exps to training data
         '''

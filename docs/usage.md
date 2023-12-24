@@ -85,13 +85,13 @@ class CustomPolicy1(BasePolicy):
     ''' inherit BasePolicy
     '''
     def __init__(self, cfg) -> None:
-        super(BasePolicy, self).__init__(cfg)
+        super(CustomPolicy1, self).__init__(cfg)
 
 class CustomPolicy2(DQNPolicy):
     ''' inherit DQNPolicy
     '''
     def __init__(self, cfg) -> None:
-        super(DQNPolicy, self).__init__(cfg)
+        super(CustomPolicy2, self).__init__(cfg)
 
 if __name__ == "__main__":
     my_policy = CustomPolicy1()

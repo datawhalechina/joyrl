@@ -1,7 +1,10 @@
+import copy, dill
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
 from gymnasium.spaces import Box, Discrete
+from collections import defaultdict
 class BasePolicy(nn.Module):
     ''' base policy for DRL
     '''
@@ -15,6 +18,7 @@ class BasePolicy(nn.Module):
         self.policy_transition = {}
         self.data_after_train = {}
         self.get_state_action_size()
+
     def get_state_action_size(self):
         ''' get state and action size
         '''
@@ -42,17 +46,13 @@ class BasePolicy(nn.Module):
     def get_model_params(self):
         ''' get model params
         '''
-        return self.state_dict()
+        return copy.deepcopy(self.state_dict())
     
     def put_model_params(self, model_params):
         ''' put model params
         '''
         self.load_state_dict(model_params)
 
-    def get_optimizer_params(self):
-        return self.optimizer.state_dict()
-    def set_optimizer_params(self, optim_params_dict):
-        self.optimizer.load_state_dict(optim_params_dict)
     def get_action(self,state, mode = 'sample',**kwargs):
         ''' get action
         '''
@@ -122,6 +122,8 @@ class ToyPolicy:
         self.get_state_action_size()
         self.policy_transition = {}
         self.data_after_train = {}
+        self.Q_table = defaultdict(lambda: np.zeros(self.n_actions))
+
     def get_state_action_size(self):
         self.n_states = self.obs_space.n
         self.n_actions = self.action_space.n
@@ -136,7 +138,9 @@ class ToyPolicy:
     def update_summary(self):
         ''' update policy summary
         '''
-        self.summary['scalar']['loss'] = self.loss.item()
+        self.summary['scalar']['loss'] = self.loss
+    def get_summary(self):
+        return self.summary['scalar']
     def get_action(self, state, mode = 'sample', **kwargs):
         if mode == 'sample':
             return self.sample_action(state, **kwargs)
@@ -162,7 +166,20 @@ class ToyPolicy:
         ''' learn policy
         '''
         raise NotImplementedError
+    def get_model_params(self):
+        ''' get model parameters
+        '''
+        return copy.deepcopy(self.Q_table)
+    
+    def put_model_params(self, params):
+        ''' set model parameters
+        '''
+        self.Q_table = params
     def save_model(self, fpath):
-        raise NotImplementedError
+        ''' save model
+        '''
+        torch.save(obj=self.Q_table, f=fpath, pickle_module=dill)
     def load_model(self, fpath):
-        raise NotImplementedError
+        ''' load model
+        '''
+        self.Q_table = torch.load(fpath, pickle_module=dill)

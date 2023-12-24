@@ -1,1 +1,1 @@
-python test.py --yaml presets/QuickStart/CartPole-v1_DQN_multi_intertactors.yaml 
+python offline_run.py --yaml presets/ClassControl/CartPole-v1/CartPole-v1_DQN.yaml 

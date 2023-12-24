@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2023-12-23 11:17:10
+LastEditTime: 2023-12-24 15:14:48
 Discription: 
 '''
 import sys,os
@@ -191,7 +191,9 @@ class Launcher(object):
                                 policy = policy,
                                 logger = logger
                             )
-        model_mgr = ModelMgr(self.cfg, model_params = policy.get_model_params(),logger = logger)
+        model_mgr = ModelMgr(self.cfg, 
+                             policy = policy,
+                             logger = logger)
         trainer = Trainer(  self.cfg,
                             tracker = tracker,
                             model_mgr = model_mgr,
@@ -216,7 +218,7 @@ class Launcher(object):
         collector = ray.remote(Collector).options(num_cpus = 1).remote(self.cfg, data_handler = data_handler, logger = logger)
         interactor_mgr = ray.remote(InteractorMgr).options(num_cpus = 0).remote(self.cfg, env = env, policy = policy, logger = logger)
         learner_mgr = ray.remote(LearnerMgr).options(num_cpus = 0).remote(self.cfg, policy = policy, logger = logger)
-        model_mgr = ray.remote(ModelMgr).options(num_cpus = 0).remote(self.cfg, model_params = policy.get_model_params(),logger = logger)
+        model_mgr = ray.remote(ModelMgr).options(num_cpus = 0).remote(self.cfg, policy = policy,logger = logger)
         trainer = ray.remote(Trainer).options(num_cpus = 0).remote(self.cfg,
                                 tracker = tracker,
                                 model_mgr = model_mgr,

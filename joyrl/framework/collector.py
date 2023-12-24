@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# coding=utf-8
+'''
+Author: JiangJi
+Email: johnjim0816@gmail.com
+Date: 2023-12-22 23:02:13
+LastEditor: JiangJi
+LastEditTime: 2023-12-24 16:55:23
+Discription: 
+'''
 import ray
 from ray.util.queue import Queue as RayQueue
 import multiprocessing as mp
@@ -13,7 +23,7 @@ class Collector(Moduler):
     '''
     def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
         super().__init__(cfg, *args, **kwargs)
-        self.data_handler =kwargs['data_handler']
+        self.data_handler = kwargs['data_handler']
         self.logger = kwargs['logger']
         self.training_data_que = Queue(maxsize = self.cfg.n_learners + 1) if not ray.is_initialized() else RayQueue(maxsize = self.cfg.n_learners + 1)
 
@@ -32,7 +42,7 @@ class Collector(Moduler):
         else:
             self.logger.info("[Collector.init] Start collector!")
             # self._p_start()
-        self._t_start()
+        # self._t_start()
 
     def pub_msg(self, msg: Msg):
         ''' publish message
@@ -42,6 +52,7 @@ class Collector(Moduler):
             exps = msg_data
             self._put_exps(exps)
         elif msg_type == MsgType.COLLECTOR_GET_TRAINING_DATA:
+            return self._get_training_data()
             if self.training_data_que.empty(): return None
             try:
                 return self.training_data_que.get(block = False)
