@@ -1,7 +1,7 @@
 general_cfg:
-  algo_name: DDPG
+  algo_name: TD3
   env_name: gym 
-  device: cpu 
+  device: cuda 
   mode: train 
   load_checkpoint: false
   load_path: Train_ray_Pendulum-v1_DDPG_20230527-001715 
@@ -17,25 +17,25 @@ algo_cfg:
   actor_layers:
     - layer_type: linear
       layer_size: [256]
-      activation: relu
+      activation: tanh
     - layer_type: linear
       layer_size: [256]
-      activation: relu
+      activation: tanh
   critic_layers:
     - layer_type: linear
       layer_size: [256]
-      activation: relu
+      activation: tanh
     - layer_type: linear
       layer_size: [256]
-      activation: relu
+      activation: tanh
   batch_size: 128
   buffer_type: REPLAY_QUE
   buffer_size: 8000
-  actor_lr: 0.0001
+  actor_lr: 0.001
   critic_lr: 0.001
   policy_loss_weight: 0.002
   gamma: 0.99
-  tau: 0.001
+  tau: 0.005
 env_cfg:
   id: Pendulum-v1
-  render_mode: null # null, rgb_array, human
+  render_mode: null 

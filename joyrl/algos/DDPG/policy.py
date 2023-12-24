@@ -59,10 +59,7 @@ class Policy(BasePolicy):
         ''' sample action
         '''
         self.sample_count += 1
-        state = torch.tensor(state, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
-        mu = self.actor(state)  # mu is in [-1, 1]
-        action = self.action_scale * mu + self.action_bias
-        action = action.cpu().detach().numpy()[0]
+        action = self.predict_action(state, **kwargs)
         action = self.ou_noise.get_action(action, self.sample_count) # add noise to action
         return action
 

@@ -83,4 +83,6 @@ More tutorials and API documentation are hosted on [JoyRL docs](https://datawhal
 | DQN | [DQN Paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) | [johnjim0816](https://github.com/johnjim0816) | |
 | Double DQN  |     [DoubleDQN Paper](https://arxiv.org/abs/1509.06461)      | [johnjim0816](https://github.com/johnjim0816) | |
 | Dueling DQN | [DuelingDQN Paper](https://arxiv.org/abs/1511.06581) | [johnjim0816](https://github.com/johnjim0816) | |
+| NoisyDQN | [NoisyDQN Paper](https://arxiv.org/pdf/1706.10295.pdf) | [johnjim0816](https://github.com/johnjim0816) | |
 | DDPG | [DDPG Paper](https://arxiv.org/abs/1509.02971) | [johnjim0816](https://github.com/johnjim0816) | |
+| TD3 | [TD3 Paper](https://arxiv.org/pdf/1802.09477) | [johnjim0816](https://github.com/johnjim0816) | |
