@@ -75,9 +75,9 @@ python offline_run.py --yaml ./presets/ClassControl/CartPole-v1/CartPole-v1_DQN.
 
 More tutorials and API documentation are hosted on [JoyRL docs](https://datawhalechina.github.io/joyrl/) or [JoyRL 中文文档](https://johnjim0816.com/joyrl-book/#/joyrl_docs/main).
 
-
 ## Algorithms
 
 |       Name       |                          Reference                           |                    Author                     | Notes |
 | :--------------: | :----------------------------------------------------------: | :-------------------------------------------: | :---: |
-| DQN | [DQN Paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) | [johnjim0816](https://github.com/johnjim0816) |       |
+| Q-learning | [RL introduction](https://web.stanford.edu/class/psych209/Readings/SuttonBartoIPRLBook2ndEd.pdf) | [johnjim0816](https://github.com/johnjim0816) |       |
+| DQN | [DQN Paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) | [johnjim0816](https://github.com/johnjim0816) | |
