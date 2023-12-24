@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2023-12-24 15:14:48
+LastEditTime: 2023-12-24 17:44:02
 Discription: 
 '''
 import sys,os
@@ -23,6 +23,7 @@ from joyrl.framework.tester import OnlineTester
 from joyrl.framework.trainer import Trainer
 from joyrl.framework.model_mgr import ModelMgr
 from joyrl.utils.utils import merge_class_attrs, all_seed,save_frames_as_gif
+from joyrl.envs.register import register_env
 
 class Launcher(object):
     def __init__(self, **kwargs):
@@ -171,7 +172,6 @@ class Launcher(object):
             policy.load_model(f"tasks/{self.cfg.load_path}/models/{self.cfg.load_model_step}")
         data_handler = data_handler_mod.DataHandler(self.cfg)
         return policy, data_handler
-
     
     def _start(self, **kwargs):
         ''' start serial training
@@ -231,6 +231,7 @@ class Launcher(object):
         ray.get(trainer.ray_run.remote())
 
     def run(self) -> None:
+        register_env(self.env_cfg.id) # register env
         env = self.env_config() # create single env
         policy, data_handler = self.policy_config() # configure policy and data_handler
         if self.cfg.learner_mode == 'serial':

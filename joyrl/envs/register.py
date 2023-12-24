@@ -1,5 +1,15 @@
-
-from gym.envs.registration import register
+#!/usr/bin/env python
+# coding=utf-8
+'''
+Author: JiangJi
+Email: johnjim0816@gmail.com
+Date: 2023-12-22 23:02:13
+LastEditor: JiangJi
+LastEditTime: 2023-12-24 17:45:33
+Discription: 
+'''
+import gymnasium as gym
+from gymnasium.envs.registration import register
 
 def register_env(env_name):
     if env_name == 'Racetrack-v0':
@@ -16,7 +26,7 @@ def register_env(env_name):
             kwargs={'map_name':"4x4",'is_slippery':False},
         )
     else:
-        print("The env name must be wrong or the environment donot need to register!")
+        pass
 
 # if __name__ == "__main__":
 #     import random

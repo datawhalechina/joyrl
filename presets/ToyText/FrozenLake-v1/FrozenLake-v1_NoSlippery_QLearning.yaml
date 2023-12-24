@@ -1,0 +1,23 @@
+general_cfg:
+  algo_name: QLearning # algo name
+  env_name: gym # env name, differ from env_id in env_cfgs
+  mode: train # run mode: train, test
+  collect_traj: false # if collect trajectories or not
+  load_checkpoint: false # if load checkpoint or not
+  load_path: Train_CliffWalking-v0_QLearning_20231224-173215 # if load checkpoint, then config path in 'tasks' dir
+  load_model_step: 12000 # load model step
+  max_episode: 800 # max episodes, set -1 to keep running
+  max_step: 100 # max steps per episode
+  seed: 10 # random seed, set 0 not to use seed
+  model_save_fre: 200
+  online_eval: true
+algo_cfg:
+  epsilon_decay: 2000
+  epsilon_end: 0.1
+  epsilon_start: 0.7
+  gamma: 0.95
+  lr: 0.9
+env_cfg:
+  id: FrozenLake-v1
+  is_slippery: false
+  render_mode: null
