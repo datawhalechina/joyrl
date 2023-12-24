@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2023-12-24 17:45:33
+LastEditTime: 2023-12-24 22:52:08
 Discription: 
 '''
 import gymnasium as gym
@@ -24,6 +24,13 @@ def register_env(env_name):
             id='FrozenLakeNoSlippery-v1',
             entry_point='gym.envs.toy_text.frozen_lake:FrozenLakeEnv',
             kwargs={'map_name':"4x4",'is_slippery':False},
+        )
+    elif env_name == 'CustomCliffWalking-v0':
+        register(
+            id='CustomCliffWalking-v0',
+            entry_point='joyrl.envs.gym.toy_text.cliff_walking:CustomCliffWalkingEnv',
+            max_episode_steps=1000,
+            kwargs={}
         )
     else:
         pass

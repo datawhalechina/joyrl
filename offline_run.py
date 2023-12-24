@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2023-12-24 22:27:05
+LastEditTime: 2023-12-24 22:51:05
 Discription: 
 '''
 import sys,os
@@ -257,5 +257,5 @@ def run(**kwargs):
     launcher.run()
 
 if __name__ == "__main__":
-    launcher = Launcher(**kwargs)
+    launcher = Launcher()
     launcher.run()
