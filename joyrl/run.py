@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2023-12-23 10:54:12
+LastEditTime: 2023-12-24 19:00:32
 Discription: 
 '''
 import sys,os
@@ -23,6 +23,7 @@ from joyrl.framework.tester import OnlineTester
 from joyrl.framework.trainer import Trainer
 from joyrl.framework.model_mgr import ModelMgr
 from joyrl.utils.utils import merge_class_attrs, all_seed,save_frames_as_gif
+from joyrl.envs.register import register_env
 
 class Launcher(object):
     def __init__(self, **kwargs):
@@ -171,7 +172,6 @@ class Launcher(object):
             policy.load_model(f"tasks/{self.cfg.load_path}/models/{self.cfg.load_model_step}")
         data_handler = data_handler_mod.DataHandler(self.cfg)
         return policy, data_handler
-
     
     def _start(self, **kwargs):
         ''' start serial training
@@ -191,7 +191,9 @@ class Launcher(object):
                                 policy = policy,
                                 logger = logger
                             )
-        model_mgr = ModelMgr(self.cfg, model_params = policy.get_model_params(),logger = logger)
+        model_mgr = ModelMgr(self.cfg, 
+                             policy = policy,
+                             logger = logger)
         trainer = Trainer(  self.cfg,
                             tracker = tracker,
                             model_mgr = model_mgr,
@@ -216,7 +218,7 @@ class Launcher(object):
         collector = ray.remote(Collector).options(num_cpus = 1).remote(self.cfg, data_handler = data_handler, logger = logger)
         interactor_mgr = ray.remote(InteractorMgr).options(num_cpus = 0).remote(self.cfg, env = env, policy = policy, logger = logger)
         learner_mgr = ray.remote(LearnerMgr).options(num_cpus = 0).remote(self.cfg, policy = policy, logger = logger)
-        model_mgr = ray.remote(ModelMgr).options(num_cpus = 0).remote(self.cfg, model_params = policy.get_model_params(),logger = logger)
+        model_mgr = ray.remote(ModelMgr).options(num_cpus = 0).remote(self.cfg, policy = policy,logger = logger)
         trainer = ray.remote(Trainer).options(num_cpus = 0).remote(self.cfg,
                                 tracker = tracker,
                                 model_mgr = model_mgr,
@@ -229,6 +231,7 @@ class Launcher(object):
         ray.get(trainer.ray_run.remote())
 
     def run(self) -> None:
+        register_env(self.env_cfg.id) # register env
         env = self.env_config() # create single env
         policy, data_handler = self.policy_config() # configure policy and data_handler
         if self.cfg.learner_mode == 'serial':
