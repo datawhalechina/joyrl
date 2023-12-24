@@ -58,7 +58,7 @@ class Interactor:
                 global_episode = self.tracker.pub_msg(Msg(MsgType.TRACKER_GET_EPISODE))
                 self.tracker.pub_msg(Msg(MsgType.TRACKER_INCREASE_EPISODE))
                 if global_episode % self.cfg.interact_summary_fre == 0: 
-                    self.logger.info(f"Interactor {self.id} finished episode {global_episode} with reward {self.ep_reward:.3f} in {self.ep_step} steps")
+                    self.logger.info(f"Interactor {self.id} finished episode {global_episode} with reward {self.ep_reward:.3f} in {self.ep_step} steps, truncated: {truncated}, terminated: {terminated}")
                     # put summary to recorder
                     interact_summary = {'reward':self.ep_reward,'step':self.ep_step}
                     self.summary.append((global_episode, interact_summary))

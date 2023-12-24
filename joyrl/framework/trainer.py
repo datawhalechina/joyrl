@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2023-12-20 23:39:13
+LastEditTime: 2023-12-24 21:36:10
 Discription: 
 '''
 import time
@@ -77,7 +77,8 @@ class Trainer(Moduler):
         s_t = time.time()
         while True:
             self.interactor_mgr.run()
-            self.learner_mgr.run()
+            if self.cfg.mode.lower() == 'train':
+                self.learner_mgr.run()
             if self.tracker.pub_msg(Msg(type = MsgType.TRACKER_CHECK_TASK_END)):
                 e_t = time.time()
                 self.logger.info(f"[Trainer.run] Finish {self.cfg.mode}ing! Time cost: {e_t - s_t:.3f} s")

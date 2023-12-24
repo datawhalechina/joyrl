@@ -1,5 +1,15 @@
+#!/usr/bin/env python
+# coding=utf-8
+'''
+Author: JiangJi
+Email: johnjim0816@gmail.com
+Date: 2023-12-22 23:02:13
+LastEditor: JiangJi
+LastEditTime: 2023-12-24 21:43:29
+Discription: 
+'''
 import torch.nn as nn
-from joyrl.algos.base.base_layers import create_layer, LayerConfig
+from joyrl.algos.base.base_layer import create_layer, LayerConfig
 from joyrl.algos.base.action_layers import ActionLayerType, DiscreteActionLayer, ContinuousActionLayer, DPGActionLayer
 
 class BaseNework(nn.Module):

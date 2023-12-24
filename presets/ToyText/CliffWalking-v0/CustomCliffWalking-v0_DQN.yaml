@@ -1,0 +1,40 @@
+general_cfg:
+  algo_name: DQN 
+  env_name: gym 
+  device: cpu 
+  mode: train 
+  collect_traj: false 
+  n_interactors: 1 
+  load_checkpoint: false
+  load_path: Train_single_CartPole-v1_DQN_20230515-211721
+  load_model_step: best 
+  max_episode: -1 
+  max_step: 20 
+  seed: 1 
+  online_eval: true 
+  online_eval_episode: 10 
+  model_save_fre: 500
+
+algo_cfg:
+  value_layers:
+    - layer_type: embed
+      n_embeddings: 48
+      embedding_dim: 4
+    - layer_type: linear
+      layer_size: [256]
+      activation: relu
+    - layer_type: linear
+      layer_size: [256]
+      activation: relu
+  batch_size: 128
+  buffer_type: REPLAY_QUE
+  buffer_size: 10000
+  epsilon_decay: 1000
+  epsilon_end: 0.01
+  epsilon_start: 0.99
+  gamma: 0.95
+  lr: 0.001
+  target_update: 4
+env_cfg:
+  id: CustomCliffWalking-v0
+  render_mode: null

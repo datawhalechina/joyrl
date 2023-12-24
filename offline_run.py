@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2023-12-24 17:44:02
+LastEditTime: 2023-12-24 22:27:05
 Discription: 
 '''
 import sys,os
@@ -149,9 +149,12 @@ class Launcher(object):
     def env_config(self):
         ''' create single env
         '''
-        env_cfg_dic = self.env_cfg.__dict__
-        kwargs = {k: v for k, v in env_cfg_dic.items() if k not in env_cfg_dic['ignore_params']}
-        env = gym.make(**kwargs)
+        if self.custom_env is not None:
+            env = self.custom_env
+        else:
+            env_cfg_dic = self.env_cfg.__dict__
+            kwargs = {k: v for k, v in env_cfg_dic.items() if k not in env_cfg_dic['ignore_params']}
+            env = gym.make(**kwargs)
         setattr(self.cfg, 'obs_space', env.observation_space)
         setattr(self.cfg, 'action_space', env.action_space)
         if self.env_cfg.wrapper is not None:
@@ -254,5 +257,5 @@ def run(**kwargs):
     launcher.run()
 
 if __name__ == "__main__":
-    launcher = Launcher()
+    launcher = Launcher(**kwargs)
     launcher.run()

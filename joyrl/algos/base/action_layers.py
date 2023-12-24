@@ -2,8 +2,8 @@ from enum import Enum
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from joyrl.algos.base.base_layers import LayerConfig
-from joyrl.algos.base.base_layers import create_layer
+from joyrl.algos.base.base_layer import LayerConfig
+from joyrl.algos.base.base_layer import create_layer
 
 class ActionLayerType(Enum):
     ''' Action layer type
