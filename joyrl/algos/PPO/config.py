@@ -5,10 +5,10 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-02-20 21:53:39
 LastEditor: JiangJi
-LastEditTime: 2023-05-25 22:19:00
+LastEditTime: 2023-12-25 12:30:31
 Discription: 
 '''
-class AlgoConfig:
+class AlgoConfig(object):
     def __init__(self):
         self.independ_actor = True # whether to use independent actor
         # whether actor and critic share the same optimizer

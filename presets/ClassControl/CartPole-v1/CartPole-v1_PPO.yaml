@@ -1,20 +1,17 @@
 general_cfg:
   algo_name: PPO
-  env_name: gym # env name, differ from env_id in env_cfgs
-  device: cpu # device, cpu or cuda
-  mode: train # run mode: train, test
-  collect_traj: false # if collect trajectories or not
-  mp_backend: single # multi-processing mode: single(default), ray
-  n_workers: 2 # number of workers if using multi-processing, default 1
-  load_checkpoint: false # if load checkpoint or not
-  load_path: Train_single_CartPole-v1_DQN_20230515-211721 # if load checkpoint, then config path in 'tasks' dir
-  load_model_step: best # load model step
-  max_episode: 200 # max episodes, set -1 to keep running
-  max_step: 200 # max steps per episode
-  seed: 1 # random seed, set 0 not to use seed
-  online_eval: true # if online eval or not
-  online_eval_episode: 10 # online eval episodes
-  model_save_fre: 10 # update step frequency of saving model
+  env_name: gym 
+  device: cpu 
+  mode: train 
+  load_checkpoint: false 
+  load_path: Train_CartPole-v1_PPO_20231225-124842 # if load checkpoint, then config path in 'tasks' dir
+  load_model_step: best 
+  max_episode: -1
+  max_step: 200 
+  seed: 1 
+  online_eval: true 
+  online_eval_episode: 10 
+  model_save_fre: 10 
 algo_cfg:
   ppo_type: clip
   action_type: discrete 
@@ -42,7 +39,7 @@ algo_cfg:
   gamma: 0.99
   k_epochs: 4
   batch_size: 256
-  sgd_batch_size: 128
+  sgd_batch_size: 256
 env_cfg:
   id: CartPole-v1
   render_mode: null
