@@ -103,8 +103,11 @@ More tutorials and API documentation are hosted on [JoyRL docs](https://datawhal
 | [rlpyt](https://github.com/astooke/rlpyt)                    | [![GitHub stars](https://img.shields.io/github/stars/astooke/rlpyt)](https://github.com/astooke/rlpyt/stargazers) | 11                       | :x:                            | :x:                | :heavy_check_mark: | :heavy_check_mark:     | PyTorch                                           |
 | [ChainerRL](https://github.com/chainer/chainerrl)            | [![GitHub stars](https://img.shields.io/github/stars/chainer/chainerrl)](https://github.com/chainer/chainerrl/stargazers) | 18                       | :heavy_check_mark: (gym)       | :x:                | :heavy_check_mark: | :x:                    | Chainer                                           |
 | [Tianshou](https://github.com/thu-ml/tianshou)               | [![GitHub stars](https://img.shields.io/github/stars/thu-ml/tianshou)](https://github.com/thu-ml/tianshou/stargazers) | 20                       | :heavy_check_mark: (Gymnasium) | :x:                | :heavy_check_mark: | :heavy_check_mark:     | PyTorch                                           |
-| JoyRL                                                        | ![GitHub stars](https://img.shields.io/github/stars/datawhalechina/joyrl) | 7                        | :heavy_check_mark: (Gymnasium) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:     | PyTorch                                           |
+| [JoyRL](https://github.com/datawhalechina/joyrl)             | ![GitHub stars](https://img.shields.io/github/stars/datawhalechina/joyrl) | 7                        | :heavy_check_mark: (Gymnasium) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:     | PyTorch                                           |
 
+Here are some other highlghts of JoyRL:
+
+* Provide a series of Chinese courses [JoyRL Book](https://github.com/datawhalechina/joyrl-book) (with the English version in progress), suitable for beginners to start with a combination of theory
 
 ## Contributors
 

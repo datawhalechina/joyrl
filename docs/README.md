@@ -75,6 +75,18 @@ python offline_run.py --yaml ./presets/ClassControl/CartPole-v1/CartPole-v1_DQN.
 
 More tutorials and API documentation are hosted on [JoyRL docs](https://datawhalechina.github.io/joyrl/) or [JoyRL 中文文档](https://datawhalechina.github.io/joyrl-book/#/joyrl_docs/main).
 
+## Algorithms
+
+|       Name       |                          Reference                           |                    Author                     | Notes |
+| :--------------: | :----------------------------------------------------------: | :-------------------------------------------: | :---: |
+| Q-learning | [RL introduction](https://web.stanford.edu/class/psych209/Readings/SuttonBartoIPRLBook2ndEd.pdf) | [johnjim0816](https://github.com/johnjim0816) |       |
+| DQN | [DQN Paper](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf) | [johnjim0816](https://github.com/johnjim0816) | |
+| Double DQN  |     [DoubleDQN Paper](https://arxiv.org/abs/1509.06461)      | [johnjim0816](https://github.com/johnjim0816) | |
+| Dueling DQN | [DuelingDQN Paper](https://arxiv.org/abs/1511.06581) | [johnjim0816](https://github.com/johnjim0816) | |
+| NoisyDQN | [NoisyDQN Paper](https://arxiv.org/pdf/1706.10295.pdf) | [johnjim0816](https://github.com/johnjim0816) | |
+| DDPG | [DDPG Paper](https://arxiv.org/abs/1509.02971) | [johnjim0816](https://github.com/johnjim0816) | |
+| TD3 | [TD3 Paper](https://arxiv.org/pdf/1802.09477) | [johnjim0816](https://github.com/johnjim0816) | |
+
 ## Why JoyRL?
 
 | RL Platform                                                  | GitHub Stars                                                 | # of Alg. <sup>(1)</sup> | Custom Env                     | Async Training      | RNN Support        | Multi-Head Observation | Backend                                           |
@@ -91,8 +103,11 @@ More tutorials and API documentation are hosted on [JoyRL docs](https://datawhal
 | [rlpyt](https://github.com/astooke/rlpyt)                    | [![GitHub stars](https://img.shields.io/github/stars/astooke/rlpyt)](https://github.com/astooke/rlpyt/stargazers) | 11                       | :x:                            | :x:                | :heavy_check_mark: | :heavy_check_mark:     | PyTorch                                           |
 | [ChainerRL](https://github.com/chainer/chainerrl)            | [![GitHub stars](https://img.shields.io/github/stars/chainer/chainerrl)](https://github.com/chainer/chainerrl/stargazers) | 18                       | :heavy_check_mark: (gym)       | :x:                | :heavy_check_mark: | :x:                    | Chainer                                           |
 | [Tianshou](https://github.com/thu-ml/tianshou)               | [![GitHub stars](https://img.shields.io/github/stars/thu-ml/tianshou)](https://github.com/thu-ml/tianshou/stargazers) | 20                       | :heavy_check_mark: (Gymnasium) | :x:                | :heavy_check_mark: | :heavy_check_mark:     | PyTorch                                           |
-| JoyRL                                                        | ![GitHub stars](https://img.shields.io/github/stars/datawhalechina/joyrl) | 7                        | :heavy_check_mark: (Gymnasium) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:     | PyTorch                                           |
+| [JoyRL](https://github.com/datawhalechina/joyrl)             | ![GitHub stars](https://img.shields.io/github/stars/datawhalechina/joyrl) | 7                        | :heavy_check_mark: (Gymnasium) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:     | PyTorch                                           |
 
+Here are some other highlghts of JoyRL:
+
+* Provide a series of Chinese courses [JoyRL Book](https://github.com/datawhalechina/joyrl-book) (with the English version in progress), suitable for beginners to start with a combination of theory
 
 ## Contributors
 
