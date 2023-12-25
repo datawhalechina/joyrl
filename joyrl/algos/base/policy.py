@@ -53,7 +53,7 @@ class BasePolicy(nn.Module):
         '''
         self.load_state_dict(model_params)
 
-    def get_action(self,state, mode = 'sample',**kwargs):
+    def get_action(self, state ,**kwargs):
         ''' get action
         '''
         if self.cfg.mode == 'train':
@@ -61,7 +61,7 @@ class BasePolicy(nn.Module):
         elif self.cfg.mode == 'test':
             return self.predict_action(state, **kwargs)
         else:
-            raise NameError('mode must be sample or predict')
+            raise NameError('mode must be train or test')
     def sample_action(self, state, **kwargs):
         ''' sample action
         '''
@@ -139,15 +139,20 @@ class ToyPolicy:
         ''' update policy summary
         '''
         self.summary['scalar']['loss'] = self.loss
+        
     def get_summary(self):
         return self.summary['scalar']
-    def get_action(self, state, mode = 'sample', **kwargs):
-        if mode == 'sample':
+    
+    def get_action(self, state ,**kwargs):
+        ''' get action
+        '''
+        if self.cfg.mode == 'train':
             return self.sample_action(state, **kwargs)
-        elif mode == 'predict':
+        elif self.cfg.mode == 'test':
             return self.predict_action(state, **kwargs)
         else:
-            raise NameError('mode must be sample or predict')
+            raise NameError('mode must be train or test')
+        
     def sample_action(self, state, **kwargs):
         raise NotImplementedError
     def predict_action(self, state, **kwargs):
