@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2023-12-25 00:19:54
+LastEditTime: 2024-01-03 17:14:50
 Discription: 
 '''
 import sys,os
@@ -13,16 +13,17 @@ import ray
 import argparse,datetime,importlib,yaml,time 
 import gymnasium as gym
 from pathlib import Path
+from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import GeneralConfig, MergedConfig, DefaultConfig
 from joyrl.framework.collector import Collector
 from joyrl.framework.tracker import Tracker
 from joyrl.framework.interactor import InteractorMgr
 from joyrl.framework.learner import LearnerMgr
-from joyrl.framework.recorder import Logger, Recorder
+from joyrl.framework.recorder import Recorder
 from joyrl.framework.tester import OnlineTester
 from joyrl.framework.trainer import Trainer
-from joyrl.framework.model_mgr import ModelMgr
-from joyrl.utils.utils import merge_class_attrs, all_seed,save_frames_as_gif
+from joyrl.framework.policy_mgr import PolicyMgr
+from joyrl.utils.utils import merge_class_attrs, all_seed,save_frames_as_gif,create_module,exec_method
 from joyrl.envs.register import register_env
 
 class Launcher(object):
@@ -37,32 +38,11 @@ class Launcher(object):
         self._get_default_cfg()  # get default config
         self._process_yaml_cfg()  # load yaml config
         self._merge_cfgs() # merge all configs
+        self._check_other_cfgs() # check other configs
         self._config_dirs()  # create dirs
         self._save_cfgs({'general_cfg': self.general_cfg, 'algo_cfg': self.algo_cfg, 'env_cfg': self.env_cfg})
         all_seed(seed=self.general_cfg.seed)  # set seed == 0 means no seed
         
-    def _print_cfgs(self):
-        ''' print parameters
-        '''
-        logger = Logger(self.cfg)
-        def print_cfg(cfg, name = ''):
-            cfg_dict = vars(cfg)
-            logger.info(f"{name}:")
-            logger.info(''.join(['='] * 80))
-            tplt = "{:^20}\t{:^20}\t{:^20}"
-            logger.info(tplt.format("Name", "Value", "Type"))
-            for k, v in cfg_dict.items():
-                if v.__class__.__name__ == 'list': # convert list to str
-                    v = str(v)
-                if v is None: # avoid NoneType
-                    v = 'None'
-                if "support" in k: # avoid ndarray
-                    v = str(v[0])
-                logger.info(tplt.format(k, v, str(type(v))))
-            logger.info(''.join(['='] * 80))
-        print_cfg(self.cfg.general_cfg, name = 'General Configs')
-        print_cfg(self.cfg.algo_cfg, name = 'Algo Configs')
-        print_cfg(self.cfg.env_cfg, name = 'Env Configs')
 
     def _get_default_cfg(self):
         ''' get default config
@@ -113,6 +93,13 @@ class Launcher(object):
         self.cfg = merge_class_attrs(self.cfg, self.general_cfg)
         self.cfg = merge_class_attrs(self.cfg, self.algo_cfg)
         self.cfg = merge_class_attrs(self.cfg, self.env_cfg)
+
+    def _check_other_cfgs(self):
+        buffer_type = getattr(self.cfg, 'buffer_type', None)
+        if buffer_type is not None and buffer_type.lower().startswith('onpolicy'):
+            setattr(self.cfg, 'on_policy', True)
+        else:
+            setattr(self.cfg, 'on_policy', False)
         
     def _save_cfgs(self, config_dict: dict):
         ''' save config
@@ -180,6 +167,7 @@ class Launcher(object):
     def _start(self, **kwargs):
         ''' start serial training
         '''
+        ray.init()
         env, policy, data_handler = kwargs['env'], kwargs['policy'], kwargs['data_handler']
         tracker = Tracker(self.cfg)
         logger = Logger(self.cfg)
@@ -195,12 +183,12 @@ class Launcher(object):
                                 policy = policy,
                                 logger = logger
                             )
-        model_mgr = ModelMgr(self.cfg, 
+        policy_mgr = PolicyMgr(self.cfg, 
                              policy = policy,
                              logger = logger)
         trainer = Trainer(  self.cfg,
                             tracker = tracker,
-                            model_mgr = model_mgr,
+                            policy_mgr = policy_mgr,
                             collector = collector,
                             interactor_mgr = interactor_mgr,
                             learner_mgr = learner_mgr,
@@ -222,10 +210,10 @@ class Launcher(object):
         collector = ray.remote(Collector).options(num_cpus = 1).remote(self.cfg, data_handler = data_handler, logger = logger)
         interactor_mgr = ray.remote(InteractorMgr).options(num_cpus = 0).remote(self.cfg, env = env, policy = policy, logger = logger)
         learner_mgr = ray.remote(LearnerMgr).options(num_cpus = 0).remote(self.cfg, policy = policy, logger = logger)
-        model_mgr = ray.remote(ModelMgr).options(num_cpus = 0).remote(self.cfg, policy = policy,logger = logger)
+        policy_mgr = ray.remote(PolicyMgr).options(num_cpus = 0).remote(self.cfg, policy = policy,logger = logger)
         trainer = ray.remote(Trainer).options(num_cpus = 0).remote(self.cfg,
                                 tracker = tracker,
-                                model_mgr = model_mgr,
+                                policy_mgr = policy_mgr,
                                 collector = collector,
                                 interactor_mgr = interactor_mgr,
                                 learner_mgr = learner_mgr,
@@ -233,25 +221,44 @@ class Launcher(object):
                                 recorder = recorder,
                                 logger = logger)
         ray.get(trainer.ray_run.remote())
-
+    
     def run(self) -> None:
-        register_env(self.env_cfg.id) # register env
         env = self.env_config() # create single env
         policy, data_handler = self.policy_config() # configure policy and data_handler
-        if self.cfg.learner_mode == 'serial':
-            self._start(
-                env = env,
-                policy = policy,
-                data_handler = data_handler
-            )
-        elif self.cfg.learner_mode == 'parallel':
-            self._ray_start(
-                env = env,
-                policy = policy,
-                data_handler = data_handler
-            )
-        else:
-            raise ValueError(f"[Launcher.run] learner_mode must be 'serial' or 'parallel'!")
+        is_remote = False
+        if self.cfg.n_interactors > 1: is_remote = True
+        if self.cfg.online_eval:
+            online_tester = create_module(OnlineTester, False, {'num_cpus':0}, self.cfg, env = env, policy = policy)
+        tracker = create_module(Tracker, is_remote, {'num_cpus':0}, self.cfg)
+        recorder = create_module(Recorder, is_remote, {'num_cpus':0}, self.cfg)
+        collector = create_module(Collector, is_remote, {'num_cpus':1}, self.cfg, data_handler = data_handler)
+        policy_mgr = create_module(PolicyMgr, is_remote, {'num_cpus':0}, self.cfg, policy = policy)
+        interactor_mgr = create_module(InteractorMgr, is_remote, {'num_cpus':0}, 
+                                       self.cfg, 
+                                       env = env, 
+                                       policy = policy, 
+                                       collector = collector, 
+                                       tracker = tracker, 
+                                       recorder = recorder, 
+                                       policy_mgr = policy_mgr)
+        learner_mgr = create_module(LearnerMgr, is_remote, {'num_cpus':1}, 
+                                    self.cfg, 
+                                    policy = policy,
+                                    collector = collector,
+                                    tracker = tracker,
+                                    recorder = recorder,
+                                    policy_mgr = policy_mgr
+                                    )
+        trainer = create_module(Trainer, is_remote, {'num_cpus':0}, 
+                                self.cfg,
+                                tracker = tracker,
+                                policy_mgr = policy_mgr,
+                                collector = collector,
+                                interactor_mgr = interactor_mgr,
+                                learner_mgr = learner_mgr,
+                                recorder = recorder
+                                )
+        exec_method(trainer, 'run', True)
 
 def run(**kwargs):
     launcher = Launcher(**kwargs)

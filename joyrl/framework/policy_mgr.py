@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2023-12-24 15:15:28
+LastEditTime: 2024-01-02 13:03:30
 Discription: 
 '''
 import time
@@ -19,28 +19,23 @@ from joyrl.framework.message import Msg, MsgType
 from joyrl.algos.base.policy import BasePolicy
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
+from joyrl.utils.utils import exec_method
 
-class ModelMgr(Moduler):
+class PolicyMgr(Moduler):
     ''' model manager
     '''
     def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
         super().__init__(cfg, *args, **kwargs)
-        self.logger = kwargs['logger']
         self.policy = copy.deepcopy(kwargs['policy'])
         self._latest_model_params_dict = {'step': 0, 'model_params': self.policy.get_model_params()}
         self._saved_model_que = RayQueue(maxsize = 128) if self.use_ray else Queue(maxsize = 128)
+        self._t_start()
         
     def _t_start(self):
+        exec_method(self.logger, 'info', False, "Start model manager!")
         self._t_save_policy = threading.Thread(target=self._save_policy)
         self._t_save_policy.setDaemon(True)
         self._t_save_policy.start()
-
-    def init(self):
-        if self.use_ray:
-            self.logger.info.remote(f"[ModelMgr.init] Start model manager!")
-        else:
-            self.logger.info(f"[ModelMgr.init] Start model manager!")
-        self._t_start()  
     
     def pub_msg(self, msg: Msg):
         ''' publish message
@@ -67,9 +62,9 @@ class ModelMgr(Moduler):
                     break
                 except:
                     if self.use_ray:
-                        self.logger.warning.remote(f"[ModelMgr._put_model_params] saved_model_que is full!")
+                        self.logger.warning.remote(f"[PolicyMgr._put_model_params] saved_model_que is full!")
                     else:
-                        self.logger.warning(f"[ModelMgr._put_model_params] saved_model_que is full!")
+                        self.logger.warning(f"[PolicyMgr._put_model_params] saved_model_que is full!")
                     time.sleep(0.001)
 
     def _get_model_params(self):

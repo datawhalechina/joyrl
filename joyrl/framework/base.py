@@ -5,20 +5,20 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 17:30:36
 LastEditor: JiangJi
-LastEditTime: 2023-12-02 21:59:10
+LastEditTime: 2024-01-02 13:50:07
 Discription: 
 '''
 import ray
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.message import Msg
+from joyrl.utils.utils import Logger
 
 class Moduler(object):
-    def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
+    def __init__(self, cfg: MergedConfig, **kwargs) -> None:
         self.cfg = cfg
-        if kwargs.get('use_ray', None) is not None:
-            self.use_ray = kwargs['use_ray']
-        else:
-            self.use_ray = ray.is_initialized() 
+        self.use_ray = kwargs.get('use_ray', False)
+        self.logger = Logger(self.cfg.log_dir)
+        
     def _t_start(self):
         ''' start threads
         '''

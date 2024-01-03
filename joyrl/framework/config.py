@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:30:09
 LastEditor: JiangJi
-LastEditTime: 2023-12-24 17:32:49
+LastEditTime: 2024-01-03 13:42:17
 Discription: 
 '''
 class DefaultConfig:
@@ -41,6 +41,7 @@ class GeneralConfig(object):
         self.collect_traj = False # if collect trajectory or not
         # multiprocessing settings
         self.n_interactors = 1 # number of workers
+        self.exps_trucation_size = 1 # size of exps to truncate
         self.interactor_mode = "dummy" # dummy, only works when learner_mode is serial
         self.learner_mode = "serial" # serial, parallel, whether workers and learners are in parallel
         self.n_learners = 1 # number of learners if using multi-processing, default 1

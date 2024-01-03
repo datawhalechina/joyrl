@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2023-12-24 17:31:15
+LastEditTime: 2023-12-30 17:48:42
 Discription: 
 '''
 import ray
@@ -16,29 +16,24 @@ import os
 import threading
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
+from joyrl.utils.utils import exec_method
     
 class OnlineTester(Moduler):
     ''' Online tester
     '''
     def __init__(self, cfg : MergedConfig, *args, **kwargs) -> None:
         super().__init__(cfg, *args, **kwargs)
-        self.logger = kwargs['logger']
         self.env = kwargs['env']
         self.policy = copy.deepcopy(kwargs['policy'])
         self.best_eval_reward = -float('inf')
         self.curr_test_step = -1
+        self._t_start()
 
     def _t_start(self):
+        exec_method(self.logger, 'info', False, "Start online tester!")
         self._t_eval_policy = threading.Thread(target=self._eval_policy)
         self._t_eval_policy.setDaemon(True)
         self._t_eval_policy.start()
-
-    def init(self):
-        if self.use_ray:
-            self.logger.info.remote(f"[OnlineTester] Start online tester!")
-        else:
-            self.logger.info(f"[OnlineTester] Start online tester!")
-        self._t_start() 
     
     def _check_updated_model(self):
         model_step_list = os.listdir(self.cfg.model_dir)

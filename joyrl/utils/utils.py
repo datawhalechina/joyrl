@@ -5,7 +5,7 @@ Author: John
 Email: johnjim0816@gmail.com
 Date: 2021-03-12 16:02:24
 LastEditor: John
-LastEditTime: 2023-05-15 13:18:09
+LastEditTime: 2024-01-03 13:51:19
 Discription: 
 Environment: 
 '''
@@ -17,6 +17,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import random
+import ray
 from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib import animation
@@ -164,6 +165,40 @@ def timing(func_name=True):
         return wrapper
     return decorator
 
+def create_module(class_name, is_remote, remote_options, *args, **kwargs):
+    ''' create module, which can be remote or local
+
+    Args:
+        remote (bool): remote or not
+        options (dict): options for remote
+    '''
+    if is_remote:
+        kwargs.update({'use_ray': True})
+        return ray.remote(class_name).options(**remote_options).remote(*args, **kwargs)
+    else:
+        return class_name(*args, **kwargs)
+
+    
+def exec_method(instance_name, method_name, need_get, *args, **kwargs):
+    ''' execute method of class_name, which can be remote or local
+
+    Args:
+        class_name (_type_): _description_
+        method_name (_type_): _description_
+        is_remote (bool, optional): remote or not. Defaults to False.
+        need_return (bool, optional): need to return. Defaults to False.
+
+    Returns:
+        _type_: default None
+    '''
+    is_remote = isinstance(instance_name, ray.actor.ActorHandle)
+    if is_remote:
+        if need_get:
+            return ray.get(getattr(instance_name, method_name).remote(*args, **kwargs))
+        else:
+            return getattr(instance_name, method_name).remote(*args, **kwargs)
+    else:
+        return getattr(instance_name, method_name)(*args, **kwargs)
 
 def all_seed(seed = 1):
     ''' 设置随机种子，保证实验可复现，同时保证GPU和CPU的随机种子一致
@@ -194,6 +229,37 @@ def print_logs(logger, content, is_ray=False):
     else:
         logger.info(content)
 
+class Logger(object):
+    ''' Logger for print log to console
+    '''
+    def __init__(self, log_dir, *args, **kwargs) -> None:
+        self.logger = logging.getLogger(name= "Log")
+        if kwargs.get('log_name', None) is not None: # set log name
+            self.logger.name = kwargs['log_name']
+        self.logger.setLevel(logging.INFO) # default level is INFO
+        self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S')
+        # output to file by using FileHandler
+        if not self.logger.handlers: # avoid duplicate print
+            fh = logging.FileHandler(f"{log_dir}/log.txt")
+            fh.setLevel(logging.DEBUG)
+            fh.setFormatter(self.formatter)
+            self.logger.addHandler(fh)
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.INFO)
+            ch.setFormatter(self.formatter)
+            self.logger.addHandler(ch)
+    
+    def info(self, content):
+        ''' print info
+        '''
+        self.logger.info(content)
+    
+    def warning(self, content):
+        ''' print warning
+        '''
+        self.logger.warning(content)
+        
 # MAPPO beginning
 
 # init

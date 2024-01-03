@@ -62,7 +62,7 @@ Since the training process of $\text{RL}$ is often complex and unstable, we ofte
 As shown in Figure 6, the online tester is more like an independent module, which does not affect the training process, so it is specially separated in the figure.
 
 <div align=center>
-<img width="600" src="../figs/recorder.png"/>
+<img width="600" src="../figs/overall_framework.png"/>
 <div align=center>Figure 6 Overall framework</div>
 </div>
 

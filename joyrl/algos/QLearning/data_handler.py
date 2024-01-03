@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# coding=utf-8
+'''
+Author: JiangJi
+Email: johnjim0816@gmail.com
+Date: 2023-12-24 19:13:11
+LastEditor: JiangJi
+LastEditTime: 2023-12-26 22:26:27
+Discription: 
+'''
 import numpy as np
 from joyrl.algos.base.data_handler import BaseDataHandler
 from joyrl.algos.base.exps import Exp
@@ -11,10 +21,7 @@ class DataHandler(BaseDataHandler):
         ''' add transition to buffer
         '''
         self.buffer.append(exps)
-    def add_data_after_learn(self, data):
-        ''' add update data
-        '''
-        self.data_after_train = data
+
     def sample_training_data(self):
         ''' sample training data from buffer
         '''

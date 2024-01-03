@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-04-28 16:18:44
 LastEditor: JiangJi
-LastEditTime: 2023-12-03 16:18:50
+LastEditTime: 2024-01-03 17:30:51
 Discription: 
 '''
 import ray 
@@ -14,45 +14,35 @@ from pathlib import Path
 import pickle
 import time
 import threading
-import logging
+
 import pandas
 from multiprocessing import Queue
 from torch.utils.tensorboard import SummaryWriter  
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
+from joyrl.utils.utils import exec_method
 
 class Recorder(Moduler):
     ''' Recorder for recording training information
     '''
     def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
         super().__init__(cfg, *args, **kwargs)
-        self.logger = kwargs['logger']
         self._init_writter()
         self._summary_que_dict = {}
         self._summary_que_dict['interact'] = RayQueue(maxsize = 256) if self.use_ray else Queue(maxsize = 256)
         self._summary_que_dict['policy'] = RayQueue(maxsize = 256) if self.use_ray else Queue(maxsize = 256)
+        self._t_start()
 
     def _t_start(self):
-
+        exec_method(self.logger, 'info', False, "Start recorder!")
         self._t_save_interact_summary = threading.Thread(target=self._save_interact_summary)
         self._t_save_interact_summary.setDaemon(True)
         self._t_save_policy_summary = threading.Thread(target=self._save_policy_summary)
         self._t_save_policy_summary.setDaemon(True)
         self._t_save_interact_summary.start()
         self._t_save_policy_summary.start()
-
-    def init(self):
-        if self.use_ray:
-            self.logger.info.remote("[Recorder.init] Start recorder!")
-        else:
-            self.logger.info("[Recorder.run] Start recorder!")
-        self._t_start()
-    
-    def ray_run(self):
-        self.logger.info.remote("[Recorder.run] Start recorder!")
-        self._t_start()
-
+        
     def pub_msg(self, msg: Msg):
         ''' publish message
         '''
@@ -105,7 +95,6 @@ class Recorder(Moduler):
                     break
             except Exception as e:
                 break
-            time.sleep(0.002)
 
     def _save_policy_summary(self):
         while True:
@@ -118,44 +107,7 @@ class Recorder(Moduler):
                         self._write_dataframe(step, summary, writter_type = 'policy')
                     break
             except Exception as e:
-                break
-            time.sleep(0.001)
-
-class Logger(Moduler):
-    ''' Logger for print log to console
-    '''
-    def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
-        super().__init__(cfg, *args, **kwargs)
-        self.logger = logging.getLogger(name="Log")  
-        self.logger.setLevel(logging.INFO) # default level is INFO
-        self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S')
-        # output to file by using FileHandler
-        fh = logging.FileHandler(f"{self.cfg.log_dir}/log.txt")
-        fh.setLevel(logging.DEBUG)
-        fh.setFormatter(self.formatter)
-        self.logger.addHandler(fh)
-        if self.use_ray:
-            self.logger.name = "RayLog"
-        else:
-            ch = logging.StreamHandler()
-            ch.setLevel(logging.INFO)
-            ch.setFormatter(self.formatter)
-            self.logger.addHandler(ch)
-    
-    def info(self, content):
-        ''' print info
-        '''
-        self.logger.info(content)
-        if self.use_ray: print(content)
-    
-    def warning(self, content):
-        ''' print warning
-        '''
-        self.logger.warning(content)
-        if self.use_ray: print(content)
-    
-        
+                break       
 
 class BaseTrajCollector:
     ''' Base class for trajectory collector

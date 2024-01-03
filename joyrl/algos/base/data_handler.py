@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2023-12-24 15:31:23
+LastEditTime: 2023-12-26 22:26:23
 Discription: 
 '''
 import numpy as np
@@ -23,10 +23,6 @@ class BaseDataHandler:
     def add_exps(self, exps):
         self.buffer.push(exps)
         
-    def add_data_after_learn(self, data):
-        ''' add update data
-        '''
-        self.data_after_train = data
     def sample_training_data(self):
         ''' sample training data from buffer
         '''
@@ -46,6 +42,7 @@ class BaseDataHandler:
         dones = np.array([exp.done for exp in exps])
         data = {'states': states, 'actions': actions, 'rewards': rewards, 'next_states': next_states, 'dones': dones}
         return data
+    
     def handle_exps_after_train(self):
         ''' handle exps after train
         '''

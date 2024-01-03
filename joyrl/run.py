@@ -18,10 +18,10 @@ from joyrl.framework.collector import Collector
 from joyrl.framework.tracker import Tracker
 from joyrl.framework.interactor import InteractorMgr
 from joyrl.framework.learner import LearnerMgr
-from joyrl.framework.recorder import Logger, Recorder
+from joyrl.framework.recorder import Recorder
 from joyrl.framework.tester import OnlineTester
 from joyrl.framework.trainer import Trainer
-from joyrl.framework.model_mgr import ModelMgr
+from joyrl.framework.policy_mgr import PolicyMgr
 from joyrl.utils.utils import merge_class_attrs, all_seed,save_frames_as_gif
 from joyrl.envs.register import register_env
 
@@ -191,12 +191,12 @@ class Launcher(object):
                                 policy = policy,
                                 logger = logger
                             )
-        model_mgr = ModelMgr(self.cfg, 
+        policy_mgr = PolicyMgr(self.cfg, 
                              policy = policy,
                              logger = logger)
         trainer = Trainer(  self.cfg,
                             tracker = tracker,
-                            model_mgr = model_mgr,
+                            policy_mgr = policy_mgr,
                             collector = collector,
                             interactor_mgr = interactor_mgr,
                             learner_mgr = learner_mgr,
@@ -218,10 +218,10 @@ class Launcher(object):
         collector = ray.remote(Collector).options(num_cpus = 1).remote(self.cfg, data_handler = data_handler, logger = logger)
         interactor_mgr = ray.remote(InteractorMgr).options(num_cpus = 0).remote(self.cfg, env = env, policy = policy, logger = logger)
         learner_mgr = ray.remote(LearnerMgr).options(num_cpus = 0).remote(self.cfg, policy = policy, logger = logger)
-        model_mgr = ray.remote(ModelMgr).options(num_cpus = 0).remote(self.cfg, policy = policy,logger = logger)
+        policy_mgr = ray.remote(PolicyMgr).options(num_cpus = 0).remote(self.cfg, policy = policy,logger = logger)
         trainer = ray.remote(Trainer).options(num_cpus = 0).remote(self.cfg,
                                 tracker = tracker,
-                                model_mgr = model_mgr,
+                                policy_mgr = policy_mgr,
                                 collector = collector,
                                 interactor_mgr = interactor_mgr,
                                 learner_mgr = learner_mgr,
