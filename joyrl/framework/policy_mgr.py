@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-02 13:03:30
+LastEditTime: 2024-01-04 23:52:45
 Discription: 
 '''
 import time
@@ -32,7 +32,7 @@ class PolicyMgr(Moduler):
         self._t_start()
         
     def _t_start(self):
-        exec_method(self.logger, 'info', False, "Start model manager!")
+        exec_method(self.logger, 'info', False, "[PolicyMgr._t_start] Start policy manager!")
         self._t_save_policy = threading.Thread(target=self._save_policy)
         self._t_save_policy.setDaemon(True)
         self._t_save_policy.start()
@@ -80,6 +80,6 @@ class PolicyMgr(Moduler):
                 update_step, model_params = self._saved_model_que.get()
                 self.policy.put_model_params(model_params)
                 self.policy.save_model(f"{self.cfg.model_dir}/{update_step}")
-            time.sleep(0.05)
+            time.sleep(0.02)
     
 

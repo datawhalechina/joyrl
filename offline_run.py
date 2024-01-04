@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-01-04 13:49:12
+LastEditTime: 2024-01-04 23:02:39
 Discription: 
 '''
 import sys,os
@@ -23,7 +23,7 @@ from joyrl.framework.recorder import Recorder
 from joyrl.framework.tester import OnlineTester
 from joyrl.framework.trainer import Trainer
 from joyrl.framework.policy_mgr import PolicyMgr
-from joyrl.utils.utils import merge_class_attrs, all_seed,save_frames_as_gif,create_module,exec_method,memory_profile
+from joyrl.utils.utils import merge_class_attrs, all_seed,save_frames_as_gif,create_module,exec_method
 from joyrl.envs.register import register_env
 
 class Launcher(object):
@@ -163,74 +163,18 @@ class Launcher(object):
             policy.save_model(f"{self.cfg.model_dir}/{self.cfg.load_model_step}")
         data_handler = data_handler_mod.DataHandler(self.cfg)
         return policy, data_handler
-    
-    def _start(self, **kwargs):
-        ''' start serial training
-        '''
-        ray.init()
-        env, policy, data_handler = kwargs['env'], kwargs['policy'], kwargs['data_handler']
-        tracker = Tracker(self.cfg)
-        logger = Logger(self.cfg)
-        recorder = Recorder(self.cfg, logger = logger)
-        online_tester = OnlineTester(self.cfg, env = env, policy = policy, logger = logger)
-        collector = Collector(self.cfg, data_handler = data_handler, logger = logger)
-        interactor_mgr = InteractorMgr(self.cfg, 
-                                        env = env, 
-                                        policy = policy,
-                                        logger = logger
-                                    )
-        learner_mgr = LearnerMgr(self.cfg, 
-                                policy = policy,
-                                logger = logger
-                            )
-        policy_mgr = PolicyMgr(self.cfg, 
-                             policy = policy,
-                             logger = logger)
-        trainer = Trainer(  self.cfg,
-                            tracker = tracker,
-                            policy_mgr = policy_mgr,
-                            collector = collector,
-                            interactor_mgr = interactor_mgr,
-                            learner_mgr = learner_mgr,
-                            online_tester = online_tester,
-                            recorder = recorder,
-                            logger = logger
-                        )
-        trainer.run()
 
-    def _ray_start(self, **kwargs):
-        ''' start parallel training
-        '''
-        env, policy, data_handler = kwargs['env'], kwargs['policy'], kwargs['data_handler']
-        ray.init()
-        tracker = ray.remote(Tracker).options(num_cpus = 0).remote(self.cfg)
-        logger = ray.remote(Logger).options(num_cpus = 0).remote(self.cfg)
-        recorder = ray.remote(Recorder).options(num_cpus = 0).remote(self.cfg, logger = logger)
-        online_tester = ray.remote(OnlineTester).options(num_cpus = 0).remote(self.cfg, env = env, policy = policy, logger = logger)
-        collector = ray.remote(Collector).options(num_cpus = 1).remote(self.cfg, data_handler = data_handler, logger = logger)
-        interactor_mgr = ray.remote(InteractorMgr).options(num_cpus = 0).remote(self.cfg, env = env, policy = policy, logger = logger)
-        learner_mgr = ray.remote(LearnerMgr).options(num_cpus = 0).remote(self.cfg, policy = policy, logger = logger)
-        policy_mgr = ray.remote(PolicyMgr).options(num_cpus = 0).remote(self.cfg, policy = policy,logger = logger)
-        trainer = ray.remote(Trainer).options(num_cpus = 0).remote(self.cfg,
-                                tracker = tracker,
-                                policy_mgr = policy_mgr,
-                                collector = collector,
-                                interactor_mgr = interactor_mgr,
-                                learner_mgr = learner_mgr,
-                                online_tester = online_tester,
-                                recorder = recorder,
-                                logger = logger)
-        ray.get(trainer.ray_run.remote())
-    @memory_profile
+
     def run(self) -> None:
         env = self.env_config() # create single env
         policy, data_handler = self.policy_config() # configure policy and data_handler
         is_remote = False
-        if self.cfg.n_interactors > 1: is_remote = True
+        if self.cfg.n_interactors > 1: 
+            is_remote = True
+            ray.init()
         if self.cfg.online_eval:
             online_tester = create_module(OnlineTester, False, {'num_cpus':0}, self.cfg, env = env, policy = policy)
         tracker = create_module(Tracker, is_remote, {'num_cpus':0}, self.cfg)
-        recorder = create_module(Recorder, is_remote, {'num_cpus':0}, self.cfg)
         collector = create_module(Collector, is_remote, {'num_cpus':1}, self.cfg, data_handler = data_handler)
         policy_mgr = create_module(PolicyMgr, is_remote, {'num_cpus':0}, self.cfg, policy = policy)
         interactor_mgr = create_module(InteractorMgr, is_remote, {'num_cpus':0}, 
@@ -239,14 +183,12 @@ class Launcher(object):
                                        policy = policy, 
                                        collector = collector, 
                                        tracker = tracker, 
-                                       recorder = recorder, 
                                        policy_mgr = policy_mgr)
-        learner_mgr = create_module(LearnerMgr, is_remote, {'num_cpus':1}, 
+        learner_mgr = create_module(LearnerMgr, is_remote, {'num_cpus':0}, 
                                     self.cfg, 
                                     policy = policy,
                                     collector = collector,
                                     tracker = tracker,
-                                    recorder = recorder,
                                     policy_mgr = policy_mgr
                                     )
         trainer = create_module(Trainer, is_remote, {'num_cpus':0}, 
@@ -256,7 +198,6 @@ class Launcher(object):
                                 collector = collector,
                                 interactor_mgr = interactor_mgr,
                                 learner_mgr = learner_mgr,
-                                recorder = recorder
                                 )
         exec_method(trainer, 'run', True)
 

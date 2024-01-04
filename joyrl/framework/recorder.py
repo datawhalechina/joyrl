@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-04-28 16:18:44
 LastEditor: JiangJi
-LastEditTime: 2024-01-04 13:06:08
+LastEditTime: 2024-01-04 22:56:51
 Discription: 
 '''
 import ray 
@@ -26,41 +26,26 @@ from joyrl.utils.utils import exec_method
 class Recorder(Moduler):
     ''' Recorder for recording training information
     '''
-    def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
-        super().__init__(cfg, *args, **kwargs)
-        self._init_writter()
-        self._summary_que_dict = {}
-        self._summary_que_dict['interact'] = RayQueue(maxsize = 256) if self.use_ray else Queue(maxsize = 256)
-        self._summary_que_dict['policy'] = RayQueue(maxsize = 256) if self.use_ray else Queue(maxsize = 256)
-        self._t_start()
+    def __init__(self, cfg: MergedConfig, **kwargs) -> None:
+        super().__init__(cfg, **kwargs)
+        self.type = kwargs.get('type', 'recorder')
+        self.writter = SummaryWriter(log_dir=f"{self.cfg.tb_dir}/{self.type}")
+        self._summary_que = RayQueue(maxsize = 256) if self.use_ray else Queue(maxsize = 128)
+        self._t_start() # TODO, slow down the training speed when using threading 
 
     def _t_start(self):
-        exec_method(self.logger, 'info', False, "Start recorder!")
-        self._t_save_interact_summary = threading.Thread(target=self._save_interact_summary)
-        self._t_save_interact_summary.setDaemon(True)
-        self._t_save_policy_summary = threading.Thread(target=self._save_policy_summary)
-        self._t_save_policy_summary.setDaemon(True)
-        self._t_save_interact_summary.start()
-        self._t_save_policy_summary.start()
+        exec_method(self.logger, 'info', False, f"Start {self.type} recorder!")
+        self._t_save_summary = threading.Thread(target=self._save_summary)
+        self._t_save_summary.setDaemon(True)
+        self._t_save_summary.start()
 
     def pub_msg(self, msg: Msg):
         ''' publish message
         '''
         msg_type, msg_data = msg.type, msg.data
-        if msg_type == MsgType.RECORDER_PUT_INTERACT_SUMMARY:
-            interact_summary_list = msg_data
-            for summary_data in interact_summary_list:
-                step, summary = summary_data
-                self._write_tb_scalar(step, summary, writter_type = 'interact')
-                self._write_dataframe(step, summary, writter_type = 'interact')
-            # self._add_summary(interact_summary_list, writter_type = 'interact')
-        elif msg_type == MsgType.RECORDER_PUT_POLICY_SUMMARY:
-            policy_summary_list = msg_data
-            # for summary_data in policy_summary_list:
-            #     step, summary = summary_data
-            #     self._write_tb_scalar(step, summary, writter_type = 'policy')
-            #     self._write_dataframe(step, summary, writter_type = 'policy')
-            self._add_summary(policy_summary_list, writter_type = 'policy')
+        if msg_type == MsgType.RECORDER_PUT_SUMMARY:
+            summary_data_list = msg_data
+            self._add_summary(summary_data_list)
         else:
             raise NotImplementedError
         
@@ -70,53 +55,40 @@ class Recorder(Moduler):
         for writter_type in self.writter_types:
             self.writters[writter_type] = SummaryWriter(log_dir=f"{self.cfg.tb_dir}/{writter_type}")
     
-    def _add_summary(self, summary_data_list, writter_type = None):
+    def _add_summary(self, summary_data_list):
         while True:
             try:
-                self._summary_que_dict[writter_type].put(summary_data_list, block = False)
-                return 
+                self._summary_que.put(summary_data_list, block = False)
+                break
             except:
                 self.logger.warning(f"[Recorder._add_summary] summary_que is full!")
+                # time.sleep(0.001)
                 pass
 
-    def _write_tb_scalar(self, step, summary, writter_type):
+    def _write_tb_scalar(self, step, summary):
         for key, value in summary.items():
-            self.writters[writter_type].add_scalar(tag = f"{self.cfg.mode.lower()}_{key}", scalar_value=value, global_step = step)
+            self.writter.add_scalar(tag = f"{self.cfg.mode.lower()}_{key}", scalar_value=value, global_step = step)
 
-    def _write_dataframe(self, step, summary, writter_type):
-        df_file = f"{self.cfg.res_dir}/{writter_type}.csv"
+    def _write_dataframe(self, step, summary):
+        df_file = f"{self.cfg.res_dir}/{self.type}.csv"
         if Path(df_file).exists():
             df = pandas.read_csv(df_file)
         else:
             df = pandas.DataFrame()
-        saved_dict = {f"{writter_type}_step": step}
+        saved_dict = {f"{self.type}_step": step}
         saved_dict.update(summary)
         df = df.append(saved_dict, ignore_index=True)
         df.to_csv(df_file, index = False)
 
-    def _save_interact_summary(self):
+    def _save_summary(self):
         while True:
-            try: 
-                summary_data_list = self._summary_que_dict['interact'].get(block = False)
+            while not self._summary_que.empty():
+                summary_data_list = self._summary_que.get()
                 for summary_data in summary_data_list:
                     step, summary = summary_data
-                    self._write_tb_scalar(step, summary, writter_type = 'interact')
-                    self._write_dataframe(step, summary, writter_type = 'interact')
-            except:
-                # self.logger.warning("[Recorder._save_interact_summary] summary_que is empty!")
-                pass
-
-    def _save_policy_summary(self):
-        while True:
-            try:
-                summary_data_list = self._summary_que_dict['policy'].get(block = False)
-                for summary_data in summary_data_list:
-                    step, summary = summary_data
-                    self._write_tb_scalar(step, summary, writter_type = 'policy')
-                    self._write_dataframe(step, summary, writter_type = 'policy')
-            except:
-                # self.logger.warning("[Recorder._save_policy_summary] summary_que is empty!")
-                pass     
+                    self._write_tb_scalar(step, summary)
+                    self._write_dataframe(step, summary)
+            time.sleep(0.01)
 
 class BaseTrajCollector:
     ''' Base class for trajectory collector

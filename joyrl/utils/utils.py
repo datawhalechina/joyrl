@@ -5,7 +5,7 @@ Author: John
 Email: johnjim0816@gmail.com
 Date: 2021-03-12 16:02:24
 LastEditor: John
-LastEditTime: 2024-01-04 13:34:46
+LastEditTime: 2024-01-04 23:10:57
 Discription: 
 Environment: 
 '''
@@ -28,10 +28,6 @@ from functools import wraps
 from time import time
 import logging
 from matplotlib.font_manager import FontProperties  # 导入字体模块
-try:
-    from memory_profiler import profile as memory_profile
-except ImportError:
-    memory_profile = lambda f: f  # 如果没有安装，则定义一个空操作的装饰器
 
 def chinese_font():
     ''' 设置中文字体，注意需要根据自己电脑情况更改字体路径，否则还是默认的字体
@@ -226,12 +222,6 @@ def save_traj(traj, fpath):
     traj_pkl = os.path.join(fpath, 'traj.pkl')
     with open(traj_pkl, 'wb') as f:
         pickle.dump(traj, f)
-
-def print_logs(logger, content, is_ray=False):
-    if is_ray:
-        logger.info.remote(content)
-    else:
-        logger.info(content)
 
 class Logger(object):
     ''' Logger for print log to console

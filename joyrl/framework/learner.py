@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-01-03 13:45:43
+LastEditTime: 2024-01-04 23:48:37
 Discription: 
 '''
 import ray
@@ -15,6 +15,8 @@ from typing import Tuple
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
+from joyrl.framework.recorder import Recorder
+from joyrl.utils.utils import exec_method, create_module
 
 class Learner(Moduler):
     ''' learner
@@ -30,7 +32,7 @@ class Learner(Moduler):
         self._init_update_steps()
 
     def _init_update_steps(self):
-        if not self.cfg.on_policy and self.use_ray:
+        if (not self.cfg.on_policy) and self.use_ray:
             self.n_update_steps = float('inf')
         else:
             self.n_update_steps = 1
@@ -38,18 +40,18 @@ class Learner(Moduler):
     def run(self):
         run_step = 0
         while True:
-            training_data = self.collector.pub_msg(Msg(type = MsgType.COLLECTOR_GET_TRAINING_DATA))
+            training_data = exec_method(self.collector, 'pub_msg', True, Msg(type = MsgType.COLLECTOR_GET_TRAINING_DATA))
             if training_data is None: return
             self.policy.learn(**training_data)
-            global_update_step = self.tracker.pub_msg(Msg(type = MsgType.TRACKER_GET_UPDATE_STEP))
-            self.tracker.pub_msg(Msg(type = MsgType.TRACKER_INCREASE_UPDATE_STEP))
+            global_update_step = exec_method(self.tracker, 'pub_msg', True, Msg(type = MsgType.TRACKER_GET_UPDATE_STEP))
+            exec_method(self.tracker, 'pub_msg', True, Msg(type = MsgType.TRACKER_INCREASE_UPDATE_STEP))
             # put updated model params to policy_mgr
             model_params = self.policy.get_model_params()
-            self.policy_mgr.pub_msg(Msg(type = MsgType.MODEL_MGR_PUT_MODEL_PARAMS, data = (global_update_step, model_params)))
+            exec_method(self.policy_mgr, 'pub_msg', True, Msg(type = MsgType.MODEL_MGR_PUT_MODEL_PARAMS, data = (global_update_step, model_params)))
             # put policy summary to recorder
             if global_update_step % self.cfg.policy_summary_fre == 0:
                 policy_summary = [(global_update_step,self.policy.get_summary())]
-                self.recorder.pub_msg(Msg(type = MsgType.RECORDER_PUT_POLICY_SUMMARY, data = policy_summary))
+                exec_method(self.recorder, 'pub_msg', True, Msg(type = MsgType.RECORDER_PUT_SUMMARY, data = policy_summary))
             run_step += 1
             if run_step >= self.n_update_steps:
                 return
@@ -60,25 +62,17 @@ class LearnerMgr(Moduler):
     def __init__(self, cfg: MergedConfig, **kwargs) -> None:
         super().__init__(cfg, **kwargs)
         self.policy = kwargs['policy']
-        self.learners = [Learner(cfg = self.cfg, 
-                                 id = i, 
-                                 policy = copy.deepcopy(self.policy),
-                                 policy_mgr = kwargs.get('policy_mgr', None),
-                                 collector = kwargs.get('collector', None),
-                                 tracker = kwargs.get('tracker', None),
-                                 recorder = kwargs.get('recorder', None),
-                                 ) for i in range(self.cfg.n_learners)]
-
-    # def init(self, *args, **kwargs):
-    #     if self.use_ray:
-    #         self.learners = [ray.remote(Learner).options(num_cpus=3).remote(cfg = self.cfg, id = i, policy = copy.deepcopy(self.policy), *args, **kwargs) for i in range(self.cfg.n_learners)]
-    #     else:
-    #         self.learners = [Learner(cfg = self.cfg, id = i, policy = copy.deepcopy(self.policy), *args, **kwargs) for i in range(self.cfg.n_learners)]
-
+        self.recorder = create_module(Recorder, self.use_ray, {'num_cpus':0}, self.cfg, type = 'learner')
+        self.learners = [create_module(Learner, self.use_ray, {'num_cpus':1}, 
+                                       self.cfg, 
+                                       id = i, 
+                                       policy = copy.deepcopy(self.policy), 
+                                       policy_mgr = kwargs.get('policy_mgr', None), 
+                                       collector = kwargs.get('collector', None), 
+                                       tracker = kwargs.get('tracker', None), 
+                                       recorder = self.recorder) 
+                         for i in range(self.cfg.n_learners)]
+        exec_method(self.logger, 'info', True, f"[LearnerMgr] Create {self.cfg.n_learners} learners!")
     def run(self):
         for i in range(self.cfg.n_learners):
-            self.learners[i].run()
-
-    def ray_run(self):
-        for i in range(self.cfg.n_learners):
-            self.learners[i].ray_run.remote()
+            exec_method(self.learners[i], 'run', False)

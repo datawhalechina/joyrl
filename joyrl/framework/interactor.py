@@ -5,7 +5,8 @@ from joyrl.algos.base.exps import Exp
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
-from joyrl.utils.utils import exec_method, memory_profile
+from joyrl.framework.recorder import Recorder
+from joyrl.utils.utils import exec_method, create_module
 
 class Interactor(Moduler):
     def __init__(self, cfg: MergedConfig, **kwargs) -> None:
@@ -51,13 +52,13 @@ class Interactor(Moduler):
             self.ep_step += 1
             if terminated or truncated or self.ep_step >= self.cfg.max_step > 0:
                 global_episode = exec_method(self.tracker, 'pub_msg', True, Msg(type = MsgType.TRACKER_GET_EPISODE))
-                exec_method(self.tracker, 'pub_msg', True, Msg(MsgType.TRACKER_INCREASE_EPISODE))
+                exec_method(self.tracker, 'pub_msg', False, Msg(MsgType.TRACKER_INCREASE_EPISODE))
                 if global_episode % self.cfg.interact_summary_fre == 0: 
-                    self.logger.info(f"Interactor {self.id} finished episode {global_episode} with reward {self.ep_reward:.3f} in {self.ep_step} steps, truncated: {truncated}, terminated: {terminated}")
+                    exec_method(self.logger, 'info', True, f"Interactor {self.id} finished episode {global_episode} with reward {self.ep_reward:.3f} in {self.ep_step} steps, truncated: {truncated}, terminated: {terminated}")
                     # put summary to recorder
                     interact_summary = {'reward':self.ep_reward,'step':self.ep_step}
                     self.summary.append((global_episode, interact_summary))
-                    exec_method(self.recorder, 'pub_msg', True, Msg(type = MsgType.RECORDER_PUT_INTERACT_SUMMARY, data = self.summary)) # put summary to stats recorder
+                    exec_method(self.recorder, 'pub_msg', True, Msg(type = MsgType.RECORDER_PUT_SUMMARY, data = self.summary)) # put summary to stats recorder
                     self.summary = [] # reset summary
                 self.ep_reward, self.ep_step = 0, 0
                 self.curr_obs, self.curr_info = self.env.reset(seed = self.seed)
@@ -75,27 +76,25 @@ class InteractorMgr(Moduler):
         super().__init__(cfg, **kwargs)
         self.env = kwargs['env']
         self.policy = kwargs['policy']
+        self.recorder = create_module(Recorder, self.use_ray, {'num_cpus':0}, self.cfg, type = 'interactor')
         self.n_interactors = self.cfg.n_interactors
-        self.interactors = [
-            Interactor(self.cfg, 
-                       id = i, 
-                       env = copy.deepcopy(self.env), 
-                       policy = copy.deepcopy(self.policy),
-                        tracker = kwargs.get('tracker', None),
-                        collector = kwargs.get('collector', None),
-                        recorder = kwargs.get('recorder', None),
-                        policy_mgr = kwargs.get('policy_mgr', None),
-            )
-            for i in range(self.n_interactors)]
+        self.interactors = [create_module(Interactor, self.use_ray, {'num_cpus':1 }, self.cfg,
+            id = i,
+            env = copy.deepcopy(self.env),
+            policy = copy.deepcopy(self.policy),
+            tracker = kwargs.get('tracker', None),
+            collector = kwargs.get('collector', None),
+            recorder = self.recorder,
+            policy_mgr = kwargs.get('policy_mgr', None),
+            ) for i in range(self.n_interactors)
+            ]
+        exec_method(self.logger, 'info', True, f"[InteractorMgr] Create {self.n_interactors} interactors!")
 
     def run(self):
         ''' run interactors
         '''
-        if self.cfg.interactor_mode == 'dummy':
-            for i in range(self.n_interactors):
-                self.interactors[i].run()
-        else:
-            raise NotImplementedError(f"[InteractorMgr.run] interactor_mode {self.cfg.interactor_mode} is not implemented!")
+        for i in range(self.n_interactors):
+            exec_method(self.interactors[i], 'run', False)
             
     def ray_run(self): 
         self.logger.info.remote(f"[InteractorMgr.run] Start interactors!")

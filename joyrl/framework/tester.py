@@ -30,7 +30,7 @@ class OnlineTester(Moduler):
         self._t_start()
 
     def _t_start(self):
-        exec_method(self.logger, 'info', False, "Start online tester!")
+        exec_method(self.logger, 'info', False, "[OnlineTester._t_start Start online tester!")
         self._t_eval_policy = threading.Thread(target=self._eval_policy)
         self._t_eval_policy.setDaemon(True)
         self._t_eval_policy.start()
@@ -46,7 +46,7 @@ class OnlineTester(Moduler):
         elif model_step_list[-1] > self.curr_test_step:
             return True, model_step_list[-1]
         
-    def _eval_policy(self, *args, **kwargs):
+    def _eval_policy(self, **kwargs):
         ''' Evaluate policy
         '''
         while True:
