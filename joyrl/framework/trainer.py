@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-01-03 17:12:56
+LastEditTime: 2024-01-04 13:25:24
 Discription: 
 '''
 import time
@@ -62,7 +62,7 @@ class Trainer(Moduler):
             if exec_method(self.tracker, 'pub_msg', True, Msg(type = MsgType.TRACKER_CHECK_TASK_END)):
                 e_t = time.time()
                 self.logger.info(f"[Trainer.run] Finish {self.cfg.mode}ing! Time cost: {e_t - s_t:.3f} s")
-                time.sleep(10)
+                time.sleep(3)
                 break
 
     def ray_run(self):

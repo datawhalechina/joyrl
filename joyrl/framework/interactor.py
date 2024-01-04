@@ -5,7 +5,7 @@ from joyrl.algos.base.exps import Exp
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
-from joyrl.utils.utils import exec_method
+from joyrl.utils.utils import exec_method, memory_profile
 
 class Interactor(Moduler):
     def __init__(self, cfg: MergedConfig, **kwargs) -> None:

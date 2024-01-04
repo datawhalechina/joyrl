@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-04-28 16:18:44
 LastEditor: JiangJi
-LastEditTime: 2024-01-03 17:30:51
+LastEditTime: 2024-01-04 13:06:08
 Discription: 
 '''
 import ray 
@@ -16,7 +16,7 @@ import time
 import threading
 
 import pandas
-from multiprocessing import Queue
+from queue import Queue
 from torch.utils.tensorboard import SummaryWriter  
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
@@ -42,16 +42,24 @@ class Recorder(Moduler):
         self._t_save_policy_summary.setDaemon(True)
         self._t_save_interact_summary.start()
         self._t_save_policy_summary.start()
-        
+
     def pub_msg(self, msg: Msg):
         ''' publish message
         '''
         msg_type, msg_data = msg.type, msg.data
         if msg_type == MsgType.RECORDER_PUT_INTERACT_SUMMARY:
             interact_summary_list = msg_data
-            self._add_summary(interact_summary_list, writter_type = 'interact')
+            for summary_data in interact_summary_list:
+                step, summary = summary_data
+                self._write_tb_scalar(step, summary, writter_type = 'interact')
+                self._write_dataframe(step, summary, writter_type = 'interact')
+            # self._add_summary(interact_summary_list, writter_type = 'interact')
         elif msg_type == MsgType.RECORDER_PUT_POLICY_SUMMARY:
             policy_summary_list = msg_data
+            # for summary_data in policy_summary_list:
+            #     step, summary = summary_data
+            #     self._write_tb_scalar(step, summary, writter_type = 'policy')
+            #     self._write_dataframe(step, summary, writter_type = 'policy')
             self._add_summary(policy_summary_list, writter_type = 'policy')
         else:
             raise NotImplementedError
@@ -63,10 +71,13 @@ class Recorder(Moduler):
             self.writters[writter_type] = SummaryWriter(log_dir=f"{self.cfg.tb_dir}/{writter_type}")
     
     def _add_summary(self, summary_data_list, writter_type = None):
-        while not self._summary_que_dict[writter_type].full():
-            self._summary_que_dict[writter_type].put(summary_data_list)
-            time.sleep(0.001)
-            break
+        while True:
+            try:
+                self._summary_que_dict[writter_type].put(summary_data_list, block = False)
+                return 
+            except:
+                self.logger.warning(f"[Recorder._add_summary] summary_que is full!")
+                pass
 
     def _write_tb_scalar(self, step, summary, writter_type):
         for key, value in summary.items():
@@ -85,29 +96,27 @@ class Recorder(Moduler):
 
     def _save_interact_summary(self):
         while True:
-            try:
-                while not self._summary_que_dict['interact'].empty():
-                    summary_data_list = self._summary_que_dict['interact'].get()
-                    for summary_data in summary_data_list:
-                        step, summary = summary_data
-                        self._write_tb_scalar(step, summary, writter_type = 'interact')
-                        self._write_dataframe(step, summary, writter_type = 'interact')
-                    break
-            except Exception as e:
-                break
+            try: 
+                summary_data_list = self._summary_que_dict['interact'].get(block = False)
+                for summary_data in summary_data_list:
+                    step, summary = summary_data
+                    self._write_tb_scalar(step, summary, writter_type = 'interact')
+                    self._write_dataframe(step, summary, writter_type = 'interact')
+            except:
+                # self.logger.warning("[Recorder._save_interact_summary] summary_que is empty!")
+                pass
 
     def _save_policy_summary(self):
         while True:
             try:
-                while not self._summary_que_dict['policy'].empty():
-                    summary_data_list = self._summary_que_dict['policy'].get()
-                    for summary_data in summary_data_list:
-                        step, summary = summary_data
-                        self._write_tb_scalar(step, summary, writter_type = 'policy')
-                        self._write_dataframe(step, summary, writter_type = 'policy')
-                    break
-            except Exception as e:
-                break       
+                summary_data_list = self._summary_que_dict['policy'].get(block = False)
+                for summary_data in summary_data_list:
+                    step, summary = summary_data
+                    self._write_tb_scalar(step, summary, writter_type = 'policy')
+                    self._write_dataframe(step, summary, writter_type = 'policy')
+            except:
+                # self.logger.warning("[Recorder._save_policy_summary] summary_que is empty!")
+                pass     
 
 class BaseTrajCollector:
     ''' Base class for trajectory collector

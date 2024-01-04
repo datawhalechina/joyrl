@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-03 00:44:32
+LastEditTime: 2024-01-04 13:47:44
 Discription: 
 '''
 import ray
@@ -17,6 +17,7 @@ from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
 from joyrl.algos.base.data_handler import BaseDataHandler
 from joyrl.framework.base import Moduler
+from joyrl.utils.utils import memory_profile
 
 class Collector(Moduler):
     ''' Collector for collecting training data

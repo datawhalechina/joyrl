@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-01-03 17:14:50
+LastEditTime: 2024-01-04 13:49:12
 Discription: 
 '''
 import sys,os
@@ -23,7 +23,7 @@ from joyrl.framework.recorder import Recorder
 from joyrl.framework.tester import OnlineTester
 from joyrl.framework.trainer import Trainer
 from joyrl.framework.policy_mgr import PolicyMgr
-from joyrl.utils.utils import merge_class_attrs, all_seed,save_frames_as_gif,create_module,exec_method
+from joyrl.utils.utils import merge_class_attrs, all_seed,save_frames_as_gif,create_module,exec_method,memory_profile
 from joyrl.envs.register import register_env
 
 class Launcher(object):
@@ -221,7 +221,7 @@ class Launcher(object):
                                 recorder = recorder,
                                 logger = logger)
         ray.get(trainer.ray_run.remote())
-    
+    @memory_profile
     def run(self) -> None:
         env = self.env_config() # create single env
         policy, data_handler = self.policy_config() # configure policy and data_handler
