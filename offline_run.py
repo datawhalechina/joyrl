@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-01-04 23:02:39
+LastEditTime: 2024-01-06 22:02:03
 Discription: 
 '''
 import sys,os
@@ -172,8 +172,8 @@ class Launcher(object):
         if self.cfg.n_interactors > 1: 
             is_remote = True
             ray.init()
-        if self.cfg.online_eval:
-            online_tester = create_module(OnlineTester, False, {'num_cpus':0}, self.cfg, env = env, policy = policy)
+        # if self.cfg.online_eval:
+        #     online_tester = create_module(OnlineTester, False, {'num_cpus':0}, self.cfg, env = env, policy = policy)
         tracker = create_module(Tracker, is_remote, {'num_cpus':0}, self.cfg)
         collector = create_module(Collector, is_remote, {'num_cpus':1}, self.cfg, data_handler = data_handler)
         policy_mgr = create_module(PolicyMgr, is_remote, {'num_cpus':0}, self.cfg, policy = policy)

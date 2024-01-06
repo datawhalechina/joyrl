@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-04 22:59:23
+LastEditTime: 2024-01-06 22:51:32
 Discription: 
 '''
 import ray
@@ -17,6 +17,7 @@ from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
 from joyrl.algos.base.data_handler import BaseDataHandler
 from joyrl.framework.base import Moduler
+from joyrl.utils.utils import exec_method
 
 class Collector(Moduler):
     ''' Collector for collecting training data
@@ -48,10 +49,12 @@ class Collector(Moduler):
             except Full:
                 self.logger.warning("[Collector.pub_msg] raw_exps_que is full!")
         elif msg_type == MsgType.COLLECTOR_GET_TRAINING_DATA:
-            try:
-                return self._training_data_que.get(block = False)
-            except:
-                return None
+            return self._get_training_data()
+            # try:
+            #     return self._training_data_que.get(block = False)
+            # except:
+            #     # exec_method(self.logger, 'warning', True, "[Collector.pub_msg] training_data_que is empty!")
+            #     return None
         elif msg_type == MsgType.COLLECTOR_GET_BUFFER_LENGTH:
             return self.get_buffer_length()
         else:
@@ -69,15 +72,13 @@ class Collector(Moduler):
         '''
         while True:
             training_data = self.data_handler.sample_training_data()
-            if training_data is None:
-                continue
-            else:
+            if training_data is not None:
                 try:
                     self._training_data_que.put(training_data, block = False)
                 except Full:
-                    # self.logger.warning("[Collector._sample_training_data] training_data_que is full!")
+                    # exec_method(self.logger, 'warning', True, "[Collector._prepare_training_data] training_data_que is full!")
                     pass
-
+            
     def _get_training_data(self):
         training_data = self.data_handler.sample_training_data() # sample training data
         return training_data

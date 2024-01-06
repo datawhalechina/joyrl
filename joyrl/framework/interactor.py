@@ -8,9 +8,9 @@ from joyrl.framework.base import Moduler
 from joyrl.framework.recorder import Recorder
 from joyrl.utils.utils import exec_method, create_module
 
-class Interactor(Moduler):
+class Interactor:
     def __init__(self, cfg: MergedConfig, **kwargs) -> None:
-        super().__init__(cfg, **kwargs)
+        self.cfg = cfg
         self.id = kwargs.get('id', 0)
         self.env = kwargs.get('env', None)
         self.policy = kwargs.get('policy', None)
@@ -18,6 +18,8 @@ class Interactor(Moduler):
         self.collector = kwargs['collector']
         self.recorder = kwargs['recorder']
         self.policy_mgr = kwargs['policy_mgr']
+        self.logger = kwargs['logger']
+        self.use_ray = kwargs['use_ray']
         self.seed = self.cfg.seed + self.id
         self.exps = [] # reset experiences
         self.summary = [] # reset summary
@@ -39,9 +41,9 @@ class Interactor(Moduler):
         ''' run in sync mode
         '''
         run_step = 0 # local run step
-        model_params = exec_method(self.policy_mgr, 'pub_msg', True,  Msg(type = MsgType.MODEL_MGR_GET_MODEL_PARAMS)) # get model params
-        self.policy.put_model_params(model_params)
         while True:
+            model_params = exec_method(self.policy_mgr, 'pub_msg', True,  Msg(type = MsgType.MODEL_MGR_GET_MODEL_PARAMS)) # get model params
+            self.policy.put_model_params(model_params)
             action = self.policy.get_action(self.curr_obs)
             obs, reward, terminated, truncated, info = self.env.step(action)
             interact_transition = {'interactor_id': self.id, 'state': self.curr_obs, 'action': action,'reward': reward, 'next_state': obs, 'done': terminated or truncated, 'info': info}
@@ -86,6 +88,8 @@ class InteractorMgr(Moduler):
             collector = kwargs.get('collector', None),
             recorder = self.recorder,
             policy_mgr = kwargs.get('policy_mgr', None),
+            logger = self.logger,
+            use_ray = self.use_ray,
             ) for i in range(self.n_interactors)
             ]
         exec_method(self.logger, 'info', True, f"[InteractorMgr] Create {self.n_interactors} interactors!")
@@ -94,7 +98,9 @@ class InteractorMgr(Moduler):
         ''' run interactors
         '''
         for i in range(self.n_interactors):
-            exec_method(self.interactors[i], 'run', False)
+            self.interactors[i].run.remote()
+        # for i in range(self.n_interactors):
+        #     exec_method(self.interactors[i], 'run', False)
             
     def ray_run(self): 
         self.logger.info.remote(f"[InteractorMgr.run] Start interactors!")

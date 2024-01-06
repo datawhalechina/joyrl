@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-01-04 23:52:09
+LastEditTime: 2024-01-06 22:39:42
 Discription: 
 '''
 import time
@@ -32,7 +32,6 @@ class Trainer(Moduler):
         '''
         def print_cfg(cfg, name = ''):
             cfg_dict = vars(cfg)
-            exec_method(self.logger, 'info', True, ''.join(['='] * 80))
             exec_method(self.logger, 'info', True, f"{name}:")
             exec_method(self.logger, 'info', True, ''.join(['='] * 80))
             tplt = "{:^20}\t{:^20}\t{:^20}"
@@ -59,6 +58,7 @@ class Trainer(Moduler):
             exec_method(self.interactor_mgr, 'run', False)
             exec_method(self.learner_mgr, 'run', False)
             while True:
+                time.sleep(0.1)
                 if exec_method(self.tracker, 'pub_msg', True, Msg(type = MsgType.TRACKER_CHECK_TASK_END)):
                     e_t = time.time()
                     exec_method(self.logger, 'info', True, f"[Trainer.run] Finish {self.cfg.mode}ing! Time cost: {e_t - s_t:.3f} s")
