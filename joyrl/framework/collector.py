@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-06 22:51:32
+LastEditTime: 2024-01-07 22:03:28
 Discription: 
 '''
 import ray
@@ -35,8 +35,7 @@ class Collector(Moduler):
         self._t_handle_exps.start()
         self._t_prepare_training_data = threading.Thread(target=self._prepare_training_data)
         self._t_prepare_training_data.setDaemon(True)
-        self._t_prepare_training_data.start()
-    
+        self._t_prepare_training_data.start()  
 
     def pub_msg(self, msg: Msg):
         ''' publish message
@@ -49,12 +48,11 @@ class Collector(Moduler):
             except Full:
                 self.logger.warning("[Collector.pub_msg] raw_exps_que is full!")
         elif msg_type == MsgType.COLLECTOR_GET_TRAINING_DATA:
-            return self._get_training_data()
-            # try:
-            #     return self._training_data_que.get(block = False)
-            # except:
-            #     # exec_method(self.logger, 'warning', True, "[Collector.pub_msg] training_data_que is empty!")
-            #     return None
+            try:
+                return self._training_data_que.get(block = False)
+            except:
+                # exec_method(self.logger, 'warning', True, "[Collector.pub_msg] training_data_que is empty!")
+                return None
         elif msg_type == MsgType.COLLECTOR_GET_BUFFER_LENGTH:
             return self.get_buffer_length()
         else:

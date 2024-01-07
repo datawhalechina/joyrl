@@ -92,15 +92,13 @@ class InteractorMgr(Moduler):
             use_ray = self.use_ray,
             ) for i in range(self.n_interactors)
             ]
-        exec_method(self.logger, 'info', True, f"[InteractorMgr] Create {self.n_interactors} interactors!")
+        exec_method(self.logger, 'info', True, f"[InteractorMgr] Create {self.n_interactors} interactors!, use_ray: {self.use_ray}")
 
     def run(self):
         ''' run interactors
         '''
         for i in range(self.n_interactors):
-            self.interactors[i].run.remote()
-        # for i in range(self.n_interactors):
-        #     exec_method(self.interactors[i], 'run', False)
+            exec_method(self.interactors[i], 'run', False)
             
     def ray_run(self): 
         self.logger.info.remote(f"[InteractorMgr.run] Start interactors!")

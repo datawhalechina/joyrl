@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-01-06 22:54:09
+LastEditTime: 2024-01-07 22:18:18
 Discription: 
 '''
 import ray
@@ -42,7 +42,6 @@ class Learner:
     def run(self):
         run_step = 0
         while True:
-            s_t = time.time()
             training_data = exec_method(self.collector, 'pub_msg', True, Msg(type = MsgType.COLLECTOR_GET_TRAINING_DATA))
             if training_data is not None:
                 self.policy.learn(**training_data)
@@ -55,8 +54,7 @@ class Learner:
                 if global_update_step % self.cfg.policy_summary_fre == 0:
                     policy_summary = [(global_update_step,self.policy.get_summary())]
                     exec_method(self.recorder, 'pub_msg', False, Msg(type = MsgType.RECORDER_PUT_SUMMARY, data = policy_summary))
-                run_step += 1
-                # exec_method(self.logger, 'info', True, f"Learner {self.id} finished {run_step} update steps in {time.time() - s_t:.4f}s!")
+            run_step += 1
             if run_step >= self.n_update_steps:
                 return
     
@@ -79,9 +77,7 @@ class LearnerMgr(Moduler):
                                        use_ray = self.use_ray,
                                        )      
                          for i in range(self.cfg.n_learners)]
-        exec_method(self.logger, 'info', True, f"[LearnerMgr] Create {self.cfg.n_learners} learners!")
+        exec_method(self.logger, 'info', True, f"[LearnerMgr] Create {self.cfg.n_learners} learners!, use_ray: {self.use_ray}")
     def run(self):
         for i in range(self.cfg.n_learners):
-            self.learners[i].run.remote()
-        # for i in range(self.cfg.n_learners):
-        #     exec_method(self.learners[i], 'run', False)
+            exec_method(self.learners[i], 'run', False)

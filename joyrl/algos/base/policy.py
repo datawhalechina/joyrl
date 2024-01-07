@@ -53,15 +53,19 @@ class BasePolicy(nn.Module):
         '''
         self.load_state_dict(model_params)
 
-    def get_action(self, state ,**kwargs):
+    def get_action(self, state, **kwargs):
         ''' get action
         '''
-        if self.cfg.mode == 'train':
+        mode = kwargs.get('mode', None)
+        if mode is None: 
+            mode = 'sample' if self.cfg.mode == 'train' else 'predict'
+        if mode == 'sample':
             return self.sample_action(state, **kwargs)
-        elif self.cfg.mode == 'test':
+        elif mode == 'predict':
             return self.predict_action(state, **kwargs)
         else:
-            raise NameError('mode must be train or test')
+            raise NameError('[get_action] mode must be sample or predict')
+        
     def sample_action(self, state, **kwargs):
         ''' sample action
         '''
@@ -109,7 +113,10 @@ class BasePolicy(nn.Module):
     def load_model(self, fpath):
         ''' load model
         '''
-        self.load_state_dict(torch.load(fpath))
+        try:
+            self.load_state_dict(torch.load(fpath, map_location=self.device))
+        except:
+            print(f"load model from {fpath} failed, try to load model from cpu")
 
 class ToyPolicy:
     ''' base policy for traditional RL or non DRL
@@ -143,15 +150,18 @@ class ToyPolicy:
     def get_summary(self):
         return self.summary['scalar']
     
-    def get_action(self, state ,**kwargs):
+    def get_action(self, state, **kwargs):
         ''' get action
         '''
-        if self.cfg.mode == 'train':
+        mode = kwargs.get('mode', None)
+        if mode is None: 
+            mode = 'sample' if self.cfg.mode == 'train' else 'predict'
+        if mode == 'sample':
             return self.sample_action(state, **kwargs)
-        elif self.cfg.mode == 'test':
+        elif mode == 'predict':
             return self.predict_action(state, **kwargs)
         else:
-            raise NameError('mode must be train or test')
+            raise NameError('mode must be sample or predict')
         
     def sample_action(self, state, **kwargs):
         raise NotImplementedError

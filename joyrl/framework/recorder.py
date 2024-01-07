@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-04-28 16:18:44
 LastEditor: JiangJi
-LastEditTime: 2024-01-04 22:56:51
+LastEditTime: 2024-01-07 00:42:40
 Discription: 
 '''
 import ray 
@@ -88,7 +88,7 @@ class Recorder(Moduler):
                     step, summary = summary_data
                     self._write_tb_scalar(step, summary)
                     self._write_dataframe(step, summary)
-            time.sleep(0.01)
+            time.sleep(0.001)
 
 class BaseTrajCollector:
     ''' Base class for trajectory collector

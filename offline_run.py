@@ -5,15 +5,14 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-01-06 22:02:03
+LastEditTime: 2024-01-07 22:01:19
 Discription: 
 '''
 import sys,os
 import ray
-import argparse,datetime,importlib,yaml,time 
+import argparse,datetime,importlib,yaml
 import gymnasium as gym
 from pathlib import Path
-from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import GeneralConfig, MergedConfig, DefaultConfig
 from joyrl.framework.collector import Collector
 from joyrl.framework.tracker import Tracker
@@ -23,8 +22,7 @@ from joyrl.framework.recorder import Recorder
 from joyrl.framework.tester import OnlineTester
 from joyrl.framework.trainer import Trainer
 from joyrl.framework.policy_mgr import PolicyMgr
-from joyrl.utils.utils import merge_class_attrs, all_seed,save_frames_as_gif,create_module,exec_method
-from joyrl.envs.register import register_env
+from joyrl.utils.utils import merge_class_attrs, all_seed, create_module,exec_method
 
 class Launcher(object):
     def __init__(self, **kwargs):
@@ -164,7 +162,6 @@ class Launcher(object):
         data_handler = data_handler_mod.DataHandler(self.cfg)
         return policy, data_handler
 
-
     def run(self) -> None:
         env = self.env_config() # create single env
         policy, data_handler = self.policy_config() # configure policy and data_handler
@@ -172,8 +169,8 @@ class Launcher(object):
         if self.cfg.n_interactors > 1: 
             is_remote = True
             ray.init()
-        # if self.cfg.online_eval:
-        #     online_tester = create_module(OnlineTester, False, {'num_cpus':0}, self.cfg, env = env, policy = policy)
+        if self.cfg.online_eval:
+            online_tester = create_module(OnlineTester, False, {'num_cpus':0}, self.cfg, env = env, policy = policy)
         tracker = create_module(Tracker, is_remote, {'num_cpus':0}, self.cfg)
         collector = create_module(Collector, is_remote, {'num_cpus':1}, self.cfg, data_handler = data_handler)
         policy_mgr = create_module(PolicyMgr, is_remote, {'num_cpus':0}, self.cfg, policy = policy)
