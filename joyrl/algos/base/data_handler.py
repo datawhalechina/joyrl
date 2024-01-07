@@ -5,12 +5,12 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2023-12-26 22:26:23
+LastEditTime: 2024-01-08 00:38:10
 Discription: 
 '''
 import numpy as np
-from joyrl.algos.base.buffers import BufferCreator
-from joyrl.algos.base.exps import Exp
+from joyrl.algos.base.buffer import BufferCreator
+from joyrl.algos.base.experience import Exp
 
 class BaseDataHandler:
     ''' Basic data handler

@@ -1,7 +1,7 @@
 import gymnasium as gym
 import ray
 import copy
-from joyrl.algos.base.exps import Exp
+from joyrl.algos.base.experience import Exp
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler

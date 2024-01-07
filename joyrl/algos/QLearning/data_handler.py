@@ -5,12 +5,12 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-24 19:13:11
 LastEditor: JiangJi
-LastEditTime: 2023-12-26 22:26:27
+LastEditTime: 2024-01-08 00:38:56
 Discription: 
 '''
 import numpy as np
 from joyrl.algos.base.data_handler import BaseDataHandler
-from joyrl.algos.base.exps import Exp
+from joyrl.algos.base.experience import Exp
 
 class DataHandler(BaseDataHandler):
     def __init__(self,cfg) -> None:

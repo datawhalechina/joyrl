@@ -5,12 +5,13 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2023-12-24 21:43:29
+LastEditTime: 2024-01-08 01:12:49
 Discription: 
 '''
+import copy
 import torch.nn as nn
 from joyrl.algos.base.base_layer import create_layer, LayerConfig
-from joyrl.algos.base.action_layers import ActionLayerType, DiscreteActionLayer, ContinuousActionLayer, DPGActionLayer
+from joyrl.algos.base.action_layer import ActionLayerType, DiscreteActionLayer, ContinuousActionLayer, DPGActionLayer
 
 class BaseNework(nn.Module):
     def __init__(self) -> None:
@@ -63,7 +64,7 @@ class QNetwork(BaseNework):
                 layer.reset_noise()
         
 class ValueNetwork(BaseNework):
-    ''' Value network, for policy-based methods,  in which the actor and critic share the same network
+    ''' Value network, for policy-based methods,  in which the branch_layers and critic share the same network
     '''
     def __init__(self, cfg, state_size, action_space) -> None:
         super(ValueNetwork, self).__init__()
@@ -160,18 +161,78 @@ class CriticNetwork(BaseCriticNetwork):
             x = layer(x)
         value = self.head_layer(x)
         return value
-        
+
+class BranchLayers(nn.Module):
+    def __init__(self, cfg, input_size_list, **kwargs) -> None:
+        super(BranchLayers, self).__init__(**kwargs)
+        self.input_size_list = input_size_list
+        self.branch_layers = nn.ModuleList([nn.ModuleList() for _ in range(len(self.input_size_list))])
+        self.output_size_list = copy.deepcopy(input_size_list)
+        self.branch_layers_cfg = cfg.branch_layers
+        for i, branch_layer_cfg in enumerate(self.branch_layers_cfg):
+            if i >= len(input_size_list): # if branch_layers_cfg is more than input_size
+                break
+            input_size = input_size_list[i]
+            for layer_cfg_dic in branch_layer_cfg:
+                if "layer_type" not in layer_cfg_dic:
+                    raise ValueError("layer_type must be specified in layer_cfg")
+                layer_cfg = LayerConfig(**layer_cfg_dic)
+                layer, layer_output_size = create_layer(input_size, layer_cfg)
+                self.branch_layers[i].append(layer)
+                input_size = layer_output_size
+            self.output_size_list[i] = layer_output_size
+    def forward(self, x):
+        for i, branch_layer in enumerate(self.branch_layers):
+            for layer in branch_layer:
+                x[i] = layer(x[i])
+        return x
+    
+class MergeLayer(nn.Module):
+    def __init__(self, cfg, input_size_list, **kwargs) -> None:
+        super(MergeLayer, self).__init__(**kwargs)
+        input_dim = sum([input_size[1] for input_size in input_size_list])
+        self.input_size = [None, input_dim]
+        self.merge_layers = nn.ModuleList()
+        self.output_size = [None, None]
+        self.merge_layers_cfg = cfg.merge_layers
+        for layer_cfg_dic in self.merge_layers_cfg:
+            if "layer_type" not in layer_cfg_dic:
+                raise ValueError("layer_type must be specified in layer_cfg")
+            layer_cfg = LayerConfig(**layer_cfg_dic)
+            layer, layer_output_size = create_layer(self.input_size, layer_cfg)
+            self.merge_layers.append(layer)
+            self.input_size = layer_output_size
+        self.output_size = layer_output_size
+    def forward(self, x):
+        x = torch.cat(x, dim=1)
+        for layer in self.merge_layers:
+            x = layer(x)
+        return x
 
 if __name__ == "__main__":
     # test：export PYTHONPATH=./:$PYTHONPATH
     import torch
-    from config.general_config import MergedConfig
+    from joyrl.framework.config import MergedConfig
     import gymnasium as gym
     cfg = MergedConfig()
-    state_size = [None,4]
+    state_size = [[None, 4], [None, 4]]
     cfg.n_actions = 2
     cfg.continuous = False
     cfg.min_policy = 0
+    cfg.branch_layers = [
+        [
+            {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
+            {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
+        ],
+        [
+            {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
+            {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
+        ],
+    ]
+    cfg.merge_layers = [
+        {'layer_type': 'linear', 'layer_size': [2], 'activation': 'ReLU'},
+        {'layer_type': 'linear', 'layer_size': [2], 'activation': 'ReLU'},
+    ]
     cfg.value_layers = [
         {'layer_type': 'embed', 'n_embeddings': 10, 'embedding_dim': 32, 'activation': 'none'},
         {'layer_type': 'Linear', 'layer_size': [64], 'activation': 'ReLU'},
@@ -182,9 +243,12 @@ if __name__ == "__main__":
         {'layer_type': 'linear', 'layer_size': [256], 'activation': 'ReLU'},
     ]
     action_space = gym.spaces.Discrete(2)
-    actor = ActorNetwork(cfg, state_size, action_space)
-    x = torch.tensor([[ 0.0012,  0.0450, -0.0356,  0.0449]])
-    x = actor(x)
+    branch_layers = BranchLayers(cfg, state_size)
+    merge_layer = MergeLayer(cfg, branch_layers.output_size_list)
+    x = [torch.tensor([[ 0.0012,  0.0450, -0.0356,  0.0449]]), torch.tensor([[ 0.0012,  0.0450, -0.0356,  0.0449]])]
+    x = branch_layers(x)
+    x = merge_layer(x)
+    print(branch_layers.output_size_list)
     print(x)
     # value_net = QNetwork(cfg, state_dim, cfg.n_actions)
     # print(value_net)
