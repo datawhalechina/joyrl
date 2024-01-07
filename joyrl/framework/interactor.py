@@ -97,10 +97,10 @@ class InteractorMgr(Moduler):
     def run(self):
         ''' run interactors
         '''
-        for i in range(self.n_interactors):
-            self.interactors[i].run.remote()
         # for i in range(self.n_interactors):
-        #     exec_method(self.interactors[i], 'run', False)
+        #     self.interactors[i].run.remote()
+        for i in range(self.n_interactors):
+            exec_method(self.interactors[i], 'run', False)
             
     def ray_run(self): 
         self.logger.info.remote(f"[InteractorMgr.run] Start interactors!")

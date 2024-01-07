@@ -8,7 +8,7 @@ LastEditor: JiangJi
 LastEditTime: 2024-01-06 22:02:03
 Discription: 
 '''
-import sys,os
+import sys,os,copy
 import ray
 import argparse,datetime,importlib,yaml,time 
 import gymnasium as gym
@@ -144,12 +144,24 @@ class Launcher(object):
             env = gym.make(**kwargs)
         setattr(self.cfg, 'obs_space', env.observation_space)
         setattr(self.cfg, 'action_space', env.action_space)
-        if self.env_cfg.wrapper is not None:
-            wrapper_class_path = self.env_cfg.wrapper.split('.')[:-1]
-            wrapper_class_name = self.env_cfg.wrapper.split('.')[-1]
-            env_wapper = __import__('.'.join(wrapper_class_path), fromlist=[wrapper_class_name])
-            env = getattr(env_wapper, wrapper_class_name)(env)
+        if self.env_cfg.wrapper is None:
+            return env
+
+        for wrapper in self.env_cfg.wrapper: 
+            wrapper_name = wrapper['wrapper_name']
+            wrapper_kwargs = copy.deepcopy(wrapper)
+            wrapper_kwargs.pop("wrapper_name")
+            mm = importlib.import_module('joyrl.envs.gym')
+            env_wapper_cls = eval(f'mm.wrappers.{wrapper_name}')
+            try:
+                env = env_wapper_cls(env, **wrapper_kwargs)
+            except Exception as e:
+                env = env_wapper_cls(env)
+        
+        setattr(self.cfg, 'obs_space', env.observation_space)
+        setattr(self.cfg, 'action_space', env.action_space)
         return env
+    
     
     def policy_config(self):
         ''' configure policy and data_handler

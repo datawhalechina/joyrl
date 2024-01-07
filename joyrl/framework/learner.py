@@ -55,7 +55,7 @@ class Learner:
                 if global_update_step % self.cfg.policy_summary_fre == 0:
                     policy_summary = [(global_update_step,self.policy.get_summary())]
                     exec_method(self.recorder, 'pub_msg', False, Msg(type = MsgType.RECORDER_PUT_SUMMARY, data = policy_summary))
-                run_step += 1
+            run_step += 1
                 # exec_method(self.logger, 'info', True, f"Learner {self.id} finished {run_step} update steps in {time.time() - s_t:.4f}s!")
             if run_step >= self.n_update_steps:
                 return
@@ -81,7 +81,7 @@ class LearnerMgr(Moduler):
                          for i in range(self.cfg.n_learners)]
         exec_method(self.logger, 'info', True, f"[LearnerMgr] Create {self.cfg.n_learners} learners!")
     def run(self):
-        for i in range(self.cfg.n_learners):
-            self.learners[i].run.remote()
         # for i in range(self.cfg.n_learners):
-        #     exec_method(self.learners[i], 'run', False)
+        #     self.learners[i].run.remote()
+        for i in range(self.cfg.n_learners):
+            exec_method(self.learners[i], 'run', False)

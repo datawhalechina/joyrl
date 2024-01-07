@@ -49,12 +49,12 @@ class Collector(Moduler):
             except Full:
                 self.logger.warning("[Collector.pub_msg] raw_exps_que is full!")
         elif msg_type == MsgType.COLLECTOR_GET_TRAINING_DATA:
-            return self._get_training_data()
-            # try:
-            #     return self._training_data_que.get(block = False)
-            # except:
-            #     # exec_method(self.logger, 'warning', True, "[Collector.pub_msg] training_data_que is empty!")
-            #     return None
+            # return self._get_training_data()
+            try:
+                return self._training_data_que.get(block = False)
+            except:
+                # exec_method(self.logger, 'warning', True, "[Collector.pub_msg] training_data_que is empty!")
+                return None
         elif msg_type == MsgType.COLLECTOR_GET_BUFFER_LENGTH:
             return self.get_buffer_length()
         else:
