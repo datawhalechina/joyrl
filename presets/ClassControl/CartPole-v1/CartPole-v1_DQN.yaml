@@ -4,7 +4,7 @@ general_cfg:
   device: cpu 
   mode: train 
   collect_traj: false 
-  n_interactors: 2
+  n_interactors: 1
   load_checkpoint: false
   load_path: Train_single_CartPole-v1_DQN_20230515-211721
   load_model_step: best 
@@ -16,7 +16,24 @@ general_cfg:
   model_save_fre: 500
 
 algo_cfg:
-  value_layers:
+  # branch_layers:
+  #   - name: feature_1
+  #     layers: 
+  #       - layer_type: linear
+  #         layer_size: [256]
+  #         activation: relu
+  #       - layer_type: linear
+  #         layer_size: [256]
+  #         activation: relu
+  #   - name: feature_2
+  #     layers: 
+  #       - layer_type: linear
+  #         layer_size: [256]
+  #         activation: relu
+  #       - layer_type: linear
+  #         layer_size: [256]
+  #         activation: relu
+  merge_layers:
     - layer_type: linear
       layer_size: [256]
       activation: relu

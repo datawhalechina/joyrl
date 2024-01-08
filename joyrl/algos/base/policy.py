@@ -26,11 +26,11 @@ class BasePolicy(nn.Module):
         # action_size must be [action_dim_1, action_dim_2, ...]
         if isinstance(self.obs_space, Box):
             if len(self.obs_space.shape) == 3:
-                self.state_size = [None, self.obs_space.shape[0], self.obs_space.shape[1], self.obs_space.shape[2]]
+                self.state_size = [[None, self.obs_space.shape[0], self.obs_space.shape[1], self.obs_space.shape[2]]]
             else:
-                self.state_size = [None, self.obs_space.shape[0]]
+                self.state_size = [[None, self.obs_space.shape[0]]]
         elif isinstance(self.obs_space, Discrete):
-            self.state_size = [None, self.obs_space.n]
+            self.state_size = [[None, self.obs_space.n]]
         else:
             raise ValueError('obs_space type error')
         if isinstance(self.action_space, Box):
