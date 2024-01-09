@@ -8,6 +8,13 @@ activation_dics = {'relu': nn.ReLU,
                    'softmax': nn.Softmax,
                    'leakyrelu': nn.LeakyReLU,
                    'none': nn.Identity}  
+pooling_dict = {
+    'avg2d': nn.AvgPool2d,
+    'max2d': nn.MaxPool2d
+}
+norm_dict = {
+    'layernorm': nn.LayerNorm
+}
 
 class LayerConfig:
     ''' layer config class
@@ -134,6 +141,7 @@ def dense_layer(in_dim,out_dim,act_name='relu'):
 def conv2d_layer(input_size, layer_cfg: LayerConfig):
     ''' conv2d layer
     '''
+    act_name = layer_cfg.activation.lower()
     in_channel = layer_cfg.in_channel
     out_channel = layer_cfg.out_channel
     kernel_size = layer_cfg.kernel_size if hasattr(layer_cfg,'kernel_size') else 4
@@ -145,7 +153,8 @@ def conv2d_layer(input_size, layer_cfg: LayerConfig):
             self.conv = nn.Conv2d(in_channel,out_channel,kernel_size,stride,padding)
         def forward(self,x):
             return self.conv(x)
-    layer = Conv2dLayer(in_channel,out_channel,kernel_size,stride,padding)
+    cnn_layer = Conv2dLayer(in_channel, out_channel, kernel_size, stride, padding)
+    layer = nn.Sequential(cnn_layer, activation_dics[act_name]())
     output_size = get_output_size_with_batch(layer, input_size)
     return layer, output_size
 
@@ -158,6 +167,26 @@ def flatten_layer(input_size, layer_cfg: LayerConfig):
     #     def forward(self,x):
     #         return x.view(x.size(0),-1)
     layer = nn.Sequential(nn.Flatten())
+    output_size = get_output_size_with_batch(layer, input_size)
+    return layer, output_size
+
+def pooling_layer(input_size, layer_cfg: LayerConfig):
+    pooling_type = layer_cfg.pooling_type.lower()
+    kernel_size = layer_cfg.kernel_size
+    stride = layer_cfg.stride
+    padding = layer_cfg.padding
+    if pooling_type not in pooling_dict:
+        raise KeyError("pooling_type Error! you can add the pooling_type in joyrl/algos/base/base_layer.py")
+    layer = pooling_dict[pooling_type](kernel_size=kernel_size, stride=stride, padding=padding)
+    output_size = get_output_size_with_batch(layer, input_size)
+    return layer, output_size
+
+def norm_layer(input_size, layer_cfg: LayerConfig):
+    norm_type = layer_cfg.norm_type.lower()
+    normalized_shape = layer_cfg.normalized_shape
+    if norm_type not in norm_dict:
+        raise KeyError("norm_type Error! you can add the norm_type in joyrl/algos/base/base_layer.py")
+    layer = norm_dict[norm_type](normalized_shape=normalized_shape)
     output_size = get_output_size_with_batch(layer, input_size)
     return layer, output_size
 
@@ -178,5 +207,9 @@ def create_layer(input_size: list, layer_cfg: LayerConfig):
         return embedding_layer(input_size, layer_cfg)
     elif layer_type == "flatten":
         return flatten_layer(input_size, layer_cfg)
+    elif layer_type == "pooling":
+        return pooling_layer(input_size, layer_cfg)
+    elif layer_type == "norm":
+        return norm_layer(input_size, layer_cfg)
     else:
         raise NotImplementedError

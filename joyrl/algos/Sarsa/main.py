@@ -18,7 +18,7 @@ import gym
 import datetime
 import argparse
 from envs.register import register_env
-from envs.wrappers import CliffWalkingWapper
+from joyrl.envs.gym.wrappers import CliffWalkingWapper
 from Sarsa.sarsa import Sarsa
 from common.utils import all_seed
 from common.launcher import Launcher

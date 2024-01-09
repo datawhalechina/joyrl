@@ -1,0 +1,69 @@
+general_cfg:
+  algo_name: DQN 
+  env_name: gym 
+  device: cuda   
+  mode: test 
+  collect_traj: false 
+  n_interactors: 1
+  load_checkpoint: true
+  load_path: Train_CarRacing-v2_DQN_20240109-221840
+  load_model_step: best # 754
+  max_episode: 3
+  max_step: 1200
+  seed: 2023 
+
+algo_cfg:
+  merge_layers:
+  branch_layers:
+    - name: feature_1
+      layers:
+      - layer_type: conv2d
+        in_channel: 4
+        out_channel: 16 
+        kernel_size: 4
+        stride: 2
+        activation: relu
+      - layer_type: pooling
+        pooling_type: max2d
+        kernel_size: 2
+        stride: 2
+        padding: 0
+      - layer_type: conv2d
+        in_channel: 16
+        out_channel: 32 
+        kernel_size: 4
+        stride: 2
+        activation: relu
+      - layer_type: pooling
+        pooling_type: avg2d
+        kernel_size: 2
+        stride: 2
+        padding: 0
+      - layer_type: flatten
+      - layer_type: norm
+        norm_type: LayerNorm
+        normalized_shape: 512
+      - layer_type: linear
+        layer_size: [128]
+        activation: relu
+  batch_size: 128 
+  buffer_type: REPLAY_QUE
+  buffer_size: 12000
+  epsilon_decay: 2000
+  epsilon_end: 0.02
+  epsilon_start: 0.99
+  gamma: 0.99
+  lr: 1.5e-4 # 2.0e-4
+  target_update: 4
+env_cfg:
+  id: CarRacing-v2
+  render_mode: human
+  continuous: False
+  wrapper:
+    - wrapper_name: CarV2SkipFrame
+      skip: 5
+    - wrapper_name: GrayScaleObservation
+    - wrapper_name: ResizeObservation
+      shape: 84
+    - wrapper_name: FrameStack
+      num_stack: 4
