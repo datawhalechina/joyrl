@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-08 13:37:26
+LastEditTime: 2024-01-09 13:50:07
 Discription: 
 '''
 import copy
@@ -13,14 +13,14 @@ import torch
 import torch.nn as nn
 from joyrl.algos.base.base_layer import create_layer, LayerConfig
 from joyrl.algos.base.action_layer import ActionLayerType, DiscreteActionLayer, ContinuousActionLayer, DPGActionLayer
-
+from joyrl.framework.config import MergedConfig
 class BranchLayers(nn.Module):
-    def __init__(self, cfg, input_size_list, **kwargs) -> None:
+    def __init__(self, branch_layers_cfg : list, input_size_list, **kwargs) -> None:
         super(BranchLayers, self).__init__(**kwargs)
         self.input_size_list = input_size_list
         self.branch_layers = nn.ModuleList([nn.ModuleList() for _ in range(len(self.input_size_list))])
         self.output_size_list = copy.deepcopy(input_size_list)
-        self.branch_layers_cfg = cfg.branch_layers
+        self.branch_layers_cfg = branch_layers_cfg
         if self.branch_layers_cfg is None:
             self.branch_layers_cfg = []
         for i, branch_layer_cfg in enumerate(self.branch_layers_cfg):
@@ -36,6 +36,7 @@ class BranchLayers(nn.Module):
                 self.branch_layers[i].append(layer)
                 input_size = layer_output_size
             self.output_size_list[i] = layer_output_size
+            
     def forward(self, x):
         if isinstance(x, torch.Tensor): # if x is a tensor, convert it to a list
             x = [x]
@@ -43,6 +44,7 @@ class BranchLayers(nn.Module):
             for layer in branch_layer:
                 x[i] = layer(x[i])
         return x
+    
     def reset_noise(self):
         ''' reset noise for noisy layers
         '''
@@ -52,13 +54,15 @@ class BranchLayers(nn.Module):
                     layer.reset_noise()
     
 class MergeLayer(nn.Module):
-    def __init__(self, cfg, input_size_list, **kwargs) -> None:
+    def __init__(self, merge_layers_cfg: list, input_size_list: list, **kwargs) -> None:
         super(MergeLayer, self).__init__(**kwargs)
         input_dim = sum([input_size[1] for input_size in input_size_list])
         self.input_size = [None, input_dim]
         self.output_size = copy.deepcopy(self.input_size)
         self.merge_layers = nn.ModuleList()
-        self.merge_layers_cfg = cfg.merge_layers
+        self.merge_layers_cfg = merge_layers_cfg
+        if self.merge_layers_cfg is None:
+            self.merge_layers_cfg = []
         for layer_cfg_dic in self.merge_layers_cfg:
             if "layer_type" not in layer_cfg_dic:
                 raise ValueError("layer_type must be specified in layer_cfg")
@@ -80,13 +84,15 @@ class MergeLayer(nn.Module):
                 layer.reset_noise()
     
 class BaseNework(nn.Module):
-    def __init__(self, cfg) -> None:
+    def __init__(self, cfg: MergedConfig, state_size_list: list, action_size_list: list) -> None:
         super(BaseNework, self).__init__()
         self.cfg = cfg
+        self.state_size_list = state_size_list
+        self.action_size_list = action_size_list
         
     def create_graph(self):
-        self.branch_layers = BranchLayers(self.cfg, [[None, 1], [None, 1]])
-        self.merge_layer = MergeLayer(self.cfg, self.branch_layers.output_size_list)
+        self.branch_layers = BranchLayers(self.cfg.branch_layers, [[None, 1], [None, 1]])
+        self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
 
     def forward(self, x):
         x = self.branch_layers(x)
@@ -96,7 +102,7 @@ class BaseNework(nn.Module):
 class QNetwork(BaseNework):
     ''' Q network, for value-based methods like DQN
     '''
-    def __init__(self, cfg, state_size_list, action_size_list):
+    def __init__(self, cfg: MergedConfig, state_size_list: list, action_size_list: list):
         '''_summary_
 
         Args:
@@ -106,23 +112,21 @@ class QNetwork(BaseNework):
         Raises:
             ValueError: _description_
         '''
-        super(QNetwork, self).__init__(cfg)
-        self.state_size_list = state_size_list
-        self.action_size_list = action_size_list
+        super(QNetwork, self).__init__(cfg, state_size_list, action_size_list)
         self.dueling = hasattr(cfg, 'dueling') and cfg.dueling
         self.create_graph()
 
     def create_graph(self):
-        self.branch_layers = BranchLayers(self.cfg, self.state_size_list)
-        self.merge_layer = MergeLayer(self.cfg, self.branch_layers.output_size_list)
+        self.branch_layers = BranchLayers(self.cfg.branch_layers, self.state_size_list)
+        self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
         if self.dueling:
             state_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
-            self.state_value_layer, layer_out_size = create_layer(self.merge_layer.output_size, state_value_layer_cfg)
+            self.state_value_layer, _ = create_layer(self.merge_layer.output_size, state_value_layer_cfg)
             action_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_size_list[0]], activation='none')
-            self.action_value_layer, layer_out_size = create_layer(self.merge_layer.output_size, action_value_layer_cfg)
+            self.action_value_layer, _ = create_layer(self.merge_layer.output_size, action_value_layer_cfg)
         else:
             action_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_size_list[0]], activation='none')
-            self.action_value_layer, layer_out_size = create_layer(self.merge_layer.output_size, action_layer_cfg)
+            self.action_value_layer, _ = create_layer(self.merge_layer.output_size, action_layer_cfg)
 
     def forward(self, x):
         x = self.branch_layers(x)
@@ -144,100 +148,73 @@ class QNetwork(BaseNework):
 class ValueNetwork(BaseNework):
     ''' Value network, for policy-based methods,  in which the branch_layers and critic share the same network
     '''
-    def __init__(self, cfg, state_size, action_space) -> None:
-        super(ValueNetwork, self).__init__(cfg)
-        self.cfg = cfg
-        self.continuous = action_space.continuous
-        self.layers_cfg_dic = cfg.value_layers # load layers config
-        self.layers = nn.ModuleList()
-        output_size = state_size
-        for layer_cfg_dic in self.layers_cfg_dic:
-            if "layer_type" not in layer_cfg_dic:
-                raise ValueError("layer_type must be specified in layer_cfg")
-            layer_cfg = LayerConfig(**layer_cfg_dic)
-            layer, layer_out_size = create_layer(output_size, layer_cfg)
-            output_size = layer_out_size
-            self.layers.append(layer) 
-        value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
-        self.value_layer, layer_out_size = create_layer(output_size, value_layer_cfg)
-        if self.continuous:
-            self.action_layer = ContinuousActionLayer(cfg, output_size, action_space)
-        else:
-            self.action_layer = DiscreteActionLayer(cfg, output_size, action_space)
-    def forward(self, x, legal_actions=None):
-        for layer in self.layers:
-            x = layer(x)
-        value = self.value_layer(x)
-        if self.continuous:
-            mu, sigma = self.action_layer(x)
-            return value, mu, sigma
-        else:
-            probs = self.action_layer(x, legal_actions)
-            return value, probs
+    def __init__(self, cfg: MergedConfig, state_size_list: list, action_size_list: list, action_type_list: list) -> None:
+        super(ValueNetwork, self).__init__(cfg, state_size_list, action_size_list)
+        self.action_type_list = action_type_list
+        self.create_graph()
         
-class BaseActorNetwork(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-class BaseCriticNetwork(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-
-class ActorNetwork(BaseActorNetwork):
-    def __init__(self, cfg, state_size, action_space) -> None:
-        super().__init__()
-        self.cfg = cfg
-        self.action_type = ActionLayerType[cfg.action_type.upper()]
-        self.layers_cfg_dic = cfg.actor_layers # load layers config
-        self.layers = nn.ModuleList()
-        output_size = state_size
-        for layer_cfg_dic in self.layers_cfg_dic:
-            if "layer_type" not in layer_cfg_dic:
-                raise ValueError("layer_type must be specified in layer_cfg")
-            layer_cfg = LayerConfig(**layer_cfg_dic)
-            layer, layer_out_size = create_layer(output_size, layer_cfg)
-            output_size = layer_out_size
-            self.layers.append(layer) 
-        if self.action_type == ActionLayerType.DISCRETE:
-            self.action_layer = DiscreteActionLayer(cfg, output_size, action_space)
-        elif self.action_type == ActionLayerType.CONTINUOUS:
-            self.action_layer = ContinuousActionLayer(cfg, output_size, action_space)
-        elif self.action_type == ActionLayerType.DPG:
-            self.action_layer = DPGActionLayer(cfg, output_size, action_space)
+    def create_graph(self):
+        self.branch_layers = BranchLayers(self.cfg.branch_layers, self.state_size_list)
+        self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
+        self.value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
+        self.value_layer, _ = create_layer(self.merge_layer.output_size, self.value_layer_cfg)
+        if self.action_type_list[0] == ActionLayerType.CONTINUOUS:
+            self.action_layer = ContinuousActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
+        elif self.action_type_list[0] == ActionLayerType.DISCRETE:
+            self.action_layer = DiscreteActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
+        elif self.action_type_list[0] == ActionLayerType.DPG:
+            self.action_layer = DPGActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
         else:
             raise ValueError("action_type must be specified in discrete, continuous or dpg")
+        
     def forward(self, x, legal_actions=None):
-        for layer in self.layers:
-            x = layer(x)
-        if self.action_type == ActionLayerType.DISCRETE:
-            probs = self.action_layer(x, legal_actions)
-            return probs
-        elif self.action_type == ActionLayerType.CONTINUOUS:
-            output = self.action_layer(x)
-            return output
-        elif self.action_type == ActionLayerType.DPG:
-            mu = self.action_layer(x)
-            return mu
+        x = self.branch_layers(x)
+        x = self.merge_layer(x)
+        value = self.value_layer(x)
+        action_output = self.action_layer(x, legal_actions)
+        return value, action_output
 
-class CriticNetwork(BaseCriticNetwork):
-    def __init__(self, cfg, input_size, output_dim = 1):
-        super(CriticNetwork, self).__init__()
-        self.cfg = cfg
-        self.layers_cfg_dic = cfg.critic_layers # load layers config
-        self.layers = nn.ModuleList()
-        output_size = input_size
-        for layer_cfg_dic in self.layers_cfg_dic:
-            if "layer_type" not in layer_cfg_dic:
-                raise ValueError("layer_type must be specified in layer_cfg")
-            layer_cfg = LayerConfig(**layer_cfg_dic)
-            layer, layer_out_size = create_layer(output_size, layer_cfg)
-            output_size = layer_out_size
-            self.layers.append(layer) 
-        head_layer_cfg = LayerConfig(layer_type='linear', layer_size=[output_dim], activation='none')
-        self.head_layer, layer_out_size = create_layer(output_size, head_layer_cfg)
+
+class ActorNetwork(BaseNework):
+    def __init__(self, cfg: MergedConfig, state_size_list: list, action_size_list: list, action_type_list: list) -> None:
+        super(ActorNetwork, self).__init__(cfg, state_size_list, action_size_list)
+        self.action_type_list = action_type_list
+        self.create_graph()
+    
+    def create_graph(self):
+        self.branch_layers = BranchLayers(self.cfg.actor_branch_layers, self.state_size_list)
+        self.merge_layer = MergeLayer(self.cfg.actor_merge_layers, self.branch_layers.output_size_list)
+        if self.action_type_list[0] == ActionLayerType.CONTINUOUS:
+            self.action_layer = ContinuousActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
+        elif self.action_type_list[0] == ActionLayerType.DISCRETE:
+            self.action_layer = DiscreteActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
+        elif self.action_type_list[0] == ActionLayerType.DPG:
+            self.action_layer = DPGActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
+        else:
+            raise ValueError("action_type must be specified in discrete, continuous or dpg")
+        
+    def forward(self, x, legal_actions=None):
+        x = self.branch_layers(x)
+        x = self.merge_layer(x)
+        action_output = self.action_layer(x, legal_actions)
+        return action_output
+    
+
+class CriticNetwork(BaseNework):
+    def __init__(self, cfg: MergedConfig, state_size_list: list, action_size_list: list) -> None:
+        super(CriticNetwork, self).__init__(cfg, state_size_list, action_size_list)
+        self.create_graph()
+
+    def create_graph(self):
+        self.branch_layers = BranchLayers(self.cfg.critic_branch_layers, self.state_size_list)
+        self.merge_layer = MergeLayer(self.cfg.critic_merge_layers, self.branch_layers.output_size_list)
+        self.value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
+        self.value_layer, _ = create_layer(self.merge_layer.output_size, self.value_layer_cfg)
+    
     def forward(self, x):
-        for layer in self.layers:
-            x = layer(x)
-        value = self.head_layer(x)
+        x = self.branch_layers(x)
+        x = self.merge_layer(x)
+        value = self.value_layer(x)
         return value
 
 if __name__ == "__main__":

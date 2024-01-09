@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-06 22:48:05
+LastEditTime: 2024-01-09 13:32:19
 Discription: 
 '''
 import time
@@ -61,10 +61,7 @@ class PolicyMgr(Moduler):
                     self._saved_model_que.put((update_step, model_params), block=False)
                     break
                 except:
-                    if self.use_ray:
-                        self.logger.warning.remote(f"[PolicyMgr._put_model_params] saved_model_que is full!")
-                    else:
-                        self.logger.warning(f"[PolicyMgr._put_model_params] saved_model_que is full!")
+                    exec_method(self.logger, 'warning', True, "[PolicyMgr._put_model_params] saved_model_que is full!")
                     # time.sleep(0.001)
 
     def _get_model_params(self):

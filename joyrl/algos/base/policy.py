@@ -3,8 +3,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from gymnasium.spaces import Box, Discrete
 from collections import defaultdict
+from gymnasium.spaces import Box, Discrete
+from joyrl.algos.base.action_layer import ActionLayerType
 class BasePolicy(nn.Module):
     ''' base policy for DRL
     '''
@@ -17,13 +18,13 @@ class BasePolicy(nn.Module):
         self.optimizer = None
         self.policy_transition = {}
         self.data_after_train = {}
-        self.get_state_action_size()
+        self.get_state_size()
+        self.get_action_size()
 
-    def get_state_action_size(self):
-        ''' get state and action size
+    def get_state_size(self):
+        ''' get state size
         '''
         # state_size must be [[None, state_dim_1], [None, state_dim_2], ...]
-        # action_size must be [action_dim_1, action_dim_2, ...]
         if isinstance(self.obs_space, Box):
             if len(self.obs_space.shape) == 3:
                 self.state_size = [[None, self.obs_space.shape[0], self.obs_space.shape[1], self.obs_space.shape[2]]]
@@ -33,13 +34,22 @@ class BasePolicy(nn.Module):
             self.state_size = [[None, self.obs_space.n]]
         else:
             raise ValueError('obs_space type error')
+        return self.state_size
+    
+    def get_action_size(self):
+        ''' get action size
+        '''
+        # action_size must be [action_dim_1, action_dim_2, ...]
         if isinstance(self.action_space, Box):
             self.action_size = [self.action_space.shape[0]]
+            self.action_type = [ActionLayerType.CONTINUOUS]
         elif isinstance(self.action_space, Discrete):
             self.action_size = [self.action_space.n]
+            self.action_type = [ActionLayerType.DISCRETE]
         else:
             raise ValueError('action_space type error')
-        return self.state_size, self.action_size
+        return self.action_size
+    
     def create_optimizer(self):
         self.optimizer = optim.Adam(self.parameters(), lr=self.cfg.lr) 
 

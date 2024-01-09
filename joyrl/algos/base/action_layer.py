@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# coding=utf-8
+'''
+Author: JiangJi
+Email: johnjim0816@gmail.com
+Date: 2023-12-25 09:28:26
+LastEditor: JiangJi
+LastEditTime: 2024-01-09 13:37:53
+Discription: 
+'''
 from enum import Enum
 import torch
 import torch.nn as nn
@@ -18,12 +28,12 @@ class BaseActionLayer(nn.Module):
         pass
 
 class DiscreteActionLayer(BaseActionLayer):
-    def __init__(self, cfg, input_size, action_space, **kwargs):
+    def __init__(self, cfg, input_size, action_dim, **kwargs):
         super(DiscreteActionLayer, self).__init__()
         self.cfg = cfg
         self.min_policy = cfg.min_policy
         if kwargs: self.id = kwargs['id']
-        self.action_dim = action_space.n
+        self.action_dim = action_dim
         output_size = input_size
         action_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_dim], activation='leakyrelu')
         self.logits_p_layer, layer_out_size = create_layer(output_size, action_layer_cfg)
@@ -42,12 +52,12 @@ class DiscreteActionLayer(BaseActionLayer):
         return output
         
 class ContinuousActionLayer(BaseActionLayer):
-    def __init__(self, cfg, input_size, action_space, **kwargs):
+    def __init__(self, cfg, input_size, action_dim, **kwargs):
         super(ContinuousActionLayer, self).__init__()
         self.cfg = cfg
         self.min_policy = cfg.min_policy
         if kwargs: self.id = kwargs['id']
-        self.action_dim = action_space.shape[0]
+        self.action_dim = action_dim
         output_size = input_size
         mu_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_dim], activation='tanh')
         self.mu_layer, layer_out_size = create_layer(output_size, mu_layer_cfg)
@@ -62,16 +72,17 @@ class ContinuousActionLayer(BaseActionLayer):
         output = {"mu": mu, "sigma": sigma}
         return output
 class DPGActionLayer(BaseActionLayer):
-    def __init__(self, cfg, input_size, action_space, **kwargs):
+    def __init__(self, cfg, input_size, action_dim, **kwargs):
         super(DPGActionLayer, self).__init__()
         self.cfg = cfg
         if kwargs: self.id = kwargs['id']
-        self.action_dim = action_space.shape[0]
+        self.action_dim = action_dim
         self.output_size = input_size
         action_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_dim], activation='tanh')
         self.action_layer, layer_out_size = create_layer(self.output_size, action_layer_cfg)
         self.output_size = layer_out_size
     def forward(self,x):
         mu = self.action_layer(x)
-        return mu
+        output = {"mu": mu}
+        return output
         

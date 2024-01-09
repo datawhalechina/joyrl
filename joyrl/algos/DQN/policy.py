@@ -23,7 +23,6 @@ class Policy(BasePolicy):
         
     def create_graph(self):
 
-        self.state_size, self.action_size = self.get_state_action_size()
         self.policy_net = QNetwork(self.cfg, self.state_size, self.action_size).to(self.device)
         self.target_net = QNetwork(self.cfg, self.state_size, self.action_size).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict()) # or use this to copy parameters

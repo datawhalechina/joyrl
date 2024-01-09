@@ -1,6 +1,8 @@
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+from gymnasium.spaces import Box, Discrete
+from joyrl.algos.base.action_layer import ActionLayerType
 from joyrl.algos.base.policy import BasePolicy
 from joyrl.algos.base.network import CriticNetwork, ActorNetwork
 from joyrl.algos.base.noise import OUNoise
@@ -20,6 +22,17 @@ class Policy(BasePolicy):
         self.create_summary() # create summary
         self.to(self.device)
         self.sample_count = 0 # sample count
+
+    def get_action_size(self):
+        ''' get action size
+        '''
+        # action_size must be [action_dim_1, action_dim_2, ...]
+        if isinstance(self.action_space, Box):
+            self.action_size = [self.action_space.shape[0]]
+            self.action_type = [ActionLayerType.DPG]
+        else:
+            raise ValueError('action_space type error')
+        return self.action_size
 
     def create_graph(self):
         self.state_size, self.action_size = self.get_state_action_size()

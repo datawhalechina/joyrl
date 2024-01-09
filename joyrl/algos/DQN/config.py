@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-20 23:39:18
 LastEditor: JiangJi
-LastEditTime: 2024-01-08 13:33:41
+LastEditTime: 2024-01-09 13:10:39
 Discription: 
 '''
 class AlgoConfig():
@@ -25,24 +25,24 @@ class AlgoConfig():
         # value network layers config
         # [{'name': 'feature_1', 'layers': [{'layer_type': 'linear', 'layer_size': [256], 'activation': 'relu'}, {'layer_type': 'linear', 'layer_size': [256], 'activation': 'relu'}]}]
         self.branch_layers = [
-            {
-                'name': 'feature_1',
-                'layers': 
-                [
-                    {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
-                    {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
-                ]
-            },
-            {
-                'name': 'feature_2',
-                'layers': 
-                [
-                    {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
-                    {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
-                ]
-            }
-        ],
+        #     {
+        #         'name': 'feature_1',
+        #         'layers': 
+        #         [
+        #             {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
+        #             {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
+        #         ]
+        #     },
+        #     {
+        #         'name': 'feature_2',
+        #         'layers': 
+        #         [
+        #             {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
+        #             {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
+        #         ]
+        #     }
+        ]
         self.merge_layers = [
-            # {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
-            # {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
+            {'layer_type': 'linear', 'layer_size': [256], 'activation': 'ReLU'},
+            {'layer_type': 'linear', 'layer_size': [256], 'activation': 'ReLU'},
         ]
