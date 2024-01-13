@@ -62,7 +62,7 @@ env_cfg:
   id: CarRacing-v2
   render_mode: null
   continuous: False
-  wrapper:
+  wrappers:
     - wrapper_name: CarV2SkipFrame
       skip: 5
     - wrapper_name: GrayScaleObservation

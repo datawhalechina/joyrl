@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-13 16:55:39
+LastEditTime: 2024-01-13 18:14:44
 Discription: 
 '''
 import ray
@@ -54,7 +54,7 @@ class Collector(Moduler):
                     time.sleep(0.002)
         elif msg_type == MsgType.COLLECTOR_GET_TRAINING_DATA:
             try:
-                return self._training_data_que.get(timeout=1)
+                return self._training_data_que.get(block=True,timeout=0.01)
             except Empty:
                 # exec_method(self.logger, 'warning', True, "[Collector.pub_msg] training_data_que is empty!")
                 return None

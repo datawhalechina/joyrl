@@ -4,7 +4,7 @@ general_cfg:
   device: cpu 
   mode: train 
   collect_traj: false 
-  n_interactors: 1
+  n_interactors: 2
   load_checkpoint: false
   load_path: Train_single_CartPole-v1_DQN_20230515-211721
   load_model_step: best 

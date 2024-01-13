@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-24 15:09:47
 LastEditor: JiangJi
-LastEditTime: 2024-01-11 13:11:50
+LastEditTime: 2024-01-13 18:26:43
 Discription: 
 '''
 import math
@@ -26,7 +26,6 @@ class Policy(ToyPolicy):
         self.sample_count = 0
         self.create_summary()
 
-    
     def sample_action(self, state, **kwargs):
         self.sample_count += 1
         self.epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * \

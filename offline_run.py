@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-01-11 13:07:33
+LastEditTime: 2024-01-13 18:45:23
 Discription: 
 '''
 import os,copy
@@ -140,10 +140,9 @@ class Launcher(object):
             env = gym.make(**kwargs)
         setattr(self.cfg, 'obs_space', env.observation_space)
         setattr(self.cfg, 'action_space', env.action_space)
-        if self.env_cfg.wrapper is None:
+        if self.env_cfg.wrappers is None:
             return env
-
-        for wrapper in self.env_cfg.wrapper: 
+        for wrapper in self.env_cfg.wrappers: 
             wrapper_name = wrapper['wrapper_name']
             wrapper_kwargs = copy.deepcopy(wrapper)
             wrapper_kwargs.pop("wrapper_name")

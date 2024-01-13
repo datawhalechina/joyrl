@@ -3,9 +3,9 @@
 '''
 Author: JiangJi
 Email: johnjim0816@gmail.com
-Date: 2024-01-11 13:01:30
+Date: 2023-12-24 15:09:47
 LastEditor: JiangJi
-LastEditTime: 2024-01-11 13:04:51
+LastEditTime: 2024-01-13 18:37:13
 Discription: 
 '''
 import math
@@ -27,29 +27,27 @@ class Policy(ToyPolicy):
         self.next_action = None
         self.create_summary()
 
-    
     def sample_action(self, state, **kwargs):
         self.sample_count += 1
         self.epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * \
             math.exp(-1. * self.sample_count / self.epsilon_decay) 
         if np.random.uniform(0, 1) > self.epsilon:
-            action = np.argmax(self.Q_table[str(state)]) #  select the action with max Q value
+            action = self.predict_action(state)
+            if self.next_action is not None:
+                action = self.next_action
+                self.next_action = None
         else:
             action = np.random.choice(self.n_actions) # random select an action
         return action
     
     def predict_action(self, state, **kwargs):
-        if self.next_action is None:
-            action = np.argmax(self.Q_table[str(state)])
-        else:
-            action = self.next_action
+        action = np.argmax(self.Q_table[str(state)])
         return action
     
     def learn(self, **kwargs):
         state, action, reward, next_state, done = kwargs.get('state'), kwargs.get('action'), kwargs.get('reward'), kwargs.get('next_state'), kwargs.get('done')
         Q_predict = self.Q_table[str(state)][action] 
-        next_action = self.get_action(next_state) # next action
-        self.next_action = next_action
+        self.next_action = self.predict_action(next_state)
         if done: 
             Q_target = reward 
         else:

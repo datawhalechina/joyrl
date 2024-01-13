@@ -12,7 +12,7 @@ general_cfg:
   model_save_fre: 200
   online_eval: true
 algo_cfg:
-  epsilon_decay: 300
+  epsilon_decay: 500
   epsilon_end: 0.01
   epsilon_start: 0.95
   gamma: 0.99

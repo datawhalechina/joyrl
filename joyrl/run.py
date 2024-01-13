@@ -5,10 +5,10 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-01-07 22:01:52
+LastEditTime: 2024-01-13 18:46:29
 Discription: 
 '''
-import sys,os
+import os,copy
 import ray
 import argparse,datetime,importlib,yaml
 import gymnasium as gym
@@ -18,7 +18,6 @@ from joyrl.framework.collector import Collector
 from joyrl.framework.tracker import Tracker
 from joyrl.framework.interactor import InteractorMgr
 from joyrl.framework.learner import LearnerMgr
-from joyrl.framework.recorder import Recorder
 from joyrl.framework.tester import OnlineTester
 from joyrl.framework.trainer import Trainer
 from joyrl.framework.policy_mgr import PolicyMgr
@@ -41,7 +40,6 @@ class Launcher(object):
         self._save_cfgs({'general_cfg': self.general_cfg, 'algo_cfg': self.algo_cfg, 'env_cfg': self.env_cfg})
         all_seed(seed=self.general_cfg.seed)  # set seed == 0 means no seed
         
-
     def _get_default_cfg(self):
         ''' get default config
         '''
@@ -142,11 +140,21 @@ class Launcher(object):
             env = gym.make(**kwargs)
         setattr(self.cfg, 'obs_space', env.observation_space)
         setattr(self.cfg, 'action_space', env.action_space)
-        if self.env_cfg.wrapper is not None:
-            wrapper_class_path = self.env_cfg.wrapper.split('.')[:-1]
-            wrapper_class_name = self.env_cfg.wrapper.split('.')[-1]
-            env_wapper = __import__('.'.join(wrapper_class_path), fromlist=[wrapper_class_name])
-            env = getattr(env_wapper, wrapper_class_name)(env)
+        if self.env_cfg.wrappers is None:
+            return env
+        for wrapper in self.env_cfg.wrappers: 
+            wrapper_name = wrapper['wrapper_name']
+            wrapper_kwargs = copy.deepcopy(wrapper)
+            wrapper_kwargs.pop("wrapper_name")
+            mm = importlib.import_module('joyrl.envs.gym')
+            env_wapper_cls = eval(f'mm.wrappers.{wrapper_name}')
+            try:
+                env = env_wapper_cls(env, **wrapper_kwargs)
+            except Exception as e:
+                env = env_wapper_cls(env)
+        
+        setattr(self.cfg, 'obs_space', env.observation_space)
+        setattr(self.cfg, 'action_space', env.action_space)
         return env
     
     def policy_config(self):

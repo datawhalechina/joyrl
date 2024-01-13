@@ -207,4 +207,5 @@ class ToyPolicy:
     def load_model(self, fpath):
         ''' load model
         '''
+        self.Q_table = None
         self.Q_table = torch.load(fpath, pickle_module=dill)
