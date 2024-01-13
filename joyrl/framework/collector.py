@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-13 16:48:29
+LastEditTime: 2024-01-13 16:55:39
 Discription: 
 '''
 import ray
@@ -45,10 +45,13 @@ class Collector(Moduler):
         if msg_type == MsgType.COLLECTOR_PUT_EXPS:
             exps = msg_data
             # self.data_handler.add_exps(exps)
-            try:
-                self._raw_exps_que.put(exps, block=False)
-            except Full:
-                exec_method(self.logger, 'warning', True, "[Collector.pub_msg] raw_exps_que is full!")
+            while True:
+                try:
+                    self._raw_exps_que.put(exps, block=True, timeout=0.01)
+                    break
+                except Full:
+                    exec_method(self.logger, 'warning', True, "[Collector.pub_msg] raw_exps_que is full!")
+                    time.sleep(0.002)
         elif msg_type == MsgType.COLLECTOR_GET_TRAINING_DATA:
             try:
                 return self._training_data_que.get(timeout=1)
@@ -80,7 +83,10 @@ class Collector(Moduler):
             if not self._training_data_que.full():
                 training_data = self._get_training_data()
                 if training_data is not None:
-                    self._training_data_que.put(training_data, block = False)
+                    try:
+                        self._training_data_que.put(training_data, block = True, timeout=0.1)
+                    except Full:
+                        exec_method(self.logger, 'warning', True, "[Collector._prepare_training_data] training_data_que is full!")
             # exec_method(self.logger, 'warning', True, "[Collector._prepare_training_data] training_data_que is full!")
             time.sleep(0.002)
             
