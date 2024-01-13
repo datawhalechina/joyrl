@@ -5,10 +5,10 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-01-07 22:01:19
+LastEditTime: 2024-01-11 13:07:33
 Discription: 
 '''
-import sys,os,copy
+import os,copy
 import ray
 import argparse,datetime,importlib,yaml
 import gymnasium as gym
@@ -18,7 +18,6 @@ from joyrl.framework.collector import Collector
 from joyrl.framework.tracker import Tracker
 from joyrl.framework.interactor import InteractorMgr
 from joyrl.framework.learner import LearnerMgr
-from joyrl.framework.recorder import Recorder
 from joyrl.framework.tester import OnlineTester
 from joyrl.framework.trainer import Trainer
 from joyrl.framework.policy_mgr import PolicyMgr
@@ -41,7 +40,6 @@ class Launcher(object):
         self._save_cfgs({'general_cfg': self.general_cfg, 'algo_cfg': self.algo_cfg, 'env_cfg': self.env_cfg})
         all_seed(seed=self.general_cfg.seed)  # set seed == 0 means no seed
         
-
     def _get_default_cfg(self):
         ''' get default config
         '''

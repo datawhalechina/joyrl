@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-04-28 16:18:44
 LastEditor: JiangJi
-LastEditTime: 2024-01-07 00:42:40
+LastEditTime: 2024-01-11 13:19:23
 Discription: 
 '''
 import ray 
@@ -61,7 +61,7 @@ class Recorder(Moduler):
                 self._summary_que.put(summary_data_list, block = False)
                 break
             except:
-                self.logger.warning(f"[Recorder._add_summary] summary_que is full!")
+                self.logger.warning(f"[Recorder._add_summary] {self.type} summary_que is full!")
                 # time.sleep(0.001)
                 pass
 

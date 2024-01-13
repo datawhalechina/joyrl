@@ -3,9 +3,9 @@
 '''
 Author: JiangJi
 Email: johnjim0816@gmail.com
-Date: 2023-12-24 15:09:47
+Date: 2024-01-11 13:01:30
 LastEditor: JiangJi
-LastEditTime: 2024-01-11 13:11:50
+LastEditTime: 2024-01-11 13:04:51
 Discription: 
 '''
 import math
@@ -24,6 +24,7 @@ class Policy(ToyPolicy):
         self.epsilon_decay = cfg.epsilon_decay
         self.Q_table = defaultdict(lambda: np.zeros(self.n_actions))
         self.sample_count = 0
+        self.next_action = None
         self.create_summary()
 
     
@@ -38,16 +39,21 @@ class Policy(ToyPolicy):
         return action
     
     def predict_action(self, state, **kwargs):
-        action = np.argmax(self.Q_table[str(state)])
+        if self.next_action is None:
+            action = np.argmax(self.Q_table[str(state)])
+        else:
+            action = self.next_action
         return action
     
     def learn(self, **kwargs):
         state, action, reward, next_state, done = kwargs.get('state'), kwargs.get('action'), kwargs.get('reward'), kwargs.get('next_state'), kwargs.get('done')
         Q_predict = self.Q_table[str(state)][action] 
+        next_action = self.get_action(next_state) # next action
+        self.next_action = next_action
         if done: 
             Q_target = reward 
         else:
-            Q_target = reward + self.gamma * np.max(self.Q_table[str(next_state)]) 
+            Q_target = reward + self.gamma * self.Q_table[str(next_state)][self.next_action]
         self.Q_table[str(state)][action] += self.lr * (Q_target - Q_predict)
         self.loss = (Q_target - Q_predict) ** 2
         self.update_summary() # update summary
