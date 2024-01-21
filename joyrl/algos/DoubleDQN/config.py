@@ -22,8 +22,8 @@ class AlgoConfig(object):
         self.batch_size = 64  # batch size
         self.target_update = 4  # target network update frequency
         # value network layers config
-        self.value_layers = [
-            {'layer_type': 'Linear', 'layer_size': [256], 'activation': 'ReLU'},
-            {'layer_type': 'Linear', 'layer_size': [256], 'activation': 'ReLU'},
+        self.branch_layers = []
+        self.merge_layers = [
+            {'layer_type': 'linear', 'layer_size': [256], 'activation': 'ReLU'},
+            {'layer_type': 'linear', 'layer_size': [256], 'activation': 'ReLU'},
         ]
-

@@ -172,6 +172,7 @@ class Launcher(object):
 
     def run(self) -> None:
         env = self.env_config() # create single env
+        # interactor cpu   learner cuda   online_test test
         policy, data_handler = self.policy_config() # configure policy and data_handler
         is_remote = False
         if self.cfg.n_interactors > 1: 

@@ -18,8 +18,6 @@ class Policy(BasePolicy):
     def __init__(self,cfg) -> None:
         super(Policy, self).__init__(cfg)
         self.cfg = cfg
-        self.obs_space = cfg.obs_space
-        self.action_space = cfg.action_space
         self.gamma = cfg.gamma  
         # e-greedy parameters
         self.epsilon_start = cfg.epsilon_start
@@ -32,7 +30,6 @@ class Policy(BasePolicy):
         self.create_summary() # create summary
 
     def create_graph(self):
-        self.state_size, self.action_size = self.get_state_action_size()
         self.policy_net = QNetwork(self.cfg, self.state_size, self.action_size).to(self.device)
         self.target_net = QNetwork(self.cfg, self.state_size, self.action_size).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict()) # or use this to copy parameters

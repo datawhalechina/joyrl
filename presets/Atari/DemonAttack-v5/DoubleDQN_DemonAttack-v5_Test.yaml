@@ -1,0 +1,77 @@
+general_cfg:
+  algo_name: DoubleDQN 
+  env_name: gym 
+  device: cuda   
+  mode: test 
+  collect_traj: false 
+  n_interactors: 1
+  load_checkpoint: true
+  # reward 860.000 in 552 steps
+  load_path: Train_ALE/DemonAttack-v5_DoubleDQN_20240120-200251
+  load_model_step: best  
+  max_episode: 2
+  max_step: 1000
+  seed: 2023 
+
+algo_cfg:
+  merge_layers:
+  branch_layers:
+    - name: feature_1
+      layers:
+      - layer_type: conv2d
+        in_channel: 4
+        out_channel: 16 
+        kernel_size: 4
+        stride: 2
+        activation: relu
+      - layer_type: pooling
+        pooling_type: max2d
+        kernel_size: 2
+        stride: 2
+        padding: 0
+      - layer_type: conv2d
+        in_channel: 16
+        out_channel: 32 
+        kernel_size: 4
+        stride: 2
+        activation: relu
+      - layer_type: pooling
+        pooling_type: avg2d
+        kernel_size: 2
+        stride: 2
+        padding: 0  
+      - layer_type: flatten
+      - layer_type: norm
+        norm_type: LayerNorm
+        normalized_shape: 512
+      - layer_type: linear
+        layer_size: [200]
+        activation: relu
+      - layer_type: linear
+        layer_size: [200]
+        activation: relu
+  batch_size: 32 
+  buffer_type: REPLAY_QUE
+  buffer_size: 12000
+  epsilon_decay: 20000
+  epsilon_end: 0.05
+  epsilon_start: 0.95
+  gamma: 0.99
+  lr: 1.5e-4
+  target_update: 16
+env_cfg:
+  id: ALE/DemonAttack-v5
+  render_mode: human
+  obs_type: rgb
+  wrappers:
+    - wrapper_name: BaseSkipFrame
+      skip: 5
+      cut_slices:
+      - [15, 188]
+      - [0, 160]
+      start_skip: 14
+    - wrapper_name: GrayScaleObservation
+    - wrapper_name: ResizeObservation
+      shape: 84
+    - wrapper_name: FrameStack
+      num_stack: 4
