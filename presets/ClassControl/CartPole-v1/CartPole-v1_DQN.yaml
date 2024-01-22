@@ -14,6 +14,7 @@ general_cfg:
   online_eval: true 
   online_eval_episode: 10 
   model_save_fre: 500
+  policy_summary_fre: 2
 
 algo_cfg:
   # branch_layers:

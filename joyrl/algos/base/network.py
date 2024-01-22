@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-09 13:50:07
+LastEditTime: 2024-01-15 13:56:26
 Discription: 
 '''
 import copy
@@ -75,6 +75,7 @@ class MergeLayer(nn.Module):
         x = torch.cat(x, dim=1)
         for layer in self.merge_layers:
             x = layer(x)
+        
         return x
     def reset_noise(self):
         ''' reset noise for noisy layers
@@ -158,12 +159,14 @@ class ValueNetwork(BaseNework):
         self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
         self.value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
         self.value_layer, _ = create_layer(self.merge_layer.output_size, self.value_layer_cfg)
-        if self.action_type_list[0] == ActionLayerType.CONTINUOUS:
-            self.action_layer = ContinuousActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
-        elif self.action_type_list[0] == ActionLayerType.DISCRETE:
-            self.action_layer = DiscreteActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
-        elif self.action_type_list[0] == ActionLayerType.DPG:
-            self.action_layer = DPGActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
+        action_type = ActionLayerType(self.action_type_list[0].upper())
+        action_size = self.action_size_list[0]
+        if action_type == ActionLayerType.CONTINUOUS:
+            self.action_layer = ContinuousActionLayer(self.cfg, self.merge_layer.output_size, action_size)
+        elif action_type == ActionLayerType.DISCRETE:
+            self.action_layer = DiscreteActionLayer(self.cfg, self.merge_layer.output_size, action_size)
+        elif action_type == ActionLayerType.DPG:
+            self.action_layer = DPGActionLayer(self.cfg, self.merge_layer.output_size, action_size)
         else:
             raise ValueError("action_type must be specified in discrete, continuous or dpg")
         
@@ -184,16 +187,19 @@ class ActorNetwork(BaseNework):
     def create_graph(self):
         self.branch_layers = BranchLayers(self.cfg.actor_branch_layers, self.state_size_list)
         self.merge_layer = MergeLayer(self.cfg.actor_merge_layers, self.branch_layers.output_size_list)
-        if self.action_type_list[0] == ActionLayerType.CONTINUOUS:
-            self.action_layer = ContinuousActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
-        elif self.action_type_list[0] == ActionLayerType.DISCRETE:
-            self.action_layer = DiscreteActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
-        elif self.action_type_list[0] == ActionLayerType.DPG:
-            self.action_layer = DPGActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
+        action_type = self.action_type_list[0]
+        action_size = self.action_size_list[0]
+        if action_type == ActionLayerType.CONTINUOUS:
+            self.action_layer = ContinuousActionLayer(self.cfg, self.merge_layer.output_size, action_size)
+        elif action_type == ActionLayerType.DISCRETE:
+            self.action_layer = DiscreteActionLayer(self.cfg, self.merge_layer.output_size, action_size)
+        elif action_type == ActionLayerType.DPG:
+            self.action_layer = DPGActionLayer(self.cfg, self.merge_layer.output_size, action_size)
         else:
             raise ValueError("action_type must be specified in discrete, continuous or dpg")
         
     def forward(self, x, legal_actions=None):
+        
         x = self.branch_layers(x)
         x = self.merge_layer(x)
         action_output = self.action_layer(x, legal_actions)

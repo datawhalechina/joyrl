@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2023-12-25 12:48:39
+LastEditTime: 2024-01-21 18:17:39
 Discription: 
 '''
 import torch
@@ -31,10 +31,10 @@ class Policy(BasePolicy):
             self.kl_beta = cfg.kl_beta
             self.kl_alpha = cfg.kl_alpha
         self.gamma = cfg.gamma
-        self.action_type = cfg.action_type
-        if self.action_type.lower() == 'continuous': # continuous action space
-            self.action_scale = torch.tensor((self.action_space.high - self.action_space.low)/2, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
-            self.action_bias = torch.tensor((self.action_space.high + self.action_space.low)/2, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
+        # self.action_type = cfg.action_type
+        # if self.action_type.lower() == 'continuous': # continuous action space
+        #     self.action_scale = torch.tensor((self.action_space.high - self.action_space.low)/2, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
+        #     self.action_bias = torch.tensor((self.action_space.high + self.action_space.low)/2, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
         self.critic_loss_coef = cfg.critic_loss_coef
         self.k_epochs = cfg.k_epochs # update policy for K epochs
         self.eps_clip = cfg.eps_clip # clip parameter for PPO
@@ -44,6 +44,7 @@ class Policy(BasePolicy):
         self.create_optimizer()
         self.create_summary()
         self.to(self.device)
+        
     def create_summary(self):
         '''
         创建 tensorboard 数据
@@ -65,10 +66,10 @@ class Policy(BasePolicy):
 
     def create_graph(self):
         if not self.independ_actor:
-            self.policy_net = ValueNetwork(self.cfg, self.state_size, self.action_space)
+            self.policy_net = ValueNetwork(self.cfg, self.state_size, self.action_size, self.action_type)
         else:
-            self.actor = ActorNetwork(self.cfg, self.state_size, self.action_space)
-            self.critic = CriticNetwork(self.cfg, self.state_size)
+            self.actor = ActorNetwork(self.cfg, self.state_size, self.action_size, self.action_type)
+            self.critic = CriticNetwork(self.cfg, self.state_size, self.action_size)
 
     def create_optimizer(self):
         if self.share_optimizer:
@@ -86,11 +87,13 @@ class Policy(BasePolicy):
                 self.probs = self.policy_net(state)
         else:
             self.value = self.critic(state)
-            if self.action_type.lower() == 'continuous':
-                self.mu, self.sigma = self.actor(state)
-            else:
-                output = self.actor(state)
-                self.probs = output['probs']
+            output = self.actor(state)
+            self.probs = output['probs']
+            # if self.action_type.lower() == 'continuous':
+            #     self.mu, self.sigma = self.actor(state)
+            # else:
+            #     output = self.actor(state)
+            #     self.probs = output['probs']
         if self.cfg.mode == 'train':
             action = self.sample_action(**kwargs)
             self.update_policy_transition()
@@ -100,44 +103,53 @@ class Policy(BasePolicy):
             raise NameError('mode must be sample or predict')
         return action
     def update_policy_transition(self):
-        if self.action_type.lower() == 'continuous':
-            self.policy_transition = {'value': self.value, 'mu': self.mu, 'sigma': self.sigma}
-        else:
-            self.policy_transition = {'value': self.value, 'probs': self.probs, 'log_probs': self.log_probs}
+        self.policy_transition = {'value': self.value, 'probs': self.probs, 'log_probs': self.log_probs}
+        # if self.action_type.lower() == 'continuous':
+        #     self.policy_transition = {'value': self.value, 'mu': self.mu, 'sigma': self.sigma}
+        # else:
+        #     self.policy_transition = {'value': self.value, 'probs': self.probs, 'log_probs': self.log_probs}
     def sample_action(self,**kwargs):
-        if self.action_type.lower() == 'continuous':
-            mean = self.mu * self.action_scale + self.action_bias
-            std = self.sigma
-            dist = Normal(mean,std)
-            action = dist.sample()
-            action = torch.clamp(action, torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32), torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32))
-            self.log_probs = dist.log_prob(action).detach()
-            return action.detach().cpu().numpy()[0]
-        else:
-            dist = Categorical(self.probs)
-            action = dist.sample()
-            self.log_probs = dist.log_prob(action).detach()
-            return action.detach().cpu().numpy().item()
+        # if self.action_type.lower() == 'continuous':
+        #     mean = self.mu * self.action_scale + self.action_bias
+        #     std = self.sigma
+        #     dist = Normal(mean,std)
+        #     action = dist.sample()
+        #     action = torch.clamp(action, torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32), torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32))
+        #     self.log_probs = dist.log_prob(action).detach()
+        #     return action.detach().cpu().numpy()[0]
+        # else:
+        #     dist = Categorical(self.probs)
+        #     action = dist.sample()
+        #     self.log_probs = dist.log_prob(action).detach()
+        #     return action.detach().cpu().numpy().item()
+        dist = Categorical(self.probs)
+        action = dist.sample()
+        self.log_probs = dist.log_prob(action).detach()
+        return action.detach().cpu().numpy().item()
     def predict_action(self, **kwargs):
+        return torch.argmax(self.probs).detach().cpu().numpy().item()
         if self.action_type.lower() == 'continuous':
             return self.mu.detach().cpu().numpy()[0]
         else:
             return torch.argmax(self.probs).detach().cpu().numpy().item()
     def learn(self, **kwargs): 
-        states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
-        if self.action_type.lower() == 'continuous':      
-            mus, sigmas = kwargs.get('mu'), kwargs.get('sigma')
-            mus = torch.stack(mus, dim=0).to(device=self.device, dtype=torch.float32)
-            sigmas = torch.stack(sigmas, dim=0).to(device=self.device, dtype=torch.float32)
-            means = mus * self.action_scale + self.action_bias
-            stds = sigmas
-            dists = Normal(means,stds)
-            old_log_probs = dists.log_prob(torch.tensor(np.array(actions), device=self.device, dtype=torch.float32)).detach()
-            old_probs = torch.exp(old_log_probs)
-        else:
-            old_probs, old_log_probs  = kwargs.get('probs'), kwargs.get('log_probs')
-            old_probs = torch.stack(old_probs, dim=0).to(device=self.device, dtype=torch.float32)  # shape:[batch_size,n_actions]
-            old_log_probs = torch.tensor(old_log_probs, device=self.device, dtype=torch.float32).unsqueeze(dim=1) # shape:[batch_size,1]
+        states, actions, next_states, rewards, dones, returns = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones'), kwargs.get('returns')
+        # if self.action_type.lower() == 'continuous':      
+        #     mus, sigmas = kwargs.get('mu'), kwargs.get('sigma')
+        #     mus = torch.stack(mus, dim=0).to(device=self.device, dtype=torch.float32)
+        #     sigmas = torch.stack(sigmas, dim=0).to(device=self.device, dtype=torch.float32)
+        #     means = mus * self.action_scale + self.action_bias
+        #     stds = sigmas
+        #     dists = Normal(means,stds)
+        #     old_log_probs = dists.log_prob(torch.tensor(np.array(actions), device=self.device, dtype=torch.float32)).detach()
+        #     old_probs = torch.exp(old_log_probs)
+        # else:
+        #     old_probs, old_log_probs  = kwargs.get('probs'), kwargs.get('log_probs')
+        #     old_probs = torch.stack(old_probs, dim=0).to(device=self.device, dtype=torch.float32)  # shape:[batch_size,n_actions]
+        #     old_log_probs = torch.tensor(old_log_probs, device=self.device, dtype=torch.float32).unsqueeze(dim=1) # shape:[batch_size,1]
+        old_probs, old_log_probs  = kwargs.get('probs'), kwargs.get('log_probs')
+        old_probs = torch.stack(old_probs, dim=0).to(device=self.device, dtype=torch.float32)  # shape:[batch_size,n_actions]
+        old_log_probs = torch.tensor(old_log_probs, device=self.device, dtype=torch.float32).unsqueeze(dim=1) # shape:[batch_size,1]
         # convert to tensor
         states = torch.tensor(np.array(states), device=self.device, dtype=torch.float32) # shape:[batch_size,n_states]
         # actions = torch.tensor(np.array(actions), device=self.device, dtype=torch.float32).unsqueeze(dim=1) # shape:[batch_size,1]
@@ -145,27 +157,33 @@ class Policy(BasePolicy):
         next_states = torch.tensor(np.array(next_states), device=self.device, dtype=torch.float32) # shape:[batch_size,n_states]
         rewards = torch.tensor(np.array(rewards), device=self.device, dtype=torch.float32) # shape:[batch_size,1]
         dones = torch.tensor(np.array(dones), device=self.device, dtype=torch.float32) # shape:[batch_size,1]
-        returns = self._compute_returns(rewards, dones) # shape:[batch_size,1]  
+        # returns = self._compute_returns(rewards, dones) # shape:[batch_size,1]  
+        returns = torch.tensor(returns.copy(), device=self.device, dtype=torch.float32) # shape:[batch_size,1]
         torch_dataset = Data.TensorDataset(states, actions, old_probs, old_log_probs,returns)
-        train_loader = Data.DataLoader(dataset=torch_dataset, batch_size=self.sgd_batch_size, shuffle=True,drop_last=False)
+        train_loader = Data.DataLoader(dataset=torch_dataset, batch_size=self.sgd_batch_size, shuffle=False,drop_last=False)
         for _ in range(self.k_epochs):
-            for batch_idx, (old_states, old_actions, old_probs, old_log_probs, returns) in enumerate(train_loader):
+            for _, (old_states, old_actions, old_probs, old_log_probs, returns) in enumerate(train_loader):
                 # compute advantages
                 values = self.critic(old_states) # detach to avoid backprop through the critic
                 advantages = returns - values.detach() # shape:[batch_size,1]
                 # get action probabilities
-                if self.action_type.lower() == 'continuous':
-                    mu, sigma = self.actor(old_states)
-                    mean = mu * self.action_scale + self.action_bias
-                    std = sigma
-                    dist = Normal(mean, std)
-                    new_log_probs = dist.log_prob(old_actions)
-                else:
-                    output = self.actor(old_states) 
-                    new_probs = output['probs'] # shape:[batch_size,n_actions]
-                    dist = Categorical(new_probs)
-                    # get new action probabilities
-                    new_log_probs = dist.log_prob(old_actions.squeeze(dim=1)).unsqueeze(dim=1) # shape:[batch_size,1]
+                output = self.actor(old_states) 
+                new_probs = output['probs'] # shape:[batch_size,n_actions]
+                dist = Categorical(new_probs)
+                # get new action probabilities
+                new_log_probs = dist.log_prob(old_actions.squeeze(dim=1)).unsqueeze(dim=1) # shape:[batch_size,1]
+                # if self.action_type.lower() == 'continuous':
+                #     mu, sigma = self.actor(old_states)
+                #     mean = mu * self.action_scale + self.action_bias
+                #     std = sigma
+                #     dist = Normal(mean, std)
+                #     new_log_probs = dist.log_prob(old_actions)
+                # else:
+                #     output = self.actor(old_states) 
+                #     new_probs = output['probs'] # shape:[batch_size,n_actions]
+                #     dist = Categorical(new_probs)
+                #     # get new action probabilities
+                #     new_log_probs = dist.log_prob(old_actions.squeeze(dim=1)).unsqueeze(dim=1) # shape:[batch_size,1]
                 # compute ratio (pi_theta / pi_theta__old):
                 ratio = torch.exp(new_log_probs - old_log_probs) # shape: [batch_size, 1]
                 # compute surrogate loss
@@ -188,6 +206,7 @@ class Policy(BasePolicy):
                 else:
                     raise NameError("ppo_type must be 'clip' or 'kl'")
                 # compute critic loss
+                
                 self.critic_loss = nn.MSELoss()(returns, values) # shape: [batch_size, 1]
                 # compute total loss
                 if self.share_optimizer:
@@ -203,18 +222,5 @@ class Policy(BasePolicy):
                     self.critic_optimizer.step()
         self.update_summary()
 
-    def _compute_returns(self, rewards, dones):
-        # monte carlo estimate of state rewards
-        returns = []
-        discounted_sum = 0
-        for reward, done in zip(reversed(rewards), reversed(dones)):
-            if done:
-                discounted_sum = 0
-            discounted_sum = reward + (self.gamma * discounted_sum)
-            returns.insert(0, discounted_sum)
-        # Normalizing the rewards:
-        returns = torch.tensor(returns, device=self.device, dtype=torch.float32).unsqueeze(dim=1)
-        returns = (returns - returns.mean()) / (returns.std() + 1e-5) # 1e-5 to avoid division by zero
-        return returns
 
         

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-02-20 21:53:39
 LastEditor: JiangJi
-LastEditTime: 2023-12-25 12:30:31
+LastEditTime: 2024-01-15 13:26:35
 Discription: 
 '''
 class AlgoConfig(object):
@@ -33,3 +33,10 @@ class AlgoConfig(object):
         self.actor_hidden_dim = 256 # hidden dimension for actor
         self.critic_hidden_dim = 256 # hidden dimension for critic
         self.min_policy = 0 # min value for policy (for discrete action space)
+        self.buffer_type = 'REPLAY_QUE'
+        self.branch_layers = []
+        self.merge_layers = []
+        self.actor_branch_layers = []
+        self.actor_merge_layers = []
+        self.critic_branch_layers = []
+        self.critic_merge_layers = []

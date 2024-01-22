@@ -53,7 +53,7 @@ class ReplayBuffer:
             self.buffer[self.position] = exp
             self.position = (self.position + 1) % self.capacity
 
-    def sample(self):
+    def sample(self, **kwargs):
         ''' sample a batch of transitions   
         '''
         batch = random.sample(self.buffer, self.batch_size) 
@@ -78,9 +78,10 @@ class ReplayBufferQue:
         for exp in exps:
             self.buffer.append(exp)
 
-    def sample(self, sequential: bool = False):
+    def sample(self, **kwargs):
         ''' sample a batch of transitions
         '''
+        sequential = kwargs.get('sequential', False)
         if self.batch_size > len(self.buffer): # if the buffer is not full, return None
             return None
         if sequential: # sequential sampling
@@ -110,7 +111,7 @@ class OnPolicyBufferQue(ReplayBufferQue):
         self.buffer = deque(maxlen=128)
     def push(self, exps: list):
         self.buffer.append(exps)
-    def sample(self):
+    def sample(self,**kwargs):
         ''' sample all the transitions
         '''
         if len(self.buffer) == 0: return None
@@ -194,9 +195,10 @@ class PrioritizedReplayBuffer:
         priority = self.max_priority if self.tree.total() == 0 else self.tree.max_prior()
         self.tree.add(priority, exps)
     
-    def sample(self, batch_size):
+    def sample(self, **kwargs):
         ''' 采样一个批量样本
         '''
+        batch_size = kwargs.get('batch_size', 128)
         indices = [] # 采样的索引
         priorities = [] # 采样的优先级
         exps = [] # 采样的样本

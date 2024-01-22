@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-13 18:14:44
+LastEditTime: 2024-01-21 18:07:31
 Discription: 
 '''
 import ray
@@ -25,8 +25,8 @@ class Collector(Moduler):
     def __init__(self, cfg: MergedConfig, **kwargs) -> None:
         super().__init__(cfg, **kwargs)
         self.data_handler = kwargs['data_handler']
+        self._raw_exps_que = kwargs['raw_exps_que']
         self._training_data_que = Queue(maxsize = 1)
-        self._raw_exps_que = Queue(maxsize = 128) # raw exps queue
         self._t_start()
 
     def _t_start(self):
@@ -69,7 +69,7 @@ class Collector(Moduler):
         '''
         while True:
             try:
-                exps = self._raw_exps_que.get(timeout=1) # get exps from raw_exps_que
+                exps = self._raw_exps_que.get() # get exps from raw_exps_que
                 self.data_handler.add_exps(exps) # add exps to data handler
                 # exec_method(self.logger, 'info', True, "[Collector._handle_exps] add exps to data handler")
             except Empty:

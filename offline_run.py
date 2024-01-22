@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-01-13 18:45:23
+LastEditTime: 2024-01-21 18:18:41
 Discription: 
 '''
 import os,copy
@@ -14,13 +14,7 @@ import argparse,datetime,importlib,yaml
 import gymnasium as gym
 from pathlib import Path
 from joyrl.framework.config import GeneralConfig, MergedConfig, DefaultConfig
-from joyrl.framework.collector import Collector
-from joyrl.framework.tracker import Tracker
-from joyrl.framework.interactor import InteractorMgr
-from joyrl.framework.learner import LearnerMgr
-from joyrl.framework.tester import OnlineTester
 from joyrl.framework.trainer import Trainer
-from joyrl.framework.policy_mgr import PolicyMgr
 from joyrl.utils.utils import merge_class_attrs, all_seed, create_module,exec_method
 
 class Launcher(object):
@@ -176,33 +170,12 @@ class Launcher(object):
         is_remote = False
         if self.cfg.n_interactors > 1: 
             is_remote = True
-            ray.init()
-        if self.cfg.online_eval:
-            online_tester = create_module(OnlineTester, False, {'num_cpus':0}, self.cfg, env = env, policy = policy)
-        tracker = create_module(Tracker, is_remote, {'num_cpus':0}, self.cfg)
-        collector = create_module(Collector, is_remote, {'num_cpus':1}, self.cfg, data_handler = data_handler)
-        policy_mgr = create_module(PolicyMgr, is_remote, {'num_cpus':0}, self.cfg, policy = policy)
-        interactor_mgr = create_module(InteractorMgr, is_remote, {'num_cpus':0}, 
-                                       self.cfg, 
-                                       env = env, 
-                                       policy = policy, 
-                                       collector = collector, 
-                                       tracker = tracker, 
-                                       policy_mgr = policy_mgr)
-        learner_mgr = create_module(LearnerMgr, is_remote, {'num_cpus':0}, 
-                                    self.cfg, 
-                                    policy = policy,
-                                    collector = collector,
-                                    tracker = tracker,
-                                    policy_mgr = policy_mgr
-                                    )
+            ray.init()                           
         trainer = create_module(Trainer, is_remote, {'num_cpus':0}, 
                                 self.cfg,
-                                tracker = tracker,
-                                policy_mgr = policy_mgr,
-                                collector = collector,
-                                interactor_mgr = interactor_mgr,
-                                learner_mgr = learner_mgr,
+                                env = env,
+                                policy = policy,
+                                data_handler = data_handler,
                                 )
         exec_method(trainer, 'run', True)
 
