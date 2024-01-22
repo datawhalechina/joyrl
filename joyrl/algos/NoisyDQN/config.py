@@ -18,7 +18,7 @@ class AlgoConfig(object):
         self.epsilon_decay = 500  # epsilon decay
         self.gamma = 0.95  # reward discount factor
         self.lr = 0.0001  # learning rate
-        self.buffer_size = 100000  # replay buffer size
+        self.max_buffer_size = 100000  # replay buffer size
         self.batch_size = 64  # batch size
         self.target_update = 4  # target network update frequency
         # value network layers config

@@ -20,7 +20,7 @@ algo_cfg:
   actor_hidden_dim: 256
   actor_lr: 0.0005
   batch_size: 256
-  buffer_size: 1000000
+  max_buffer_size: 1000000
   critic_hidden_dim: 256
   critic_lr: 0.0005
   expl_noise: 0.1

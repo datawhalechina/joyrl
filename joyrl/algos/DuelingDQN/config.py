@@ -8,7 +8,7 @@ class AlgoConfig(object):
         self.gamma = 0.99  # discount factor
         self.lr = 0.0001  # learning rate
         self.buffer_type = 'REPLAY_QUE' # replay buffer type
-        self.buffer_size = 100000  # replay buffer size
+        self.max_buffer_size = 100000  # replay buffer size
         self.batch_size = 64  # batch size
         self.target_update = 4  # target network update frequency
         # value network layers config

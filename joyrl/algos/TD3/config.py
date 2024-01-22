@@ -22,7 +22,7 @@ class AlgoConfig:
         self.expl_noise = 0.1 # std of Gaussian exploration noise
         self.noise_clip = 0.5 # range to clip target policy noise
         self.batch_size = 100 # batch size for both actor and critic
-        self.buffer_size = 1000000 # replay buffer size
+        self.max_buffer_size = 1000000 # replay buffer size
         self.actor_layers = [
             {'layer_type': 'Linear', 'layer_size': [200], 'activation': 'ReLU'},
             {'layer_type': 'Linear', 'layer_size': [200], 'activation': 'ReLU'},

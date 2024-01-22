@@ -30,7 +30,7 @@ algo_cfg:
       activation: relu
   batch_size: 128
   buffer_type: REPLAY_QUE
-  buffer_size: 8000
+  max_buffer_size: 8000
   actor_lr: 0.0001
   critic_lr: 0.001
   policy_loss_weight: 0.002

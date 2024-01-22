@@ -23,7 +23,7 @@ algo_cfg:
   alpha: 0.01
   automatic_entropy_tuning: false
   batch_size: 64
-  buffer_size: 1000000
+  max_buffer_size: 1000000
   gamma: 0.98
   hidden_dim: 256
   lr: 0.0004

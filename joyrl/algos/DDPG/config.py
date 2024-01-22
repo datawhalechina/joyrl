@@ -13,7 +13,7 @@ class AlgoConfig:
     def __init__(self):
         self.action_type = 'dpg' # action type, dpg: deterministic policy gradient
         self.buffer_type = 'REPLAY_QUE' # replay buffer type
-        self.buffer_size = 100000  # replay buffer size
+        self.max_buffer_size = 100000  # replay buffer size
         self.batch_size = 128  # batch size
         self.gamma = 0.99  # discount factor
         self.policy_loss_weight = 0.002  # policy loss weight

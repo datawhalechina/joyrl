@@ -28,7 +28,7 @@ algo_cfg:
   lookup_step: 10
   max_epi_num: 100
 
-  buffer_size: 100000
+  max_buffer_size: 100000
   epsilon_decay: 0.995
   epsilon_end: 0.001
   epsilon_start: 0.1
