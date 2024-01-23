@@ -184,11 +184,11 @@ class ActorCriticNetwork(BaseNework):
         else:
             raise ValueError("action_type must be specified in discrete, continuous or dpg")
         
-    def forward(self, x, legal_actions=None):
+    def forward(self, x, pre_legal_actions=None):
         x = self.branch_layers(x)
         x = self.merge_layer(x)
         value = self.value_layer(x)
-        action_output = self.action_layer(x, legal_actions)
+        action_output = self.action_layer(x, pre_legal_actions)
         return value, action_output
 
 
@@ -212,11 +212,11 @@ class ActorNetwork(BaseNework):
         else:
             raise ValueError("action_type must be specified in discrete, continuous or dpg")
         
-    def forward(self, x, legal_actions=None):
+    def forward(self, x, pre_legal_actions=None):
         
         x = self.branch_layers(x)
         x = self.merge_layer(x)
-        action_output = self.action_layer(x, legal_actions)
+        action_output = self.action_layer(x, pre_legal_actions)
         return action_output
     
 
