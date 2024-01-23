@@ -5,13 +5,14 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-01-15 13:49:07
+LastEditTime: 2024-01-23 18:07:17
 Discription: 
 '''
 from enum import Enum
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.distributions import Categorical,Normal
 from joyrl.algos.base.base_layer import LayerConfig
 from joyrl.algos.base.base_layer import create_layer
 
@@ -38,7 +39,7 @@ class DiscreteActionLayer(BaseActionLayer):
         action_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_dim], activation='leakyrelu')
         self.logits_p_layer, layer_out_size = create_layer(output_size, action_layer_cfg)
 
-    def forward(self,x, legal_actions = None):
+    def forward(self, x, legal_actions = None):
         logits_p = self.logits_p_layer(x)
         if legal_actions is not None:
             legal_actions = logits_p.type(logits_p.dtype)
@@ -50,6 +51,16 @@ class DiscreteActionLayer(BaseActionLayer):
             probs = (probs + self.min_policy) / (1.0 + self.min_policy * self.action_dim) # add a small probability to explore
         output = {"probs": probs}
         return output
+    
+    def get_action(self, x, **kwargs):
+        ''' get action
+        '''
+        legal_actions = kwargs.get('legal_actions', None)
+        output = self.forward(x, legal_actions)
+        probs = output["probs"]
+        dist = Categorical(probs)
+        # action = torch.multinomial(probs, 1).squeeze(1)
+        return action
         
 class ContinuousActionLayer(BaseActionLayer):
     def __init__(self, cfg, input_size, action_dim, **kwargs):
@@ -71,6 +82,13 @@ class ContinuousActionLayer(BaseActionLayer):
         # sigma = torch.clamp(sigma, min=-0.25, max=0.25) # clamp the std between 0.001 and 1
         output = {"mu": mu, "sigma": sigma}
         return output
+    def get_action(self, x, **kwargs):
+        ''' get action
+        '''
+        output = self.forward(x)
+        mu, sigma = output["mu"], output["sigma"]
+        action = torch.normal(mu, sigma)
+        return action
 class DPGActionLayer(BaseActionLayer):
     def __init__(self, cfg, input_size, action_dim, **kwargs):
         super(DPGActionLayer, self).__init__()

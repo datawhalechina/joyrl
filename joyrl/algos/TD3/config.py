@@ -10,7 +10,7 @@ Discription:
 '''
 class AlgoConfig:
     def __init__(self) -> None:
-        self.action_type = 'dpg' # action type, dpg: deterministic policy gradient
+        self.action_type_list = 'dpg' # action type, dpg: deterministic policy gradient
         self.buffer_type = 'REPLAY_QUE' # replay buffer type
         self.explore_steps = 100  # exploration steps before training
         self.policy_freq = 2  # policy update frequency

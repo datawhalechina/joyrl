@@ -6,7 +6,7 @@ general_cfg:
   load_checkpoint: false 
   load_path: Train_CartPole-v1_PPO_20231225-124842 # if load checkpoint, then config path in 'tasks' dir
   load_model_step: best 
-  n_interactors: 2
+  n_interactors: 1
   max_episode: -1
   max_step: 200 
   seed: 1 
@@ -17,6 +17,7 @@ general_cfg:
   exps_trucation_size: 20
 algo_cfg:
   ppo_type: clip
+  learn_frequency: 20 
   independ_actor: true
   share_optimizer: false
   actor_merge_layers:

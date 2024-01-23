@@ -15,7 +15,7 @@ import torch.optim as optim
 from torch.distributions import Categorical,Normal
 import torch.utils.data as Data
 import numpy as np
-from joyrl.algos.base.network import ValueNetwork, CriticNetwork, ActorNetwork
+from joyrl.algos.base.network import ActorCriticNetwork, CriticNetwork, ActorNetwork
 from joyrl.algos.base.policy import BasePolicy
 
 class Policy(BasePolicy):
@@ -31,8 +31,8 @@ class Policy(BasePolicy):
             self.kl_beta = cfg.kl_beta
             self.kl_alpha = cfg.kl_alpha
         self.gamma = cfg.gamma
-        # self.action_type = cfg.action_type
-        # if self.action_type.lower() == 'continuous': # continuous action space
+        # self.action_type_list = cfg.action_type
+        # if self.action_type_list.lower() == 'continuous': # continuous action space
         #     self.action_scale = torch.tensor((self.action_space.high - self.action_space.low)/2, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
         #     self.action_bias = torch.tensor((self.action_space.high + self.action_space.low)/2, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
         self.critic_loss_coef = cfg.critic_loss_coef
@@ -66,10 +66,10 @@ class Policy(BasePolicy):
 
     def create_graph(self):
         if not self.independ_actor:
-            self.policy_net = ValueNetwork(self.cfg, self.state_size, self.action_size, self.action_type)
+            self.policy_net = ActorCriticNetwork(self.cfg, self.state_size, self.action_size_list, self.action_type_list)
         else:
-            self.actor = ActorNetwork(self.cfg, self.state_size, self.action_size, self.action_type)
-            self.critic = CriticNetwork(self.cfg, self.state_size, self.action_size)
+            self.actor = ActorNetwork(self.cfg, self.state_size, self.action_size_list, self.action_type_list)
+            self.critic = CriticNetwork(self.cfg, self.state_size, self.action_size_list)
 
     def create_optimizer(self):
         if self.share_optimizer:
@@ -81,7 +81,7 @@ class Policy(BasePolicy):
     def get_action(self, state, mode='sample', **kwargs):
         state = torch.tensor(np.array(state), device=self.device, dtype=torch.float32).unsqueeze(dim=0)
         if not self.independ_actor:
-            if self.action_type.lower() == 'continuous':
+            if self.action_type_list.lower() == 'continuous':
                 self.value, self.mu, self.sigma = self.policy_net(state)
             else:
                 self.probs = self.policy_net(state)
@@ -89,7 +89,7 @@ class Policy(BasePolicy):
             self.value = self.critic(state)
             output = self.actor(state)
             self.probs = output['probs']
-            # if self.action_type.lower() == 'continuous':
+            # if self.action_type_list.lower() == 'continuous':
             #     self.mu, self.sigma = self.actor(state)
             # else:
             #     output = self.actor(state)
@@ -104,12 +104,12 @@ class Policy(BasePolicy):
         return action
     def update_policy_transition(self):
         self.policy_transition = {'value': self.value, 'probs': self.probs, 'log_probs': self.log_probs}
-        # if self.action_type.lower() == 'continuous':
+        # if self.action_type_list.lower() == 'continuous':
         #     self.policy_transition = {'value': self.value, 'mu': self.mu, 'sigma': self.sigma}
         # else:
         #     self.policy_transition = {'value': self.value, 'probs': self.probs, 'log_probs': self.log_probs}
     def sample_action(self,**kwargs):
-        # if self.action_type.lower() == 'continuous':
+        # if self.action_type_list.lower() == 'continuous':
         #     mean = self.mu * self.action_scale + self.action_bias
         #     std = self.sigma
         #     dist = Normal(mean,std)
@@ -128,13 +128,13 @@ class Policy(BasePolicy):
         return action.detach().cpu().numpy().item()
     def predict_action(self, **kwargs):
         return torch.argmax(self.probs).detach().cpu().numpy().item()
-        if self.action_type.lower() == 'continuous':
+        if self.action_type_list.lower() == 'continuous':
             return self.mu.detach().cpu().numpy()[0]
         else:
             return torch.argmax(self.probs).detach().cpu().numpy().item()
     def learn(self, **kwargs): 
         states, actions, next_states, rewards, dones, returns = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones'), kwargs.get('returns')
-        # if self.action_type.lower() == 'continuous':      
+        # if self.action_type_list.lower() == 'continuous':      
         #     mus, sigmas = kwargs.get('mu'), kwargs.get('sigma')
         #     mus = torch.stack(mus, dim=0).to(device=self.device, dtype=torch.float32)
         #     sigmas = torch.stack(sigmas, dim=0).to(device=self.device, dtype=torch.float32)
@@ -172,7 +172,7 @@ class Policy(BasePolicy):
                 dist = Categorical(new_probs)
                 # get new action probabilities
                 new_log_probs = dist.log_prob(old_actions.squeeze(dim=1)).unsqueeze(dim=1) # shape:[batch_size,1]
-                # if self.action_type.lower() == 'continuous':
+                # if self.action_type_list.lower() == 'continuous':
                 #     mu, sigma = self.actor(old_states)
                 #     mean = mu * self.action_scale + self.action_bias
                 #     std = sigma

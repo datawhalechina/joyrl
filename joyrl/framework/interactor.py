@@ -9,6 +9,10 @@ from joyrl.framework.base import Moduler
 from joyrl.framework.recorder import Recorder
 from joyrl.utils.utils import exec_method, create_module
 
+class BaseInteractor(object):
+    def __init__(self, cfg: MergedConfig, **kwargs) -> None:
+        self.cfg = cfg 
+
 class Interactor:
     def __init__(self, cfg: MergedConfig, **kwargs) -> None:
         self.cfg = cfg
