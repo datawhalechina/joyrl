@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-21 18:17:39
+LastEditTime: 2024-01-23 22:08:15
 Discription: 
 '''
 import torch
@@ -108,7 +108,15 @@ class Policy(BasePolicy):
         #     self.policy_transition = {'value': self.value, 'mu': self.mu, 'sigma': self.sigma}
         # else:
         #     self.policy_transition = {'value': self.value, 'probs': self.probs, 'log_probs': self.log_probs}
-    def sample_action(self,**kwargs):
+    def sample_action(self, state, **kwargs):
+        if not self.independ_actor:
+            pass
+        else:
+            self.value = self.critic(state)
+            action_output = self.actor(state) # list
+            self.probs = action_output['probs']
+            action = self.actor.action_layers.get_actions(self.probs, **kwargs)
+
         # if self.action_type_list.lower() == 'continuous':
         #     mean = self.mu * self.action_scale + self.action_bias
         #     std = self.sigma
