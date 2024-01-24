@@ -27,12 +27,12 @@ class Policy(BasePolicy):
         self.create_summary() # create summary
     
     def create_graph(self):
-        self.state_size, self.action_size_list = self.get_state_action_size()
+        self.state_size_list, self.action_size_list = self.get_state_action_size()
         self.n_actions = self.action_size_list[-1]
-        self.input_head_size = [None, self.state_size[-1]+self.action_size_list[-1]]
+        self.input_head_size = [None, self.state_size_list[-1]+self.action_size_list[-1]]
         # Actor
-        self.actor = ActorNetwork(self.cfg, self.state_size, self.action_space).to(self.device)
-        self.actor_target = ActorNetwork(self.cfg, self.state_size, self.action_space).to(self.device)
+        self.actor = ActorNetwork(self.cfg, self.state_size_list, self.action_space).to(self.device)
+        self.actor_target = ActorNetwork(self.cfg, self.state_size_list, self.action_space).to(self.device)
         self.actor_target.load_state_dict(self.actor.state_dict())
         # critice - 2Q
         self.critic_1 = CriticNetwork(self.cfg, self.input_head_size).to(self.device)

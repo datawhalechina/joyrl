@@ -32,9 +32,9 @@ class Policy(BasePolicy):
         self.to(self.device)
 
     def create_graph(self):
-        self.state_size, self.action_size_list = self.get_state_action_size()
-        self.policy_net = QNetwork(self.cfg, self.state_size, self.action_size_list).to(self.device)
-        self.target_net = QNetwork(self.cfg, self.state_size, self.action_size_list).to(self.device)
+        self.state_size_list, self.action_size_list = self.get_state_action_size()
+        self.policy_net = QNetwork(self.cfg, self.state_size_list, self.action_size_list).to(self.device)
+        self.target_net = QNetwork(self.cfg, self.state_size_list, self.action_size_list).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict()) # or use this to copy parameters
         self.create_optimizer()
 

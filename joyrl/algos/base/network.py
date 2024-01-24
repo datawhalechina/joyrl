@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-24 23:31:51
+LastEditTime: 2024-01-25 00:26:40
 Discription: 
 '''
 import copy
@@ -85,11 +85,11 @@ class MergeLayer(nn.Module):
                 layer.reset_noise()
 
 class BaseNework(nn.Module):
-    def __init__(self, cfg: MergedConfig, state_size_list: list, action_size_list: list) -> None:
+    def __init__(self, cfg: MergedConfig) -> None:
         super(BaseNework, self).__init__()
         self.cfg = cfg
-        self.state_size_list = state_size_list
-        self.action_size_list = action_size_list
+        self.state_size_list = self.cfg.state_size_list
+        self.action_size_list = self.cfg.action_size_list
         
     def create_graph(self):
         self.branch_layers = BranchLayers(self.cfg.branch_layers, [[None, 1], [None, 1]])
@@ -103,7 +103,7 @@ class BaseNework(nn.Module):
 class QNetwork(BaseNework):
     ''' Q network, for value-based methods like DQN
     '''
-    def __init__(self, cfg: MergedConfig, state_size_list: list, action_size_list: list):
+    def __init__(self, cfg: MergedConfig):
         '''_summary_
 
         Args:
@@ -113,7 +113,7 @@ class QNetwork(BaseNework):
         Raises:
             ValueError: _description_
         '''
-        super(QNetwork, self).__init__(cfg, state_size_list, action_size_list)
+        super(QNetwork, self).__init__(cfg)
         self.dueling = hasattr(cfg, 'dueling') and cfg.dueling
         self.create_graph()
 
@@ -146,12 +146,12 @@ class QNetwork(BaseNework):
         self.branch_layers.reset_noise()
         self.merge_layer.reset_noise()
 class ActionLayers(nn.Module):
-    def __init__(self, cfg: MergedConfig, input_size: list, action_type_list: list, action_size_list: list ) -> None:
+    def __init__(self, cfg: MergedConfig, input_size: list) -> None:
         super(ActionLayers, self).__init__()
         self.cfg = cfg
         self.input_size = input_size
-        self.action_size_list = action_size_list
-        self.action_type_list = action_type_list
+        self.action_size_list = self.cfg.action_size_list
+        self.action_type_list = self.cfg.action_type_list
         assert len(self.action_type_list) == 1 and len(self.action_type_list) == len(self.action_size_list), "action_type_list and action_size_list must have the same length, and only one output"
         self.actor_outputs = []
         self.create_graph()
@@ -202,13 +202,13 @@ class ActionLayers(nn.Module):
 class ActorCriticNetwork(BaseNework):
     ''' Value network, for policy-based methods,  in which the branch_layers and critic share the same network
     '''
-    def __init__(self, cfg: MergedConfig, state_size_list: list, action_size_list: list, action_type_list: list) -> None:
-        super(ActorCriticNetwork, self).__init__(cfg, state_size_list, action_size_list)
-        self.action_type_list = action_type_list
+    def __init__(self, cfg: MergedConfig) -> None:
+        super(ActorCriticNetwork, self).__init__(cfg)
+        self.action_type_list = self.cfg.action_type_list
         self.create_graph()
         
     def create_graph(self):
-        self.branch_layers = BranchLayers(self.cfg.branch_layers, self.state_size_list)
+        self.branch_layers = BranchLayers(self.cfg.branch_layers, self.state_size_list_list)
         self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
         self.value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
         self.value_layer, _ = create_layer(self.merge_layer.output_size, self.value_layer_cfg)
@@ -223,15 +223,15 @@ class ActorCriticNetwork(BaseNework):
 
 
 class ActorNetwork(BaseNework):
-    def __init__(self, cfg: MergedConfig, state_size_list: list, action_size_list: list, action_type_list: list) -> None:
-        super(ActorNetwork, self).__init__(cfg, state_size_list, action_size_list)
-        self.action_type_list = action_type_list
+    def __init__(self, cfg: MergedConfig) -> None:
+        super(ActorNetwork, self).__init__(cfg)
+        self.action_type_list = self.cfg.action_type_list
         self.create_graph()
     
     def create_graph(self):
         self.branch_layers = BranchLayers(self.cfg.actor_branch_layers, self.state_size_list)
         self.merge_layer = MergeLayer(self.cfg.actor_merge_layers, self.branch_layers.output_size_list)
-        self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size, self.action_type_list, self.action_size_list)
+        self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size)
         
     def forward(self, x, pre_legal_actions=None):
         x = self.branch_layers(x)
@@ -241,8 +241,8 @@ class ActorNetwork(BaseNework):
     
 
 class CriticNetwork(BaseNework):
-    def __init__(self, cfg: MergedConfig, state_size_list: list, action_size_list: list) -> None:
-        super(CriticNetwork, self).__init__(cfg, state_size_list, action_size_list)
+    def __init__(self, cfg: MergedConfig) -> None:
+        super(CriticNetwork, self).__init__(cfg)
         self.create_graph()
 
     def create_graph(self):

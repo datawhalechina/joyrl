@@ -35,11 +35,11 @@ class Policy(BasePolicy):
         return self.action_size_list
 
     def create_graph(self):
-        self.state_size, self.action_size_list = self.get_state_action_size()
-        self.input_head_size = [None, self.state_size[-1]+self.action_size_list[-1]]
-        self.actor = ActorNetwork(self.cfg, self.state_size, self.action_space)
+        self.state_size_list, self.action_size_list = self.get_state_action_size()
+        self.input_head_size = [None, self.state_size_list[-1]+self.action_size_list[-1]]
+        self.actor = ActorNetwork(self.cfg, self.state_size_list, self.action_space)
         self.critic = CriticNetwork(self.cfg, self.input_head_size)
-        self.target_actor = ActorNetwork(self.cfg, self.state_size, self.action_space)
+        self.target_actor = ActorNetwork(self.cfg, self.state_size_list, self.action_space)
         self.target_critic = CriticNetwork(self.cfg, self.input_head_size)
         self.target_actor.load_state_dict(self.actor.state_dict())
         self.target_critic.load_state_dict(self.critic.state_dict())

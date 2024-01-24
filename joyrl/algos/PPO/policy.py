@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-24 23:32:59
+LastEditTime: 2024-01-25 00:26:09
 Discription: 
 '''
 import torch
@@ -66,10 +66,10 @@ class Policy(BasePolicy):
 
     def create_graph(self):
         if not self.independ_actor:
-            self.policy_net = ActorCriticNetwork(self.cfg, self.state_size, self.action_size_list, self.action_type_list)
+            self.policy_net = ActorCriticNetwork(self.cfg).to(self.device)
         else:
-            self.actor = ActorNetwork(self.cfg, self.state_size, self.action_size_list, self.action_type_list)
-            self.critic = CriticNetwork(self.cfg, self.state_size, self.action_size_list)
+            self.actor = ActorNetwork(self.cfg).to(self.device)
+            self.critic = CriticNetwork(self.cfg).to(self.device)
 
     def create_optimizer(self):
         if self.share_optimizer:

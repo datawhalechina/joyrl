@@ -27,14 +27,15 @@ class BasePolicy(nn.Module):
         # state_size must be [[None, state_dim_1], [None, state_dim_2], ...]
         if isinstance(self.obs_space, Box):
             if len(self.obs_space.shape) == 3:
-                self.state_size = [[None, self.obs_space.shape[0], self.obs_space.shape[1], self.obs_space.shape[2]]]
+                self.state_size_list = [[None, self.obs_space.shape[0], self.obs_space.shape[1], self.obs_space.shape[2]]]
             else:
-                self.state_size = [[None, self.obs_space.shape[0]]]
+                self.state_size_list = [[None, self.obs_space.shape[0]]]
         elif isinstance(self.obs_space, Discrete):
-            self.state_size = [[None, self.obs_space.n]]
+            self.state_size_list = [[None, self.obs_space.n]]
         else:
             raise ValueError('obs_space type error')
-        return self.state_size
+        setattr(self.cfg, 'state_size_list', self.state_size_list)
+        return self.state_size_list
     
     def get_action_size(self):
         ''' get action size
@@ -45,13 +46,18 @@ class BasePolicy(nn.Module):
             self.action_type_list = [ActionLayerType.CONTINUOUS]
             self.action_high_list = [self.action_space.high]
             self.action_low_list = [self.action_space.low]
+            
         elif isinstance(self.action_space, Discrete):
             self.action_size_list = [self.action_space.n]
             self.action_type_list = [ActionLayerType.DISCRETE]
-            self.action_high_list = [0]
+            self.action_high_list = [self.action_space.n]
             self.action_low_list = [0]
         else:
             raise ValueError('action_space type error')
+        setattr(self.cfg, 'action_size_list', self.action_size_list)
+        setattr(self.cfg, 'action_type_list', self.action_type_list)
+        setattr(self.cfg, 'action_high_list', self.action_high_list)
+        setattr(self.cfg, 'action_low_list', self.action_low_list)
     
     def create_optimizer(self):
         self.optimizer = optim.Adam(self.parameters(), lr=self.cfg.lr) 

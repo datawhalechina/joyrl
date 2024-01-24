@@ -17,7 +17,7 @@ general_cfg:
   policy_summary_fre: 2
 
 algo_cfg:
-  learn_frequency: 20 
+  learn_frequency: 1
   # branch_layers:
   #   - name: feature_1
   #     layers: 
