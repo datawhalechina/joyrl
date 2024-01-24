@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-25 00:26:40
+LastEditTime: 2024-01-25 00:37:17
 Discription: 
 '''
 import copy
@@ -162,11 +162,11 @@ class ActionLayers(nn.Module):
             action_type = self.action_type_list[i]
             action_size = self.action_size_list[i]
             if action_type == ActionLayerType.CONTINUOUS:
-                action_layer = ContinuousActionLayer(self.cfg, self.input_size, action_size)
+                action_layer = ContinuousActionLayer(self.cfg, self.input_size, action_size, id = i)
             elif action_type == ActionLayerType.DISCRETE:
-                action_layer = DiscreteActionLayer(self.cfg, self.input_size, action_size)
+                action_layer = DiscreteActionLayer(self.cfg, self.input_size, action_size,id = i)
             elif action_type == ActionLayerType.DPG:
-                action_layer = DPGActionLayer(self.cfg, self.input_size, action_size)
+                action_layer = DPGActionLayer(self.cfg, self.input_size, action_size, id = i)
             else:
                 raise ValueError("action_type must be specified in discrete, continuous or dpg")
             self.action_layers.append(action_layer)
@@ -180,7 +180,8 @@ class ActionLayers(nn.Module):
     def get_actions(self, **kwargs):
         actions = []
         for i, action_layer in enumerate(self.action_layers):
-            actions.append(action_layer.get_action(**kwargs))
+            kwargs.update({'idx': i})
+            actions.append(action_layer.get_action(idx = i, **kwargs))
         return actions[0]
         return actions # [action_1, action_2, ...]
     

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-01-24 23:23:40
+LastEditTime: 2024-01-25 00:40:52
 Discription: 
 '''
 from enum import Enum
@@ -24,14 +24,23 @@ class ActionLayerType(Enum):
     DPG = 3
     
 class BaseActionLayer(nn.Module):
-    def __init__(self):
-        super(BaseActionLayer, self).__init__()
-        pass
+    def __init__(self,cfg):
+        super(BaseActionLayer, self).__init__(cfg)
+        self.cfg = cfg
+
+    def get_action(self, **kwargs):
+        mode = kwargs.get("mode", "sample")
+        if mode == "sample":
+            return self.sample_action()
+        elif mode == "predict":
+            return self.predict_action()
+        else:
+            raise NotImplementedError
 
 class DiscreteActionLayer(BaseActionLayer):
-    def __init__(self, cfg, input_size, action_dim, **kwargs):
-        super(DiscreteActionLayer, self).__init__()
-        self.cfg = cfg
+    def __init__(self, cfg, input_size, action_dim,id = 0, **kwargs):
+        super(DiscreteActionLayer, self).__init__(cfg=cfg)
+        self.id = id
         self.min_policy = cfg.min_policy
         if kwargs: self.id = kwargs['id']
         self.action_dim = action_dim
@@ -54,16 +63,7 @@ class DiscreteActionLayer(BaseActionLayer):
         output = {"probs": probs}
         self.probs = probs
         return output
-    
-    def get_action(self, **kwargs):
-        mode = kwargs.get("mode", "sample")
-        if mode == "sample":
-            return self.sample_action()
-        elif mode == "predict":
-            return self.predict_action()
-        else:
-            raise NotImplementedError
-        
+
     def sample_action(self):
         ''' get action
         '''
@@ -94,12 +94,15 @@ class DiscreteActionLayer(BaseActionLayer):
         entropy = dist.entropy()
         entropy_mean = torch.mean(entropy)
         return entropy_mean
-
-        
+ 
 class ContinuousActionLayer(BaseActionLayer):
-    def __init__(self, cfg, input_size, action_dim, **kwargs):
-        super(ContinuousActionLayer, self).__init__()
-        self.cfg = cfg
+    def __init__(self, cfg, input_size, action_dim, id = 0, **kwargs):
+        super(ContinuousActionLayer, self).__init__(cfg=cfg)
+        self.id = id
+        self.action_high = self.cfg.action_high_list[self.id]
+        self.action_low = self.cfg.action_low_list[self.id]
+        self.action_scale = torch.tensor((self.action_high - self.action_low)/2, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=0)
+        self.action_bias = torch.tensor((self.action_high + self.action_high)/2, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=0)
         self.min_policy = cfg.min_policy
         if kwargs: self.id = kwargs['id']
         self.action_dim = action_dim
@@ -115,16 +118,40 @@ class ContinuousActionLayer(BaseActionLayer):
         # sigma = F.softplus(self.fc4(x)) + 0.001 # std of normal distribution, add a small value to avoid 0
         # sigma = torch.clamp(sigma, min=-0.25, max=0.25) # clamp the std between 0.001 and 1
         output = {"mu": mu, "sigma": sigma}
-        # mode = kwargs.get("mode", "sample")
-        # output.update(self.get_action(mu, mode=mode))
+        self.mu = mu
+        self.sigma = sigma
+        self.mean = self.mu * self.action_scale + self.action_bias
+        self.std = self.sigma
         return output
-    def get_action(self, x, **kwargs):
+    
+    def sample_action(self):
         ''' get action
         '''
-        output = self.forward(x)
-        mu, sigma = output["mu"], output["sigma"]
-        action = torch.normal(mu, sigma)
-        return action
+        dist = Normal(self.mean,self.std)
+        action = dist.sample()
+        action = torch.clamp(action, torch.tensor(self.action_low, device=self.cfg.device, dtype=torch.float32), torch.tensor(self.action_high, device=self.cfg.device, dtype=torch.float32))
+        return action.detach().cpu().numpy()[0]
+    
+    def predict_action(self):
+        ''' get action
+        '''
+        return self.mean.detach().cpu().numpy()[0]
+    
+    def get_log_prob(self, action):
+        ''' get log_probs
+        '''
+        # action shape is [batch_size, action_dim]
+        dist = Normal(self.mean,self.std)
+        log_prob = dist.log_prob(action)
+        return log_prob
+    
+    def get_mean_entropy(self):
+        ''' get entropy
+        '''
+        dist = Normal(self.mean,self.std)
+        entropy = dist.entropy()
+        entropy_mean = torch.mean(entropy)
+        return entropy_mean
 class DPGActionLayer(BaseActionLayer):
     def __init__(self, cfg, input_size, action_dim, **kwargs):
         super(DPGActionLayer, self).__init__()
