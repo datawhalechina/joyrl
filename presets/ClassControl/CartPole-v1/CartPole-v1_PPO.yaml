@@ -13,8 +13,8 @@ general_cfg:
   online_eval: true 
   online_eval_episode: 10 
   model_save_fre: 10 
+  policy_summary_fre: 2
 algo_cfg:
-  ppo_type: clip
   independ_actor: true
   share_optimizer: false
   actor_merge_layers:

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-23 22:08:15
+LastEditTime: 2024-01-24 23:32:59
 Discription: 
 '''
 import torch
@@ -76,47 +76,20 @@ class Policy(BasePolicy):
             self.optimizer = optim.Adam(self.parameters(), lr=self.cfg.lr) 
         else:
             self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.cfg.actor_lr)
-            self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.cfg.critic_lr)
-    @torch.no_grad()         
-    def get_action(self, state, mode='sample', **kwargs):
+            self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.cfg.critic_lr)       
+    def update_policy_transition(self):
+        self.policy_transition = {'value': self.value, 'log_prob': self.log_prob}
+    def sample_action(self, state, **kwargs):
         state = torch.tensor(np.array(state), device=self.device, dtype=torch.float32).unsqueeze(dim=0)
         if not self.independ_actor:
-            if self.action_type_list.lower() == 'continuous':
-                self.value, self.mu, self.sigma = self.policy_net(state)
-            else:
-                self.probs = self.policy_net(state)
+            raise NotImplementedError
         else:
             self.value = self.critic(state)
-            output = self.actor(state)
-            self.probs = output['probs']
-            # if self.action_type_list.lower() == 'continuous':
-            #     self.mu, self.sigma = self.actor(state)
-            # else:
-            #     output = self.actor(state)
-            #     self.probs = output['probs']
-        if self.cfg.mode == 'train':
-            action = self.sample_action(**kwargs)
-            self.update_policy_transition()
-        elif self.cfg.mode  == 'test':
-            action = self.predict_action(**kwargs)
-        else:
-            raise NameError('mode must be sample or predict')
-        return action
-    def update_policy_transition(self):
-        self.policy_transition = {'value': self.value, 'probs': self.probs, 'log_probs': self.log_probs}
-        # if self.action_type_list.lower() == 'continuous':
-        #     self.policy_transition = {'value': self.value, 'mu': self.mu, 'sigma': self.sigma}
-        # else:
-        #     self.policy_transition = {'value': self.value, 'probs': self.probs, 'log_probs': self.log_probs}
-    def sample_action(self, state, **kwargs):
-        if not self.independ_actor:
-            pass
-        else:
-            self.value = self.critic(state)
-            action_output = self.actor(state) # list
-            self.probs = action_output['probs']
-            action = self.actor.action_layers.get_actions(self.probs, **kwargs)
-
+            _ = self.actor(state) # list
+            actions = self.actor.action_layers.get_actions(mode = 'sample')
+            self.log_prob = self.actor.action_layers.get_log_probs(actions).detach().cpu().numpy()[0] # shape:[1,]
+        self.update_policy_transition()
+        return actions
         # if self.action_type_list.lower() == 'continuous':
         #     mean = self.mu * self.action_scale + self.action_bias
         #     std = self.sigma
@@ -130,33 +103,19 @@ class Policy(BasePolicy):
         #     action = dist.sample()
         #     self.log_probs = dist.log_prob(action).detach()
         #     return action.detach().cpu().numpy().item()
-        dist = Categorical(self.probs)
-        action = dist.sample()
-        self.log_probs = dist.log_prob(action).detach()
-        return action.detach().cpu().numpy().item()
-    def predict_action(self, **kwargs):
-        return torch.argmax(self.probs).detach().cpu().numpy().item()
-        if self.action_type_list.lower() == 'continuous':
-            return self.mu.detach().cpu().numpy()[0]
-        else:
-            return torch.argmax(self.probs).detach().cpu().numpy().item()
+        # dist = Categorical(self.probs)
+        # action = dist.sample()
+        # self.log_probs = dist.log_prob(action).detach()
+        # return action.detach().cpu().numpy().item()
+    @torch.no_grad()
+    def predict_action(self, state, **kwargs):
+        state = torch.tensor(np.array(state), device=self.device, dtype=torch.float32).unsqueeze(dim=0)
+        _ = self.actor(state) # list
+        actions = self.actor.action_layers.get_actions(mode = 'predict')
+        return actions
     def learn(self, **kwargs): 
         states, actions, next_states, rewards, dones, returns = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones'), kwargs.get('returns')
-        # if self.action_type_list.lower() == 'continuous':      
-        #     mus, sigmas = kwargs.get('mu'), kwargs.get('sigma')
-        #     mus = torch.stack(mus, dim=0).to(device=self.device, dtype=torch.float32)
-        #     sigmas = torch.stack(sigmas, dim=0).to(device=self.device, dtype=torch.float32)
-        #     means = mus * self.action_scale + self.action_bias
-        #     stds = sigmas
-        #     dists = Normal(means,stds)
-        #     old_log_probs = dists.log_prob(torch.tensor(np.array(actions), device=self.device, dtype=torch.float32)).detach()
-        #     old_probs = torch.exp(old_log_probs)
-        # else:
-        #     old_probs, old_log_probs  = kwargs.get('probs'), kwargs.get('log_probs')
-        #     old_probs = torch.stack(old_probs, dim=0).to(device=self.device, dtype=torch.float32)  # shape:[batch_size,n_actions]
-        #     old_log_probs = torch.tensor(old_log_probs, device=self.device, dtype=torch.float32).unsqueeze(dim=1) # shape:[batch_size,1]
-        old_probs, old_log_probs  = kwargs.get('probs'), kwargs.get('log_probs')
-        old_probs = torch.stack(old_probs, dim=0).to(device=self.device, dtype=torch.float32)  # shape:[batch_size,n_actions]
+        old_log_probs  = kwargs.get('log_probs')
         old_log_probs = torch.tensor(old_log_probs, device=self.device, dtype=torch.float32).unsqueeze(dim=1) # shape:[batch_size,1]
         # convert to tensor
         states = torch.tensor(np.array(states), device=self.device, dtype=torch.float32) # shape:[batch_size,n_states]
@@ -166,20 +125,18 @@ class Policy(BasePolicy):
         rewards = torch.tensor(np.array(rewards), device=self.device, dtype=torch.float32) # shape:[batch_size,1]
         dones = torch.tensor(np.array(dones), device=self.device, dtype=torch.float32) # shape:[batch_size,1]
         # returns = self._compute_returns(rewards, dones) # shape:[batch_size,1]  
-        returns = torch.tensor(returns.copy(), device=self.device, dtype=torch.float32) # shape:[batch_size,1]
-        torch_dataset = Data.TensorDataset(states, actions, old_probs, old_log_probs,returns)
+        returns = torch.tensor(returns, device=self.device, dtype=torch.float32) # shape:[batch_size,1]
+        torch_dataset = Data.TensorDataset(states, actions, old_log_probs,returns)
         train_loader = Data.DataLoader(dataset=torch_dataset, batch_size=self.sgd_batch_size, shuffle=False,drop_last=False)
         for _ in range(self.k_epochs):
-            for _, (old_states, old_actions, old_probs, old_log_probs, returns) in enumerate(train_loader):
+            for _, (old_states, old_actions, old_log_probs, returns) in enumerate(train_loader):
                 # compute advantages
                 values = self.critic(old_states) # detach to avoid backprop through the critic
                 advantages = returns - values.detach() # shape:[batch_size,1]
                 # get action probabilities
-                output = self.actor(old_states) 
-                new_probs = output['probs'] # shape:[batch_size,n_actions]
-                dist = Categorical(new_probs)
-                # get new action probabilities
-                new_log_probs = dist.log_prob(old_actions.squeeze(dim=1)).unsqueeze(dim=1) # shape:[batch_size,1]
+                _ = self.actor(old_states) 
+                new_log_probs = self.actor.action_layers.get_log_probs(old_actions.squeeze(dim=1)).unsqueeze(dim=1) # shape:[batch_size,1]
+                entropy_mean = self.actor.action_layers.get_mean_entropy()
                 # if self.action_type_list.lower() == 'continuous':
                 #     mu, sigma = self.actor(old_states)
                 #     mean = mu * self.action_scale + self.action_bias
@@ -196,25 +153,10 @@ class Policy(BasePolicy):
                 ratio = torch.exp(new_log_probs - old_log_probs) # shape: [batch_size, 1]
                 # compute surrogate loss
                 surr1 = ratio * advantages # shape: [batch_size, 1]
-                if self.ppo_type == 'clip':
-                    surr2 = torch.clamp(ratio, 1 - self.eps_clip, 1 + self.eps_clip) * advantages
+                surr2 = torch.clamp(ratio, 1 - self.eps_clip, 1 + self.eps_clip) * advantages
                     # compute actor loss
-                    self.actor_loss = - (torch.mean(torch.min(surr1, surr2)) + torch.mean(self.entropy_coef * dist.entropy()))
-                elif self.ppo_type == 'kl':
-                    kl_mean = F.kl_div(torch.log(new_probs.detach()), old_probs.unsqueeze(1),reduction='mean') # KL(input|target),new_probs.shape: [batch_size, n_actions]
-                    # kl_div = torch.mean(new_probs * (torch.log(new_probs) - torch.log(old_probs)), dim=1) # KL(new|old),new_probs.shape: [batch_size, n_actions]
-                    surr2 = self.kl_lambda * kl_mean
-                    # surr2 = torch.clamp(ratio, 1 - self.eps_clip, 1 + self.eps_clip) * advantages
-                    # compute actor loss
-                    self.actor_loss = - (surr1.mean() + surr2 + self.entropy_coef * dist.entropy().mean())
-                    if kl_mean > self.kl_beta * self.kl_target:
-                        self.kl_lambda *= self.kl_alpha
-                    elif kl_mean < 1/self.kl_beta * self.kl_target:
-                        self.kl_lambda /= self.kl_alpha
-                else:
-                    raise NameError("ppo_type must be 'clip' or 'kl'")
+                self.actor_loss = - (torch.mean(torch.min(surr1, surr2)) + self.entropy_coef * entropy_mean)
                 # compute critic loss
-                
                 self.critic_loss = nn.MSELoss()(returns, values) # shape: [batch_size, 1]
                 # compute total loss
                 if self.share_optimizer:

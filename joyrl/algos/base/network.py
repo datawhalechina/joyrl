@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-23 22:14:38
+LastEditTime: 2024-01-24 23:31:51
 Discription: 
 '''
 import copy
@@ -152,11 +152,14 @@ class ActionLayers(nn.Module):
         self.input_size = input_size
         self.action_size_list = action_size_list
         self.action_type_list = action_type_list
+        assert len(self.action_type_list) == 1 and len(self.action_type_list) == len(self.action_size_list), "action_type_list and action_size_list must have the same length, and only one output"
+        self.actor_outputs = []
+        self.create_graph()
 
     def create_graph(self):
         self.action_layers = nn.ModuleList()
         for i in range(len(self.action_type_list)):
-            action_type = ActionLayerType(self.action_type_list[i].upper())
+            action_type = self.action_type_list[i]
             action_size = self.action_size_list[i]
             if action_type == ActionLayerType.CONTINUOUS:
                 action_layer = ContinuousActionLayer(self.cfg, self.input_size, action_size)
@@ -169,13 +172,32 @@ class ActionLayers(nn.Module):
             self.action_layers.append(action_layer)
 
     def forward(self, x, **kwargs):
-        action_outputs = []
+        self.actor_outputs = []
         for i, action_layer in enumerate(self.action_layers):
-            action_outputs.append(action_layer(x[i], **kwargs))
-        if len(action_outputs) == 1: #TODO: check if it supports multiple actions
-            return action_outputs[0]
-        return action_outputs
-
+            self.actor_outputs.append(action_layer(x, **kwargs))
+        return self.actor_outputs
+    
+    def get_actions(self, **kwargs):
+        actions = []
+        for i, action_layer in enumerate(self.action_layers):
+            actions.append(action_layer.get_action(**kwargs))
+        return actions[0]
+        return actions # [action_1, action_2, ...]
+    
+    def get_log_probs(self, actions):
+        return self.action_layers[0].get_log_prob(actions)
+        # log_prob_sum = 0
+        # for i, action_layer in enumerate(self.action_layers):
+        #     log_prob_sum += action_layer.get_log_prob(actions[i])
+        # return log_prob_sum
+    
+    def get_mean_entropy(self):
+        return self.action_layers[0].get_mean_entropy()
+        # entropy_sum = 0
+        # for i, action_layer in enumerate(self.action_layers):
+        #     entropy_sum += action_layer.get_entropy()
+        # entropy_mean = entropy_sum / len(self.action_layers)
+        # return entropy_mean
    
 class ActorCriticNetwork(BaseNework):
     ''' Value network, for policy-based methods,  in which the branch_layers and critic share the same network
@@ -190,13 +212,13 @@ class ActorCriticNetwork(BaseNework):
         self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
         self.value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
         self.value_layer, _ = create_layer(self.merge_layer.output_size, self.value_layer_cfg)
-        self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size,  self.action_type_list, self.action_size_list)
+        self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size, self.action_type_list, self.action_size_list)
         
-    def forward(self, x, pre_legal_actions=None, mode="sample"):
+    def forward(self, x, pre_legal_actions=None):
         x = self.branch_layers(x)
         x = self.merge_layer(x)
         value = self.value_layer(x)
-        action_outputs = self.action_layers(x, pre_legal_actions, mode=mode)
+        action_outputs = self.action_layers(x, pre_legal_actions)
         return value, action_outputs
 
 
@@ -214,7 +236,7 @@ class ActorNetwork(BaseNework):
     def forward(self, x, pre_legal_actions=None):
         x = self.branch_layers(x)
         x = self.merge_layer(x)
-        action_outputs = self.action_layers(x, pre_legal_actions)
+        action_outputs = self.action_layers(x, pre_legal_actions = pre_legal_actions)
         return action_outputs
     
 

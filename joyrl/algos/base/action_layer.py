@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-01-23 22:20:55
+LastEditTime: 2024-01-24 23:23:40
 Discription: 
 '''
 from enum import Enum
@@ -38,10 +38,10 @@ class DiscreteActionLayer(BaseActionLayer):
         output_size = input_size
         action_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_dim], activation='leakyrelu')
         self.logits_p_layer, layer_out_size = create_layer(output_size, action_layer_cfg)
+        self.probs = None
 
     def forward(self, x, **kwargs):
-        pre_legal_action = kwargs.get("pre_legal_action", None)
-        mode = kwargs.get("mode", "sample")
+        pre_legal_action = kwargs.get("pre_legal_action", None)   
         logits_p = self.logits_p_layer(x)
         if pre_legal_action is not None:
             pre_legal_action = logits_p.type(logits_p.dtype)
@@ -52,31 +52,49 @@ class DiscreteActionLayer(BaseActionLayer):
             probs = F.softmax(logits_p - logits_p.max(dim=1, keepdim=True).values, dim=1) # avoid overflow
             probs = (probs + self.min_policy) / (1.0 + self.min_policy * self.action_dim) # add a small probability to explore
         output = {"probs": probs}
-        # output.update(self.get_action(probs, mode=mode))
+        self.probs = probs
         return output
     
-    def get_action(self, probs, **kwargs):
+    def get_action(self, **kwargs):
         mode = kwargs.get("mode", "sample")
         if mode == "sample":
-            return self.sample_action(probs, **kwargs)
+            return self.sample_action()
         elif mode == "predict":
-            return self.predict_action(probs, **kwargs)
+            return self.predict_action()
         else:
             raise NotImplementedError
         
-    def sample_action(self, probs):
+    def sample_action(self):
         ''' get action
         '''
-        dist = Categorical(probs)
+        dist = Categorical(self.probs)
         action = dist.sample()
-        log_probs = dist.log_prob(action).detach()
         action = action.detach().cpu().numpy().item()
-        return {"action": action, "log_probs": log_probs}
-
-    def predict_action(self, probs):
+        return action
+    
+    def predict_action(self):
         ''' get action
         '''
-        return {"action":torch.argmax(probs).detach().cpu().numpy().item()}
+        return torch.argmax(self.probs).detach().cpu().numpy().item()
+    
+    def get_log_prob(self, action):
+        ''' get log_probs
+        '''
+        # action shape is [batch_size]
+        if isinstance(action, int):
+            action = torch.tensor(action, dtype=torch.int64, device=self.probs.device)
+        dist = Categorical(self.probs)
+        log_prob = dist.log_prob(action)
+        return log_prob
+    
+    def get_mean_entropy(self):
+        ''' get entropy
+        '''
+        dist = Categorical(self.probs)
+        entropy = dist.entropy()
+        entropy_mean = torch.mean(entropy)
+        return entropy_mean
+
         
 class ContinuousActionLayer(BaseActionLayer):
     def __init__(self, cfg, input_size, action_dim, **kwargs):

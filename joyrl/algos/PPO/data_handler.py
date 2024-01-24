@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-05-17 01:08:36
 LastEditor: JiangJi
-LastEditTime: 2024-01-16 00:29:05
+LastEditTime: 2024-01-24 22:21:55
 Discription: 
 '''
 import numpy as np
@@ -32,12 +32,12 @@ class DataHandler(BaseDataHandler):
         dones = np.array([[exp.done] for exp in exps])
         # continue
         probs = [exp.probs[0] for exp in exps] if hasattr(exps[-1],'probs') else None
-        log_probs = [exp.log_probs[0] for exp in exps] if hasattr(exps[-1],'log_probs') else None
+        log_probs = [exp.log_prob for exp in exps] if hasattr(exps[-1],'log_prob') else None
         # discrete
         value = [exp.value[0] for exp in exps] if hasattr(exps[-1],'value') else None
         mu = [exp.mu[0] for exp in exps] if hasattr(exps[-1],'mu') else None
         sigma = [exp.sigma[0] for exp in exps] if hasattr(exps[-1],'sigma') else None
-        returns = self._compute_returns(rewards, dones, self.cfg.gamma)
+        returns = self._compute_returns(rewards, dones, self.cfg.gamma).copy()
         data = {'states': states, 'actions': actions, 'rewards': rewards, 'next_states': next_states, 'dones': dones, 
                 'probs': probs, 'log_probs': log_probs, 'value': value, 'mu': mu, 'sigma': sigma, 'returns': returns}
         return data
