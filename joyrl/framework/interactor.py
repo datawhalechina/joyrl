@@ -1,5 +1,6 @@
 import gymnasium as gym
 import ray
+import time
 import copy
 from joyrl.algos.base.experience import Exp
 from joyrl.framework.message import Msg, MsgType
@@ -8,12 +9,17 @@ from joyrl.framework.base import Moduler
 from joyrl.framework.recorder import Recorder
 from joyrl.utils.utils import exec_method, create_module
 
+class BaseInteractor(object):
+    def __init__(self, cfg: MergedConfig, **kwargs) -> None:
+        self.cfg = cfg 
+
 class Interactor:
     def __init__(self, cfg: MergedConfig, **kwargs) -> None:
         self.cfg = cfg
         self.id = kwargs.get('id', 0)
         self.env = kwargs.get('env', None)
         self.policy = kwargs.get('policy', None)
+        self._raw_exps_que = kwargs.get('raw_exps_que', None)
         self.tracker = kwargs['tracker']
         self.collector = kwargs['collector']
         self.recorder = kwargs['recorder']
@@ -36,7 +42,19 @@ class Interactor:
             self.n_sample_steps = 1
             if self.use_ray: # async mode, set n_sample_steps to inf
                 self.n_sample_steps = float('inf')
-    
+                
+    def _put_exps(self):
+        ''' put exps to collector
+        '''
+        while True:
+            try:
+                self._raw_exps_que.put(self.exps, block=True, timeout=0.01)
+                break
+            except:
+                exec_method(self.logger, 'warning', True, "[Collector.pub_msg] raw_exps_que is full!")
+                time.sleep(0.01)
+        self.exps = []
+
     def run(self):
         ''' run in sync mode
         '''
@@ -64,9 +82,16 @@ class Interactor:
                     self.summary = [] # reset summary
                 self.ep_reward, self.ep_step = 0, 0
                 self.curr_obs, self.curr_info = self.env.reset(seed = self.seed)
-            if len(self.exps) >= self.cfg.exps_trucation_size or terminated or truncated or self.ep_step >= self.cfg.max_step:
-                exec_method(self.collector, 'pub_msg', True, Msg(type = MsgType.COLLECTOR_PUT_EXPS, data = self.exps))
-                self.exps = []
+            if self.cfg.on_policy:
+                if len(self.exps) >= self.cfg.batch_size:
+                    self._put_exps()
+                    # exec_method(self.collector, 'pub_msg', True, Msg(type = MsgType.COLLECTOR_PUT_EXPS, data = self.exps))
+                    # self.exps = []
+            else:
+                if len(self.exps) >= self.cfg.exps_trucation_size or terminated or truncated or self.ep_step >= self.cfg.max_step:
+                    self._put_exps()
+                    # exec_method(self.collector, 'pub_msg', True, Msg(type = MsgType.COLLECTOR_PUT_EXPS, data = self.exps))
+                    
             run_step += 1
             if run_step >= self.n_sample_steps:
                 break
@@ -78,6 +103,7 @@ class InteractorMgr(Moduler):
         super().__init__(cfg, **kwargs)
         self.env = kwargs['env']
         self.policy = kwargs['policy']
+        self.raw_exps_que = kwargs['raw_exps_que']
         self.recorder = create_module(Recorder, self.use_ray, {'num_cpus':0}, self.cfg, type = 'interactor')
         self.n_interactors = self.cfg.n_interactors
         self.interactors = [create_module(Interactor, self.use_ray, {'num_cpus':1 }, self.cfg,
@@ -88,6 +114,7 @@ class InteractorMgr(Moduler):
             collector = kwargs.get('collector', None),
             recorder = self.recorder,
             policy_mgr = kwargs.get('policy_mgr', None),
+            raw_exps_que = self.raw_exps_que,
             logger = self.logger,
             use_ray = self.use_ray,
             ) for i in range(self.n_interactors)
@@ -97,10 +124,9 @@ class InteractorMgr(Moduler):
     def run(self):
         ''' run interactors
         '''
+        need_get = False
+        if self.cfg.on_policy and self.use_ray:
+            need_get = True
         for i in range(self.n_interactors):
-            exec_method(self.interactors[i], 'run', False)
+            exec_method(self.interactors[i], 'run', need_get)
             
-    def ray_run(self): 
-        self.logger.info.remote(f"[InteractorMgr.run] Start interactors!")
-        for i in range(self.n_interactors):
-            self.interactors[i].ray_run.remote()

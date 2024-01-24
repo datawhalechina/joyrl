@@ -16,7 +16,7 @@ general_cfg:
   n_atoms: 51 # support of C51  
 algo_cfg:
   batch_size: 64
-  buffer_size: 100000
+  max_buffer_size: 100000
   epsilon_decay: 500
   epsilon_end: 0.01
   epsilon_start: 0.95

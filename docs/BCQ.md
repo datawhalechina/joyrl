@@ -20,7 +20,7 @@ class AlgoConfig:
         
         # train parameters
         self.iters_per_ep = 10 # 在train BCQ Agent时， 每一个 train_one_episode中 迭代的次数， 每一次迭代都是batch_size的经验。
-        self.buffer_size = int(1e5) # BCQ Agent中 memories的经验池大小
+        self.max_buffer_size = int(1e5) # BCQ Agent中 memories的经验池大小
         self.start_learn_buffer_size = 1e3 # memories的最少经验数量，少于此数量，会报错。
 
 	    # parameters for collecting data

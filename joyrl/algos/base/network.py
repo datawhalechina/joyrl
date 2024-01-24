@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-09 13:50:07
+LastEditTime: 2024-01-23 22:14:38
 Discription: 
 '''
 import copy
@@ -75,6 +75,7 @@ class MergeLayer(nn.Module):
         x = torch.cat(x, dim=1)
         for layer in self.merge_layers:
             x = layer(x)
+        
         return x
     def reset_noise(self):
         ''' reset noise for noisy layers
@@ -82,7 +83,7 @@ class MergeLayer(nn.Module):
         for layer in self.merge_layers:
             if hasattr(layer, "reset_noise"):
                 layer.reset_noise()
-    
+
 class BaseNework(nn.Module):
     def __init__(self, cfg: MergedConfig, state_size_list: list, action_size_list: list) -> None:
         super(BaseNework, self).__init__()
@@ -144,12 +145,43 @@ class QNetwork(BaseNework):
         '''
         self.branch_layers.reset_noise()
         self.merge_layer.reset_noise()
-        
-class ValueNetwork(BaseNework):
+class ActionLayers(nn.Module):
+    def __init__(self, cfg: MergedConfig, input_size: list, action_type_list: list, action_size_list: list ) -> None:
+        super(ActionLayers, self).__init__()
+        self.cfg = cfg
+        self.input_size = input_size
+        self.action_size_list = action_size_list
+        self.action_type_list = action_type_list
+
+    def create_graph(self):
+        self.action_layers = nn.ModuleList()
+        for i in range(len(self.action_type_list)):
+            action_type = ActionLayerType(self.action_type_list[i].upper())
+            action_size = self.action_size_list[i]
+            if action_type == ActionLayerType.CONTINUOUS:
+                action_layer = ContinuousActionLayer(self.cfg, self.input_size, action_size)
+            elif action_type == ActionLayerType.DISCRETE:
+                action_layer = DiscreteActionLayer(self.cfg, self.input_size, action_size)
+            elif action_type == ActionLayerType.DPG:
+                action_layer = DPGActionLayer(self.cfg, self.input_size, action_size)
+            else:
+                raise ValueError("action_type must be specified in discrete, continuous or dpg")
+            self.action_layers.append(action_layer)
+
+    def forward(self, x, **kwargs):
+        action_outputs = []
+        for i, action_layer in enumerate(self.action_layers):
+            action_outputs.append(action_layer(x[i], **kwargs))
+        if len(action_outputs) == 1: #TODO: check if it supports multiple actions
+            return action_outputs[0]
+        return action_outputs
+
+   
+class ActorCriticNetwork(BaseNework):
     ''' Value network, for policy-based methods,  in which the branch_layers and critic share the same network
     '''
     def __init__(self, cfg: MergedConfig, state_size_list: list, action_size_list: list, action_type_list: list) -> None:
-        super(ValueNetwork, self).__init__(cfg, state_size_list, action_size_list)
+        super(ActorCriticNetwork, self).__init__(cfg, state_size_list, action_size_list)
         self.action_type_list = action_type_list
         self.create_graph()
         
@@ -158,21 +190,14 @@ class ValueNetwork(BaseNework):
         self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
         self.value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
         self.value_layer, _ = create_layer(self.merge_layer.output_size, self.value_layer_cfg)
-        if self.action_type_list[0] == ActionLayerType.CONTINUOUS:
-            self.action_layer = ContinuousActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
-        elif self.action_type_list[0] == ActionLayerType.DISCRETE:
-            self.action_layer = DiscreteActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
-        elif self.action_type_list[0] == ActionLayerType.DPG:
-            self.action_layer = DPGActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
-        else:
-            raise ValueError("action_type must be specified in discrete, continuous or dpg")
+        self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size,  self.action_type_list, self.action_size_list)
         
-    def forward(self, x, legal_actions=None):
+    def forward(self, x, pre_legal_actions=None, mode="sample"):
         x = self.branch_layers(x)
         x = self.merge_layer(x)
         value = self.value_layer(x)
-        action_output = self.action_layer(x, legal_actions)
-        return value, action_output
+        action_outputs = self.action_layers(x, pre_legal_actions, mode=mode)
+        return value, action_outputs
 
 
 class ActorNetwork(BaseNework):
@@ -184,20 +209,13 @@ class ActorNetwork(BaseNework):
     def create_graph(self):
         self.branch_layers = BranchLayers(self.cfg.actor_branch_layers, self.state_size_list)
         self.merge_layer = MergeLayer(self.cfg.actor_merge_layers, self.branch_layers.output_size_list)
-        if self.action_type_list[0] == ActionLayerType.CONTINUOUS:
-            self.action_layer = ContinuousActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
-        elif self.action_type_list[0] == ActionLayerType.DISCRETE:
-            self.action_layer = DiscreteActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
-        elif self.action_type_list[0] == ActionLayerType.DPG:
-            self.action_layer = DPGActionLayer(self.cfg, self.merge_layer.output_size, self.action_size_list[0])
-        else:
-            raise ValueError("action_type must be specified in discrete, continuous or dpg")
+        self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size, self.action_type_list, self.action_size_list)
         
-    def forward(self, x, legal_actions=None):
+    def forward(self, x, pre_legal_actions=None):
         x = self.branch_layers(x)
         x = self.merge_layer(x)
-        action_output = self.action_layer(x, legal_actions)
-        return action_output
+        action_outputs = self.action_layers(x, pre_legal_actions)
+        return action_outputs
     
 
 class CriticNetwork(BaseNework):

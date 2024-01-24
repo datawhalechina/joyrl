@@ -11,7 +11,7 @@ class Policy(BasePolicy):
     def __init__(self,cfg) -> None:
         super(Policy, self).__init__(cfg)
         self.cfg = cfg
-        self.action_type = cfg.action_type
+        self.action_type_list = cfg.action_type
         self.ou_noise = OUNoise(self.action_space)  
         self.gamma = cfg.gamma
         self.tau = cfg.tau
@@ -28,15 +28,15 @@ class Policy(BasePolicy):
         '''
         # action_size must be [action_dim_1, action_dim_2, ...]
         if isinstance(self.action_space, Box):
-            self.action_size = [self.action_space.shape[0]]
-            self.action_type = [ActionLayerType.DPG]
+            self.action_size_list = [self.action_space.shape[0]]
+            self.action_type_list = [ActionLayerType.DPG]
         else:
             raise ValueError('action_space type error')
-        return self.action_size
+        return self.action_size_list
 
     def create_graph(self):
-        self.state_size, self.action_size = self.get_state_action_size()
-        self.input_head_size = [None, self.state_size[-1]+self.action_size[-1]]
+        self.state_size, self.action_size_list = self.get_state_action_size()
+        self.input_head_size = [None, self.state_size[-1]+self.action_size_list[-1]]
         self.actor = ActorNetwork(self.cfg, self.state_size, self.action_space)
         self.critic = CriticNetwork(self.cfg, self.input_head_size)
         self.target_actor = ActorNetwork(self.cfg, self.state_size, self.action_space)

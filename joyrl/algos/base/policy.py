@@ -41,14 +41,17 @@ class BasePolicy(nn.Module):
         '''
         # action_size must be [action_dim_1, action_dim_2, ...]
         if isinstance(self.action_space, Box):
-            self.action_size = [self.action_space.shape[0]]
-            self.action_type = [ActionLayerType.CONTINUOUS]
+            self.action_size_list = [self.action_space.shape[0]]
+            self.action_type_list = [ActionLayerType.CONTINUOUS]
+            self.action_high_list = [self.action_space.high]
+            self.action_low_list = [self.action_space.low]
         elif isinstance(self.action_space, Discrete):
-            self.action_size = [self.action_space.n]
-            self.action_type = [ActionLayerType.DISCRETE]
+            self.action_size_list = [self.action_space.n]
+            self.action_type_list = [ActionLayerType.DISCRETE]
+            self.action_high_list = [0]
+            self.action_low_list = [0]
         else:
             raise ValueError('action_space type error')
-        return self.action_size
     
     def create_optimizer(self):
         self.optimizer = optim.Adam(self.parameters(), lr=self.cfg.lr) 

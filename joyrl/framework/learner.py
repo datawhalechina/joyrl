@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-01-13 16:03:48
+LastEditTime: 2024-01-15 23:49:03
 Discription: 
 '''
 import ray
@@ -36,6 +36,8 @@ class Learner:
     def _init_update_steps(self):
         if (not self.cfg.on_policy) and self.use_ray:
             self.n_update_steps = float('inf')
+        elif self.cfg.on_policy and self.use_ray:
+            self.n_update_steps = self.cfg.n_interactors
         else:
             self.n_update_steps = 1
 
@@ -78,6 +80,10 @@ class LearnerMgr(Moduler):
                                        )      
                          for i in range(self.cfg.n_learners)]
         exec_method(self.logger, 'info', True, f"[LearnerMgr] Create {self.cfg.n_learners} learners!, use_ray: {self.use_ray}")
+        
     def run(self):
+        need_get = False
+        if self.cfg.on_policy and self.use_ray:
+            need_get = True
         for i in range(self.cfg.n_learners):
-            exec_method(self.learners[i], 'run', False)
+            exec_method(self.learners[i], 'run', need_get)

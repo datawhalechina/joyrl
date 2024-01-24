@@ -14,8 +14,10 @@ general_cfg:
   online_eval: true 
   online_eval_episode: 10 
   model_save_fre: 500
+  policy_summary_fre: 2
 
 algo_cfg:
+  learn_frequency: 20 
   # branch_layers:
   #   - name: feature_1
   #     layers: 
@@ -42,7 +44,7 @@ algo_cfg:
       activation: relu
   batch_size: 128
   buffer_type: REPLAY_QUE
-  buffer_size: 100000
+  max_buffer_size: 100000
   epsilon_decay: 500
   epsilon_end: 0.01
   epsilon_start: 0.95

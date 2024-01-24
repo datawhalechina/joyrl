@@ -12,9 +12,12 @@ general_cfg:
   seed: 1 
   online_eval: true 
   online_eval_episode: 10 
-  model_save_fre: 10 
+  model_save_fre: 100 
+  policy_summary_fre: 2
+  exps_trucation_size: 20
 algo_cfg:
   ppo_type: clip
+  learn_frequency: 20 
   independ_actor: true
   share_optimizer: false
   actor_merge_layers:
@@ -31,13 +34,14 @@ algo_cfg:
     - layer_type: linear
       layer_size: [256]
       activation: relu
-  buffer_type: ONPOLICY_QUE
+  buffer_type: REPLAY_QUE
+  max_buffer_size: 2000
   actor_lr: 0.0003
   critic_lr: 0.001
   entropy_coef: 0.01
   eps_clip: 0.2
   gamma: 0.99
-  k_epochs: 4
+  k_epochs: 1
   batch_size: 256
   sgd_batch_size: 256
 env_cfg:

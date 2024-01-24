@@ -23,8 +23,8 @@ class Policy(BasePolicy):
         
     def create_graph(self):
 
-        self.policy_net = QNetwork(self.cfg, self.state_size, self.action_size).to(self.device)
-        self.target_net = QNetwork(self.cfg, self.state_size, self.action_size).to(self.device)
+        self.policy_net = QNetwork(self.cfg, self.state_size, self.action_size_list).to(self.device)
+        self.target_net = QNetwork(self.cfg, self.state_size, self.action_size_list).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict()) # or use this to copy parameters
         self.create_optimizer()
 
@@ -41,6 +41,7 @@ class Policy(BasePolicy):
         else:
             action = self.action_space.sample()
         return action
+    
     def predict_action(self,state, **kwargs):
         ''' predict action
         '''
@@ -49,6 +50,7 @@ class Policy(BasePolicy):
             q_values = self.policy_net(state)
             action = q_values.max(1)[1].item() # choose action corresponding to the maximum q value
         return action
+    
     def learn(self, **kwargs):
         ''' learn policy
         '''

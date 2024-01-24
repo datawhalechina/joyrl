@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-02-20 21:53:39
 LastEditor: JiangJi
-LastEditTime: 2023-12-25 12:30:31
+LastEditTime: 2024-01-15 13:26:35
 Discription: 
 '''
 class AlgoConfig(object):
@@ -20,7 +20,7 @@ class AlgoConfig(object):
         self.kl_lambda = 0.5 # lambda for KL penalty, 0.5 is the default value in the paper
         self.kl_beta = 1.5 # beta for KL penalty, 1.5 is the default value in the paper
         self.kl_alpha = 2 # alpha for KL penalty, 2 is the default value in the paper
-        self.action_type = "continuous" # continuous action space
+        self.action_type_list = "continuous" # continuous action space
         self.gamma = 0.99 # discount factor
         self.k_epochs = 4 # update policy for K epochs
         self.lr = 0.0001 # for shared optimizer
@@ -33,3 +33,10 @@ class AlgoConfig(object):
         self.actor_hidden_dim = 256 # hidden dimension for actor
         self.critic_hidden_dim = 256 # hidden dimension for critic
         self.min_policy = 0 # min value for policy (for discrete action space)
+        self.buffer_type = 'REPLAY_QUE'
+        self.branch_layers = []
+        self.merge_layers = []
+        self.actor_branch_layers = []
+        self.actor_merge_layers = []
+        self.critic_branch_layers = []
+        self.critic_merge_layers = []

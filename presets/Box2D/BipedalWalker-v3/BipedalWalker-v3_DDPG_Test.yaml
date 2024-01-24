@@ -20,7 +20,7 @@ algo_cfg:
   gamma: 0.99
   actor_lr: 5.0e-5
   critic_lr: 1.0e-3
-  buffer_size: 20480
+  max_buffer_size: 20480
   tau: 0.01
   batch_size: 256
 env_cfg:

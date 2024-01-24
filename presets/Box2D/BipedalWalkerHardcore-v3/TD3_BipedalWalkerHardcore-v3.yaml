@@ -23,7 +23,7 @@ algo_cfg:
       activation: relu
   actor_lr: 1.0e-4
   batch_size: 256 
-  buffer_size: 60000
+  max_buffer_size: 60000
   critic_layers: 
     - layer_type: linear
       layer_size: [200]

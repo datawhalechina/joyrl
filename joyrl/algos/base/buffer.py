@@ -39,7 +39,7 @@ class BufferCreator:
             
 class ReplayBuffer:
     def __init__(self, cfg: MergedConfig):
-        if hasattr(cfg, 'buffer_size'): self.capacity = cfg.buffer_size
+        if hasattr(cfg, 'max_buffer_size'): self.capacity = cfg.max_buffer_size
         self.batch_size = cfg.batch_size
         self.buffer = [] 
         self.position = 0 # pointer of buffer
@@ -53,7 +53,7 @@ class ReplayBuffer:
             self.buffer[self.position] = exp
             self.position = (self.position + 1) % self.capacity
 
-    def sample(self):
+    def sample(self, **kwargs):
         ''' sample a batch of transitions   
         '''
         batch = random.sample(self.buffer, self.batch_size) 
@@ -68,21 +68,29 @@ class ReplayBufferQue:
     ''' same as ReplayBuffer, but use deque to store the transitions
     '''
     def __init__(self, cfg: MergedConfig):
-        if hasattr(cfg, 'buffer_size'): self.capacity = cfg.buffer_size
+        if hasattr(cfg, 'max_buffer_size'): self.capacity = cfg.max_buffer_size
+        self.learn_frequecy = 1
+        if hasattr(cfg, 'learn_frequecy'): self.learn_frequecy = cfg.learn_frequecy
         self.batch_size = cfg.batch_size
         self.buffer = deque(maxlen=self.capacity)
+        self.new_exp_cnt = 0
 
     def push(self, exps: list):
         ''' push a transition into the buffer
         '''
         for exp in exps:
             self.buffer.append(exp)
+        self.new_exp_cnt += len(exps)
 
-    def sample(self, sequential: bool = False):
+    def sample(self, **kwargs):
         ''' sample a batch of transitions
         '''
+        sequential = kwargs.get('sequential', False)
         if self.batch_size > len(self.buffer): # if the buffer is not full, return None
             return None
+        if self.new_exp_cnt < self.learn_frequecy: # if the buffer is not full, return None
+            return None
+        self.new_exp_cnt -= self.learn_frequecy
         if sequential: # sequential sampling
             rand = random.randint(0, len(self.buffer) - self.batch_size)
             batch = [self.buffer[i] for i in range(rand, rand + self.batch_size)]
@@ -110,7 +118,7 @@ class OnPolicyBufferQue(ReplayBufferQue):
         self.buffer = deque(maxlen=128)
     def push(self, exps: list):
         self.buffer.append(exps)
-    def sample(self):
+    def sample(self,**kwargs):
         ''' sample all the transitions
         '''
         if len(self.buffer) == 0: return None
@@ -180,7 +188,7 @@ class SumTree:
     
 class PrioritizedReplayBuffer:
     def __init__(self, cfg):
-        self.capacity = cfg.buffer_size
+        self.capacity = cfg.max_buffer_size
         self.alpha = cfg.per_alpha # 优先级的指数参数，越大越重要，越小越不重要
         self.epsilon = cfg.per_epsilon # 优先级的最小值，防止优先级为0
         self.beta = cfg.per_beta # importance sampling的参数
@@ -194,9 +202,10 @@ class PrioritizedReplayBuffer:
         priority = self.max_priority if self.tree.total() == 0 else self.tree.max_prior()
         self.tree.add(priority, exps)
     
-    def sample(self, batch_size):
+    def sample(self, **kwargs):
         ''' 采样一个批量样本
         '''
+        batch_size = kwargs.get('batch_size', 128)
         indices = [] # 采样的索引
         priorities = [] # 采样的优先级
         exps = [] # 采样的样本
@@ -231,7 +240,7 @@ class PrioritizedReplayBuffer:
 
 class PrioritizedReplayBufferQue:
     def __init__(self, cfg: MergedConfig):
-        self.capacity = cfg.buffer_size
+        self.capacity = cfg.max_buffer_size
         self.alpha = cfg.per_alpha # 优先级的指数参数，越大越重要，越小越不重要
         self.epsilon = cfg.per_epsilon # 优先级的最小值，防止优先级为0
         self.beta = cfg.per_beta # importance sampling的参数
@@ -1635,7 +1644,7 @@ if __name__ == "__main__":
     from config.general_config import MergedConfig
     cfg = MergedConfig()
     cfg.buffer_type = 'REPLAY'
-    cfg.buffer_size = 100
+    cfg.max_buffer_size = 100
     buffer = BufferCreator(cfg)()
     for i in range(100):
         buffer.add(i)

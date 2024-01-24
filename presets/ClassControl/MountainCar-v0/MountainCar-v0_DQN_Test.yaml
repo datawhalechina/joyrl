@@ -20,7 +20,7 @@ general_cfg:
   n_workers: 1
 algo_cfg:
   batch_size: 64
-  buffer_size: 40000
+  max_buffer_size: 40000
   epsilon_decay: 800
   epsilon_end: 0.01
   epsilon_start: 0.99

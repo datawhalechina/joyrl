@@ -24,7 +24,7 @@ algo_cfg:
   actor_hidden_dim: 256
   actor_lr: 0.0001
   batch_size: 128
-  buffer_size: 8000
+  max_buffer_size: 8000
   critic_hidden_dim: 256
   critic_lr: 0.001
   gamma: 0.99
