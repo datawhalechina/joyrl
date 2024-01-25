@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-26 00:32:23
+LastEditTime: 2024-01-26 00:52:28
 Discription: 
 '''
 import torch
@@ -119,24 +119,21 @@ class Policy(BasePolicy):
     def learn(self, **kwargs): 
         states, actions, next_states, rewards, dones, returns = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones'), kwargs.get('returns')
         old_log_probs  = kwargs.get('log_probs')
-        states = states[0]
-        torch_dataset = Data.TensorDataset(states, actions, old_log_probs, returns)
+        torch_dataset = Data.TensorDataset(*states, actions, old_log_probs, returns)
         train_loader = Data.DataLoader(dataset=torch_dataset, batch_size=self.sgd_batch_size, shuffle = False, drop_last=False)
         for _ in range(self.k_epochs):
-            for _ , (old_states, old_actions, old_log_probs, returns) in enumerate(train_loader):
-            # for data in train_loader:
-                # old_states = []
-                # for i in range(len(states)):
-                #     old_states.append(data[i])
-                # old_states = data[0]
-                # idx = 1
-                # old_actions = data[idx]
-                # old_log_probs = data[idx+1]
-                # returns = data[idx+2]
-                values = self.critic(old_states) # detach to avoid backprop through the critic
+            for data in train_loader:
+                old_states = []
+                for i in range(len(states)):
+                    old_states.append(data[i])
+                idx = len(states)
+                old_actions = data[idx]
+                old_log_probs = data[idx+1]
+                returns = data[idx+2]
+                values = self.critic(old_states.copy()) # detach to avoid backprop through the critic
                 advantages = returns - values.detach() # shape:[batch_size,1]
                 # get action probabilities
-                _ = self.actor(old_states)
+                _ = self.actor(old_states.copy()) # list
                 new_log_probs = self.actor.action_layers.get_log_probs_action(old_actions.squeeze(dim=1)).unsqueeze(dim=1)
                 entropy_mean = self.actor.action_layers.get_mean_entropy()
                 # compute ratio (pi_theta / pi_theta__old):

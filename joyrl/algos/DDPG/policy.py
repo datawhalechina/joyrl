@@ -79,7 +79,7 @@ class Policy(BasePolicy):
         _ = self.actor(state)
         action = self.actor.action_layers.get_actions()
         action = self.ou_noise.get_action(action, self.sample_count) # add noise to action
-        return action
+        return action[0]
 
     @torch.no_grad()
     def predict_action(self, state, **kwargs):

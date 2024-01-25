@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-26 00:31:13
+LastEditTime: 2024-01-26 00:51:38
 Discription: 
 '''
 import copy
@@ -38,7 +38,6 @@ class BranchLayers(nn.Module):
             self.output_size_list[i] = layer_output_size
             
     def forward(self, x):
-        x = copy.deepcopy(x) # avoid changing the original list pointed by x
         if isinstance(x, torch.Tensor): # if x is a tensor, convert it to a list
             x = [x]
         for i, branch_layer in enumerate(self.branch_layers):
