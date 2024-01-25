@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-25 00:37:17
+LastEditTime: 2024-01-25 10:03:12
 Discription: 
 '''
 import copy
@@ -180,8 +180,7 @@ class ActionLayers(nn.Module):
     def get_actions(self, **kwargs):
         actions = []
         for i, action_layer in enumerate(self.action_layers):
-            kwargs.update({'idx': i})
-            actions.append(action_layer.get_action(idx = i, **kwargs))
+            actions.append(action_layer.get_action(**kwargs))
         return actions[0]
         return actions # [action_1, action_2, ...]
     

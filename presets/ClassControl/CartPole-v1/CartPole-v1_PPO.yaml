@@ -1,4 +1,5 @@
 general_cfg:
+  joyrl_version: 0.5.0
   algo_name: PPO
   env_name: gym 
   device: cpu 
@@ -17,20 +18,24 @@ general_cfg:
 algo_cfg:
   independ_actor: true
   share_optimizer: false
-  actor_merge_layers:
-    - layer_type: linear
-      layer_size: [256]
-      activation: relu
-    - layer_type: linear
-      layer_size: [256]
-      activation: relu
-  critic_merge_layers:
-    - layer_type: linear
-      layer_size: [256]
-      activation: relu
-    - layer_type: linear
-      layer_size: [256]
-      activation: relu
+  actor_branch_layers:
+    - name: feature_1
+      layers:
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+  critic_branch_layers:
+    - name: feature_1
+      layers:
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
   buffer_type: ONPOLICY_QUE
   actor_lr: 0.0003
   critic_lr: 0.001

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:30:09
 LastEditor: JiangJi
-LastEditTime: 2024-01-07 22:03:14
+LastEditTime: 2024-01-25 10:01:41
 Discription: 
 '''
 class DefaultConfig:
@@ -31,6 +31,7 @@ class GeneralConfig(object):
     '''
     def __init__(self) -> None:
         # basic settings
+        self.joyrl_version = "0.5.0"
         self.env_name = "gym" # name of environment
         self.algo_name = "DQN" # name of algorithm
         self.mode = "train" # train, test

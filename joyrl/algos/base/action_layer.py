@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-01-25 00:40:52
+LastEditTime: 2024-01-25 10:10:53
 Discription: 
 '''
 from enum import Enum
@@ -25,7 +25,7 @@ class ActionLayerType(Enum):
     
 class BaseActionLayer(nn.Module):
     def __init__(self,cfg):
-        super(BaseActionLayer, self).__init__(cfg)
+        super(BaseActionLayer, self).__init__()
         self.cfg = cfg
 
     def get_action(self, **kwargs):
@@ -81,7 +81,7 @@ class DiscreteActionLayer(BaseActionLayer):
         ''' get log_probs
         '''
         # action shape is [batch_size]
-        if isinstance(action, int):
+        if not isinstance(action, torch.Tensor):
             action = torch.tensor(action, dtype=torch.int64, device=self.probs.device)
         dist = Categorical(self.probs)
         log_prob = dist.log_prob(action)
@@ -142,6 +142,8 @@ class ContinuousActionLayer(BaseActionLayer):
         '''
         # action shape is [batch_size, action_dim]
         dist = Normal(self.mean,self.std)
+        if not isinstance(action, torch.Tensor):
+            action = torch.tensor(action, dtype=torch.float32, device=self.mean.device)
         log_prob = dist.log_prob(action)
         return log_prob
     
