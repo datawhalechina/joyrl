@@ -8,3 +8,4 @@ build
 joyrl.egg-info
 tasks
 test
+test.py

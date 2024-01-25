@@ -7,7 +7,18 @@ from torchvision import transforms
 from gymnasium.spaces import Box
 from gymnasium.wrappers import FrameStack
 
+class CartPoleActionWrapper(gym_wrapper.Wrapper):
+    def __init__(self, env):
+        gym_wrapper.Wrapper.__init__(self, env)
+        # self.action_space = Box(low=-1.0, high=1.0, shape=(1, ), dtype=np.float32)
 
+    def step(self, action):
+        action = action[0]
+        return self.env.step(action)
+
+    def reset(self, seed=0, options=None):
+        return self.env.reset(seed=seed, options=options)
+    
 class CliffWalkingWapper(gym_wrapper.Wrapper):
     def __init__(self, env):
         gym_wrapper.Wrapper.__init__(self, env)

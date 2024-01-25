@@ -5,11 +5,12 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-05-17 01:08:36
 LastEditor: JiangJi
-LastEditTime: 2024-01-24 22:21:55
+LastEditTime: 2024-01-25 23:19:39
 Discription: 
 '''
 import numpy as np
 import scipy
+import torch
 from joyrl.algos.base.data_handler import BaseDataHandler
 class DataHandler(BaseDataHandler):
     def __init__(self, cfg):
@@ -22,24 +23,42 @@ class DataHandler(BaseDataHandler):
             return self.handle_exps_before_train(exps)
         else:
             return None
+        
     def handle_exps_before_train(self, exps):
         ''' convert exps to training data
         '''
         states = np.array([exp.state for exp in exps])
         actions = np.array([exp.action for exp in exps])
-        rewards = np.array([[exp.reward] for exp in exps])
+        rewards = np.array([exp.reward for exp in exps])
         next_states = np.array([exp.next_state for exp in exps])
-        dones = np.array([[exp.done] for exp in exps])
-        # continue
-        probs = [exp.probs[0] for exp in exps] if hasattr(exps[-1],'probs') else None
-        log_probs = [exp.log_prob for exp in exps] if hasattr(exps[-1],'log_prob') else None
-        # discrete
-        value = [exp.value[0] for exp in exps] if hasattr(exps[-1],'value') else None
-        mu = [exp.mu[0] for exp in exps] if hasattr(exps[-1],'mu') else None
-        sigma = [exp.sigma[0] for exp in exps] if hasattr(exps[-1],'sigma') else None
+        dones = np.array([exp.done for exp in exps])
+        log_probs = [exp.log_prob for exp in exps] 
         returns = self._compute_returns(rewards, dones, self.cfg.gamma).copy()
-        data = {'states': states, 'actions': actions, 'rewards': rewards, 'next_states': next_states, 'dones': dones, 
-                'probs': probs, 'log_probs': log_probs, 'value': value, 'mu': mu, 'sigma': sigma, 'returns': returns}
+
+        actions = torch.tensor(actions, device=self.cfg.device, dtype=torch.float32)
+        states = [torch.tensor(states, device=self.cfg.device, dtype=torch.float32)]
+        rewards = torch.tensor(rewards, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)
+        next_states = [torch.tensor(next_states, device=self.cfg.device, dtype=torch.float32)]
+        dones = torch.tensor(dones, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)
+        log_probs = torch.tensor(log_probs, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)
+        returns = torch.tensor(returns, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)
+        # states = np.array([exp.state for exp in exps])
+        # actions = np.array([exp.action for exp in exps])
+        # rewards = np.array([exp.reward for exp in exps])
+        # next_states = np.array([exp.next_state for exp in exps])
+        # dones = np.array([exp.done for exp in exps])
+        # # continue
+        # probs = [exp.probs[0] for exp in exps] if hasattr(exps[-1],'probs') else None
+        # log_probs = [exp.log_prob for exp in exps] if hasattr(exps[-1],'log_prob') else None
+
+        # # discrete
+        # value = [exp.value[0] for exp in exps] if hasattr(exps[-1],'value') else None
+        # mu = [exp.mu[0] for exp in exps] if hasattr(exps[-1],'mu') else None
+        # sigma = [exp.sigma[0] for exp in exps] if hasattr(exps[-1],'sigma') else None
+        # returns = self._compute_returns(rewards, dones, self.cfg.gamma).copy()
+        # data = {'states': states, 'actions': actions, 'rewards': rewards, 'next_states': next_states, 'dones': dones, 
+        #         'probs': probs, 'log_probs': log_probs, 'value': value, 'mu': mu, 'sigma': sigma, 'returns': returns}
+        data = {'states': states, 'actions': actions, 'rewards': rewards, 'next_states': next_states, 'dones': dones, 'log_probs': log_probs, 'returns': returns}
         return data
     # def _compute_returns(self, rewards, dones, next_value, use_gae, gamma, tau):
     #     ''' compute returns

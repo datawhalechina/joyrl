@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-25 10:03:12
+LastEditTime: 2024-01-26 00:31:13
 Discription: 
 '''
 import copy
@@ -38,6 +38,7 @@ class BranchLayers(nn.Module):
             self.output_size_list[i] = layer_output_size
             
     def forward(self, x):
+        x = copy.deepcopy(x) # avoid changing the original list pointed by x
         if isinstance(x, torch.Tensor): # if x is a tensor, convert it to a list
             x = [x]
         for i, branch_layer in enumerate(self.branch_layers):
@@ -71,11 +72,11 @@ class MergeLayer(nn.Module):
             self.merge_layers.append(layer)
             self.input_size = layer_output_size
             self.output_size = layer_output_size
+
     def forward(self, x):
         x = torch.cat(x, dim=1)
         for layer in self.merge_layers:
             x = layer(x)
-        
         return x
     def reset_noise(self):
         ''' reset noise for noisy layers
@@ -85,14 +86,13 @@ class MergeLayer(nn.Module):
                 layer.reset_noise()
 
 class BaseNework(nn.Module):
-    def __init__(self, cfg: MergedConfig) -> None:
+    def __init__(self, cfg: MergedConfig, input_size_list, **kwargs) -> None:
         super(BaseNework, self).__init__()
         self.cfg = cfg
-        self.state_size_list = self.cfg.state_size_list
-        self.action_size_list = self.cfg.action_size_list
+        self.input_size_list = input_size_list
         
     def create_graph(self):
-        self.branch_layers = BranchLayers(self.cfg.branch_layers, [[None, 1], [None, 1]])
+        self.branch_layers = BranchLayers(self.cfg.branch_layers, self.input_size_list)
         self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
 
     def forward(self, x):
@@ -103,7 +103,7 @@ class BaseNework(nn.Module):
 class QNetwork(BaseNework):
     ''' Q network, for value-based methods like DQN
     '''
-    def __init__(self, cfg: MergedConfig):
+    def __init__(self, cfg: MergedConfig, input_size_list: list) -> None:
         '''_summary_
 
         Args:
@@ -113,12 +113,13 @@ class QNetwork(BaseNework):
         Raises:
             ValueError: _description_
         '''
-        super(QNetwork, self).__init__(cfg)
+        super(QNetwork, self).__init__(cfg, input_size_list)
+        self.action_size_list = self.cfg.action_size_list
         self.dueling = hasattr(cfg, 'dueling') and cfg.dueling
         self.create_graph()
 
     def create_graph(self):
-        self.branch_layers = BranchLayers(self.cfg.branch_layers, self.state_size_list)
+        self.branch_layers = BranchLayers(self.cfg.branch_layers, self.input_size_list)
         self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
         if self.dueling:
             state_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
@@ -159,7 +160,7 @@ class ActionLayers(nn.Module):
     def create_graph(self):
         self.action_layers = nn.ModuleList()
         for i in range(len(self.action_type_list)):
-            action_type = self.action_type_list[i]
+            action_type = ActionLayerType[self.action_type_list[i].upper()]
             action_size = self.action_size_list[i]
             if action_type == ActionLayerType.CONTINUOUS:
                 action_layer = ContinuousActionLayer(self.cfg, self.input_size, action_size, id = i)
@@ -177,15 +178,24 @@ class ActionLayers(nn.Module):
             self.actor_outputs.append(action_layer(x, **kwargs))
         return self.actor_outputs
     
+    def get_mus(self):
+        mus = []
+        for i, action_layer in enumerate(self.action_layers):
+            mus.append(action_layer.get_mu())
+        return mus[0]
+    
     def get_actions(self, **kwargs):
         actions = []
         for i, action_layer in enumerate(self.action_layers):
             actions.append(action_layer.get_action(**kwargs))
-        return actions[0]
+        # return actions[0]
         return actions # [action_1, action_2, ...]
     
-    def get_log_probs(self, actions):
-        return self.action_layers[0].get_log_prob(actions)
+    def get_log_probs(self):
+        return self.action_layers[0].get_log_prob()
+    
+    def get_log_probs_action(self, actions):
+        return self.action_layers[0].get_log_prob_action(actions)
         # log_prob_sum = 0
         # for i, action_layer in enumerate(self.action_layers):
         #     log_prob_sum += action_layer.get_log_prob(actions[i])
@@ -208,7 +218,7 @@ class ActorCriticNetwork(BaseNework):
         self.create_graph()
         
     def create_graph(self):
-        self.branch_layers = BranchLayers(self.cfg.branch_layers, self.state_size_list_list)
+        self.branch_layers = BranchLayers(self.cfg.branch_layers, self.state_size_list)
         self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
         self.value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
         self.value_layer, _ = create_layer(self.merge_layer.output_size, self.value_layer_cfg)
@@ -223,13 +233,13 @@ class ActorCriticNetwork(BaseNework):
 
 
 class ActorNetwork(BaseNework):
-    def __init__(self, cfg: MergedConfig) -> None:
-        super(ActorNetwork, self).__init__(cfg)
+    def __init__(self, cfg: MergedConfig, input_size_list) -> None:
+        super(ActorNetwork, self).__init__(cfg, input_size_list)
         self.action_type_list = self.cfg.action_type_list
         self.create_graph()
     
     def create_graph(self):
-        self.branch_layers = BranchLayers(self.cfg.actor_branch_layers, self.state_size_list)
+        self.branch_layers = BranchLayers(self.cfg.actor_branch_layers, self.input_size_list)
         self.merge_layer = MergeLayer(self.cfg.actor_merge_layers, self.branch_layers.output_size_list)
         self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size)
         
@@ -238,15 +248,14 @@ class ActorNetwork(BaseNework):
         x = self.merge_layer(x)
         action_outputs = self.action_layers(x, pre_legal_actions = pre_legal_actions)
         return action_outputs
-    
 
 class CriticNetwork(BaseNework):
-    def __init__(self, cfg: MergedConfig) -> None:
-        super(CriticNetwork, self).__init__(cfg)
+    def __init__(self, cfg: MergedConfig, input_size_list) -> None:
+        super(CriticNetwork, self).__init__(cfg, input_size_list)
         self.create_graph()
 
     def create_graph(self):
-        self.branch_layers = BranchLayers(self.cfg.critic_branch_layers, self.state_size_list)
+        self.branch_layers = BranchLayers(self.cfg.critic_branch_layers, self.input_size_list)
         self.merge_layer = MergeLayer(self.cfg.critic_merge_layers, self.branch_layers.output_size_list)
         self.value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
         self.value_layer, _ = create_layer(self.merge_layer.output_size, self.value_layer_cfg)

@@ -211,5 +211,7 @@ def create_layer(input_size: list, layer_cfg: LayerConfig):
         return pooling_layer(input_size, layer_cfg)
     elif layer_type == "norm":
         return norm_layer(input_size, layer_cfg)
+    elif layer_type == "none":
+        return nn.Identity(), input_size
     else:
         raise NotImplementedError

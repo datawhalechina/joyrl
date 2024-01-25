@@ -27,20 +27,23 @@ class Policy(BasePolicy):
         ''' get action size
         '''
         # action_size must be [action_dim_1, action_dim_2, ...]
-        if isinstance(self.action_space, Box):
-            self.action_size_list = [self.action_space.shape[0]]
-            self.action_type_list = [ActionLayerType.DPG]
-        else:
-            raise ValueError('action_space type error')
-        return self.action_size_list
+        self.action_size_list = [self.action_space.shape[0]]
+        self.action_type_list = ['dpg']
+        self.action_high_list = [self.action_space.high]
+        self.action_low_list = [self.action_space.low]
+        setattr(self.cfg, 'action_size_list', self.action_size_list)
+        setattr(self.cfg, 'action_type_list', self.action_type_list)
+        setattr(self.cfg, 'action_high_list', self.action_high_list)
+        setattr(self.cfg, 'action_low_list', self.action_low_list)
 
     def create_graph(self):
-        self.state_size_list, self.action_size_list = self.get_state_action_size()
-        self.input_head_size = [None, self.state_size_list[-1]+self.action_size_list[-1]]
-        self.actor = ActorNetwork(self.cfg, self.state_size_list, self.action_space)
-        self.critic = CriticNetwork(self.cfg, self.input_head_size)
-        self.target_actor = ActorNetwork(self.cfg, self.state_size_list, self.action_space)
-        self.target_critic = CriticNetwork(self.cfg, self.input_head_size)
+        ''' create graph and optimizer
+        '''
+        critic_input_size_list = self.state_size_list + [[None, self.action_size_list[0]]]
+        self.actor = ActorNetwork(self.cfg, input_size_list = self.state_size_list)
+        self.critic = CriticNetwork(self.cfg, input_size_list = critic_input_size_list)
+        self.target_actor = ActorNetwork(self.cfg, input_size_list = self.state_size_list)
+        self.target_critic = CriticNetwork(self.cfg, input_size_list = critic_input_size_list)
         self.target_actor.load_state_dict(self.actor.state_dict())
         self.target_critic.load_state_dict(self.critic.state_dict())
         self.create_optimizer() 
@@ -72,7 +75,9 @@ class Policy(BasePolicy):
         ''' sample action
         '''
         self.sample_count += 1
-        action = self.predict_action(state, **kwargs)
+        state = torch.tensor(state, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
+        _ = self.actor(state)
+        action = self.actor.action_layers.get_actions()
         action = self.ou_noise.get_action(action, self.sample_count) # add noise to action
         return action
 
@@ -81,10 +86,9 @@ class Policy(BasePolicy):
         ''' predict action
         '''
         state = torch.tensor(state, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
-        mu = self.actor(state)  # mu is in [-1, 1]
-        action = self.action_scale * mu + self.action_bias
-        action = action.cpu().detach().numpy()[0]
-        return action
+        _ = self.actor(state)
+        action = self.actor.action_layers.get_actions()
+        return action[0]
 
     def learn(self, **kwargs):
         ''' train policy
@@ -97,16 +101,15 @@ class Policy(BasePolicy):
         rewards = torch.tensor(rewards, device=self.device, dtype=torch.float32).unsqueeze(dim=1)
         dones = torch.tensor(dones, device=self.device, dtype=torch.float32).unsqueeze(dim=1)
         # calculate policy loss
-        state_actions = torch.cat([states, self.actor(states)], dim=1)
-        self.policy_loss = -self.critic(state_actions).mean() * self.cfg.policy_loss_weight
+        self.policy_loss = -self.critic([states, self.actor(states)[0]['mu']]).mean() * self.cfg.policy_loss_weight
         # calculate value loss
-        next_actions = self.target_actor(next_states).detach()
-        next_state_actions = torch.cat([next_states, next_actions], dim=1)
-        target_values = self.target_critic(next_state_actions)
+        next_actions = self.target_actor(next_states)[0]['mu'].detach()
+        # next_state_actions = torch.cat([next_states, next_actions], dim=1)
+        target_values = self.target_critic([next_states, next_actions])
         expected_values = rewards + self.gamma * target_values * (1.0 - dones)
         expected_values = torch.clamp(expected_values, self.cfg.value_min, self.cfg.value_max) # clip value
-        values = self.critic(torch.cat([states, actions], dim=1))
-        self.value_loss = F.mse_loss(values, expected_values.detach())
+        actual_values = self.critic([states, actions])
+        self.value_loss = F.mse_loss(actual_values, expected_values.detach())
         self.tot_loss = self.policy_loss + self.value_loss
         # actor and critic update, the order is important
         self.actor_optimizer.zero_grad()

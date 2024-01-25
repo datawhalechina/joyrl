@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-25 10:10:13
+LastEditTime: 2024-01-26 00:32:23
 Discription: 
 '''
 import torch
@@ -44,7 +44,7 @@ class Policy(BasePolicy):
         self.create_optimizer()
         self.create_summary()
         self.to(self.device)
-        
+    
     def create_summary(self):
         '''
         创建 tensorboard 数据
@@ -66,19 +66,21 @@ class Policy(BasePolicy):
 
     def create_graph(self):
         if not self.independ_actor:
-            self.policy_net = ActorCriticNetwork(self.cfg).to(self.device)
+            self.policy_net = ActorCriticNetwork(self.cfg, self.state_size_list).to(self.device)
         else:
-            self.actor = ActorNetwork(self.cfg).to(self.device)
-            self.critic = CriticNetwork(self.cfg).to(self.device)
+            self.actor = ActorNetwork(self.cfg, self.state_size_list).to(self.device)
+            self.critic = CriticNetwork(self.cfg, self.state_size_list).to(self.device)
 
     def create_optimizer(self):
         if self.share_optimizer:
             self.optimizer = optim.Adam(self.parameters(), lr=self.cfg.lr) 
         else:
             self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.cfg.actor_lr)
-            self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.cfg.critic_lr)       
+            self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.cfg.critic_lr)  
+
     def update_policy_transition(self):
         self.policy_transition = {'value': self.value, 'log_prob': self.log_prob}
+
     def sample_action(self, state, **kwargs):
         state = torch.tensor(np.array(state), device=self.device, dtype=torch.float32).unsqueeze(dim=0)
         if not self.independ_actor:
@@ -87,7 +89,7 @@ class Policy(BasePolicy):
             self.value = self.critic(state)
             _ = self.actor(state) # list
             actions = self.actor.action_layers.get_actions(mode = 'sample')
-            self.log_prob = self.actor.action_layers.get_log_probs(actions).detach().cpu().numpy()[0] # shape:[1,]
+            self.log_prob = self.actor.action_layers.get_log_probs().detach().cpu().numpy().item()
         self.update_policy_transition()
         return actions
         # if self.action_type_list.lower() == 'continuous':
@@ -113,42 +115,30 @@ class Policy(BasePolicy):
         _ = self.actor(state) # list
         actions = self.actor.action_layers.get_actions(mode = 'predict')
         return actions
+    
     def learn(self, **kwargs): 
         states, actions, next_states, rewards, dones, returns = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones'), kwargs.get('returns')
         old_log_probs  = kwargs.get('log_probs')
-        old_log_probs = torch.tensor(np.array(old_log_probs), device=self.device, dtype=torch.float32).unsqueeze(dim=1) # shape:[batch_size,1]
-        # convert to tensor
-        states = torch.tensor(np.array(states), device=self.device, dtype=torch.float32) # shape:[batch_size,n_states]
-        # actions = torch.tensor(np.array(actions), device=self.device, dtype=torch.float32).unsqueeze(dim=1) # shape:[batch_size,1]
-        actions = torch.tensor(np.array(actions), device=self.device, dtype=torch.float32).unsqueeze(1) # shape:[batch_size,1]
-        next_states = torch.tensor(np.array(next_states), device=self.device, dtype=torch.float32) # shape:[batch_size,n_states]
-        rewards = torch.tensor(np.array(rewards), device=self.device, dtype=torch.float32) # shape:[batch_size,1]
-        dones = torch.tensor(np.array(dones), device=self.device, dtype=torch.float32) # shape:[batch_size,1]
-        # returns = self._compute_returns(rewards, dones) # shape:[batch_size,1]  
-        returns = torch.tensor(returns, device=self.device, dtype=torch.float32) # shape:[batch_size,1]
-        torch_dataset = Data.TensorDataset(states, actions, old_log_probs,returns)
-        train_loader = Data.DataLoader(dataset=torch_dataset, batch_size=self.sgd_batch_size, shuffle=False,drop_last=False)
+        states = states[0]
+        torch_dataset = Data.TensorDataset(states, actions, old_log_probs, returns)
+        train_loader = Data.DataLoader(dataset=torch_dataset, batch_size=self.sgd_batch_size, shuffle = False, drop_last=False)
         for _ in range(self.k_epochs):
-            for _, (old_states, old_actions, old_log_probs, returns) in enumerate(train_loader):
-                # compute advantages
+            for _ , (old_states, old_actions, old_log_probs, returns) in enumerate(train_loader):
+            # for data in train_loader:
+                # old_states = []
+                # for i in range(len(states)):
+                #     old_states.append(data[i])
+                # old_states = data[0]
+                # idx = 1
+                # old_actions = data[idx]
+                # old_log_probs = data[idx+1]
+                # returns = data[idx+2]
                 values = self.critic(old_states) # detach to avoid backprop through the critic
                 advantages = returns - values.detach() # shape:[batch_size,1]
                 # get action probabilities
-                _ = self.actor(old_states) 
-                new_log_probs = self.actor.action_layers.get_log_probs(old_actions.squeeze(dim=1)).unsqueeze(dim=1) # shape:[batch_size,1]
+                _ = self.actor(old_states)
+                new_log_probs = self.actor.action_layers.get_log_probs_action(old_actions.squeeze(dim=1)).unsqueeze(dim=1)
                 entropy_mean = self.actor.action_layers.get_mean_entropy()
-                # if self.action_type_list.lower() == 'continuous':
-                #     mu, sigma = self.actor(old_states)
-                #     mean = mu * self.action_scale + self.action_bias
-                #     std = sigma
-                #     dist = Normal(mean, std)
-                #     new_log_probs = dist.log_prob(old_actions)
-                # else:
-                #     output = self.actor(old_states) 
-                #     new_probs = output['probs'] # shape:[batch_size,n_actions]
-                #     dist = Categorical(new_probs)
-                #     # get new action probabilities
-                #     new_log_probs = dist.log_prob(old_actions.squeeze(dim=1)).unsqueeze(dim=1) # shape:[batch_size,1]
                 # compute ratio (pi_theta / pi_theta__old):
                 ratio = torch.exp(new_log_probs - old_log_probs) # shape: [batch_size, 1]
                 # compute surrogate loss
@@ -170,7 +160,7 @@ class Policy(BasePolicy):
                     self.critic_optimizer.zero_grad()  
                     self.critic_loss.backward()
                     self.critic_optimizer.step()
-        self.update_summary()
+            self.update_summary()
 
 
-        
+            
