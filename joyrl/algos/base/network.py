@@ -5,14 +5,14 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-26 00:51:38
+LastEditTime: 2024-01-26 09:59:44
 Discription: 
 '''
 import copy
 import torch
 import torch.nn as nn
 from joyrl.algos.base.base_layer import create_layer, LayerConfig
-from joyrl.algos.base.action_layer import ActionLayerType, DiscreteActionLayer, ContinuousActionLayer, DPGActionLayer
+from joyrl.algos.base.action_layer import ActionLayerType, DiscreteActionLayer, ContinuousActionLayer, DPGActionLayer, DQNActionLayer
 from joyrl.framework.config import MergedConfig
 class BranchLayers(nn.Module):
     def __init__(self, branch_layers_cfg : list, input_size_list, **kwargs) -> None:
@@ -84,6 +84,76 @@ class MergeLayer(nn.Module):
             if hasattr(layer, "reset_noise"):
                 layer.reset_noise()
 
+class ActionLayers(nn.Module):
+    def __init__(self, cfg: MergedConfig, input_size: list) -> None:
+        super(ActionLayers, self).__init__()
+        self.cfg = cfg
+        self.input_size = input_size
+        self.action_size_list = self.cfg.action_size_list
+        self.action_type_list = self.cfg.action_type_list
+        assert len(self.action_type_list) == 1 and len(self.action_type_list) == len(self.action_size_list), "action_type_list and action_size_list must have the same length, and only one output"
+        self.actor_outputs = []
+        self.create_graph()
+
+    def create_graph(self):
+        self.action_layers = nn.ModuleList()
+        for i in range(len(self.action_type_list)):
+            action_type = ActionLayerType[self.action_type_list[i].upper()]
+            action_size = self.action_size_list[i]
+            if action_type == ActionLayerType.CONTINUOUS:
+                action_layer = ContinuousActionLayer(self.cfg, self.input_size, action_size, id = i)
+            elif action_type == ActionLayerType.DISCRETE:
+                action_layer = DiscreteActionLayer(self.cfg, self.input_size, action_size,id = i)
+            elif action_type == ActionLayerType.DPG:
+                action_layer = DPGActionLayer(self.cfg, self.input_size, action_size, id = i)
+            elif action_type == ActionLayerType.DQNACTION:
+                action_layer = DQNActionLayer(self.cfg, self.input_size, action_size, id = i)
+            else:
+                raise ValueError("action_type must be specified in discrete, continuous or dpg")
+            self.action_layers.append(action_layer)
+
+    def forward(self, x, **kwargs):
+        self.actor_outputs = []
+        for i, action_layer in enumerate(self.action_layers):
+            self.actor_outputs.append(action_layer(x, **kwargs))
+        return self.actor_outputs
+    
+    def get_mus(self):
+        mus = []
+        for _, action_layer in enumerate(self.action_layers):
+            mus.append(action_layer.get_mu())
+        return mus[0]
+    
+    def get_qvalues(self):
+        qvalues = []
+        for _, action_layer in enumerate(self.action_layers):
+            qvalues.append(action_layer.get_qvalue())
+        return qvalues[0]
+    
+    def get_actions(self, **kwargs):
+        actions = []
+        for i, action_layer in enumerate(self.action_layers):
+            actions.append(action_layer.get_action(**kwargs))
+        return actions # [action_1, action_2, ...]
+    
+    def get_log_probs(self):
+        return self.action_layers[0].get_log_prob()
+    
+    def get_log_probs_action(self, actions):
+        return self.action_layers[0].get_log_prob_action(actions)
+        # log_prob_sum = 0
+        # for i, action_layer in enumerate(self.action_layers):
+        #     log_prob_sum += action_layer.get_log_prob(actions[i])
+        # return log_prob_sum
+    
+    def get_mean_entropy(self):
+        return self.action_layers[0].get_mean_entropy()
+        # entropy_sum = 0
+        # for i, action_layer in enumerate(self.action_layers):
+        #     entropy_sum += action_layer.get_entropy()
+        # entropy_mean = entropy_sum / len(self.action_layers)
+        # return entropy_mean
+    
 class BaseNework(nn.Module):
     def __init__(self, cfg: MergedConfig, input_size_list, **kwargs) -> None:
         super(BaseNework, self).__init__()
@@ -120,18 +190,25 @@ class QNetwork(BaseNework):
     def create_graph(self):
         self.branch_layers = BranchLayers(self.cfg.branch_layers, self.input_size_list)
         self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
-        if self.dueling:
-            state_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
-            self.state_value_layer, _ = create_layer(self.merge_layer.output_size, state_value_layer_cfg)
-            action_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_size_list[0]], activation='none')
-            self.action_value_layer, _ = create_layer(self.merge_layer.output_size, action_value_layer_cfg)
-        else:
-            action_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_size_list[0]], activation='none')
-            self.action_value_layer, _ = create_layer(self.merge_layer.output_size, action_layer_cfg)
+        action_type_list = ['dqnaction'] * len(self.cfg.action_type_list) 
+        setattr(self.cfg, 'action_type_list', action_type_list)
+        self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size)
+        # if self.dueling:
+        #     state_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
+        #     self.state_value_layer, _ = create_layer(self.merge_layer.output_size, state_value_layer_cfg)
+        #     action_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_size_list[0]], activation='none')
+        #     self.action_value_layer, _ = create_layer(self.merge_layer.output_size, action_value_layer_cfg)
+        # else:
+        #     action_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_size_list[0]], activation='none')
+        #     self.action_value_layer, _ = create_layer(self.merge_layer.output_size, action_layer_cfg)
 
     def forward(self, x):
         x = self.branch_layers(x)
         x = self.merge_layer(x)
+        actor_outputs = self.action_layers(x)
+        return actor_outputs
+    
+    
         if self.dueling:
             state_value = self.state_value_layer(x)
             action_value = self.action_value_layer(x)
@@ -145,68 +222,7 @@ class QNetwork(BaseNework):
         '''
         self.branch_layers.reset_noise()
         self.merge_layer.reset_noise()
-class ActionLayers(nn.Module):
-    def __init__(self, cfg: MergedConfig, input_size: list) -> None:
-        super(ActionLayers, self).__init__()
-        self.cfg = cfg
-        self.input_size = input_size
-        self.action_size_list = self.cfg.action_size_list
-        self.action_type_list = self.cfg.action_type_list
-        assert len(self.action_type_list) == 1 and len(self.action_type_list) == len(self.action_size_list), "action_type_list and action_size_list must have the same length, and only one output"
-        self.actor_outputs = []
-        self.create_graph()
 
-    def create_graph(self):
-        self.action_layers = nn.ModuleList()
-        for i in range(len(self.action_type_list)):
-            action_type = ActionLayerType[self.action_type_list[i].upper()]
-            action_size = self.action_size_list[i]
-            if action_type == ActionLayerType.CONTINUOUS:
-                action_layer = ContinuousActionLayer(self.cfg, self.input_size, action_size, id = i)
-            elif action_type == ActionLayerType.DISCRETE:
-                action_layer = DiscreteActionLayer(self.cfg, self.input_size, action_size,id = i)
-            elif action_type == ActionLayerType.DPG:
-                action_layer = DPGActionLayer(self.cfg, self.input_size, action_size, id = i)
-            else:
-                raise ValueError("action_type must be specified in discrete, continuous or dpg")
-            self.action_layers.append(action_layer)
-
-    def forward(self, x, **kwargs):
-        self.actor_outputs = []
-        for i, action_layer in enumerate(self.action_layers):
-            self.actor_outputs.append(action_layer(x, **kwargs))
-        return self.actor_outputs
-    
-    def get_mus(self):
-        mus = []
-        for i, action_layer in enumerate(self.action_layers):
-            mus.append(action_layer.get_mu())
-        return mus[0]
-    
-    def get_actions(self, **kwargs):
-        actions = []
-        for i, action_layer in enumerate(self.action_layers):
-            actions.append(action_layer.get_action(**kwargs))
-        # return actions[0]
-        return actions # [action_1, action_2, ...]
-    
-    def get_log_probs(self):
-        return self.action_layers[0].get_log_prob()
-    
-    def get_log_probs_action(self, actions):
-        return self.action_layers[0].get_log_prob_action(actions)
-        # log_prob_sum = 0
-        # for i, action_layer in enumerate(self.action_layers):
-        #     log_prob_sum += action_layer.get_log_prob(actions[i])
-        # return log_prob_sum
-    
-    def get_mean_entropy(self):
-        return self.action_layers[0].get_mean_entropy()
-        # entropy_sum = 0
-        # for i, action_layer in enumerate(self.action_layers):
-        #     entropy_sum += action_layer.get_entropy()
-        # entropy_mean = entropy_sum / len(self.action_layers)
-        # return entropy_mean
    
 class ActorCriticNetwork(BaseNework):
     ''' Value network, for policy-based methods,  in which the branch_layers and critic share the same network

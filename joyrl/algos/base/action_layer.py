@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-01-26 00:31:39
+LastEditTime: 2024-01-26 10:01:05
 Discription: 
 '''
 from enum import Enum
@@ -22,6 +22,7 @@ class ActionLayerType(Enum):
     DISCRETE = 1
     CONTINUOUS = 2
     DPG = 3
+    DQNACTION = 4
     
 class BaseActionLayer(nn.Module):
     def __init__(self,cfg, input_size, action_dim, id = 0, **kwargs):
@@ -37,6 +38,55 @@ class BaseActionLayer(nn.Module):
             return self.predict_action()
         else:
             raise NotImplementedError
+class DQNActionLayer(BaseActionLayer):
+    def __init__(self, cfg, input_size, action_dim, id = 0, **kwargs):
+        super(DQNActionLayer, self).__init__(cfg=cfg, input_size=input_size, action_dim=action_dim, id=id)
+        self.action_dim = action_dim
+        output_size = input_size
+        self.dueling = hasattr(cfg, 'dueling') and cfg.dueling
+        if self.dueling:
+            state_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
+            self.state_value_layer, _ = create_layer(output_size, state_value_layer_cfg)
+            action_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[action_dim], activation='none')
+            self.action_value_layer, _ = create_layer(output_size, action_value_layer_cfg)
+        else:
+            action_layer_cfg = LayerConfig(layer_type='linear', layer_size=[action_dim], activation='none')
+            self.action_value_layer, _ = create_layer(output_size, action_layer_cfg)
+
+    def forward(self, x, **kwargs):
+        if self.dueling:
+            state_value = self.state_value_layer(x)
+            action_value = self.action_value_layer(x)
+            q_value = state_value + action_value - action_value.mean(dim=1, keepdim=True)
+        else:
+            q_value = self.action_value_layer(x)
+        output = {"q_value": q_value}
+        self.q_value = q_value
+        return output
+    
+    def get_qvalue(self):
+        return self.q_value
+    
+    def get_action(self, **kwargs):
+        mode = kwargs.get("mode", "sample")
+        if mode == "sample":
+            return self.sample_action()
+        elif mode == "predict":
+            return self.predict_action()
+        else:
+            raise NotImplementedError
+        
+    def sample_action(self):
+        return torch.argmax(self.q_value).detach().cpu().numpy().item()
+    
+    def predict_action(self):
+        ''' get action
+        '''
+        return torch.argmax(self.q_value).detach().cpu().numpy().item()
+
+
+    
+
 
 class DiscreteActionLayer(BaseActionLayer):
     def __init__(self, cfg, input_size, action_dim, id = 0, **kwargs):
@@ -111,7 +161,7 @@ class ContinuousActionLayer(BaseActionLayer):
         self.action_dim = action_dim
         output_size = input_size
         mu_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_dim], activation='tanh')
-        self.mu_layer, layer_out_size = create_layer(output_size, mu_layer_cfg)
+        self.mu_layer, _ = create_layer(output_size, mu_layer_cfg)
         self.log_std = nn.Parameter(torch.zeros(1, self.action_dim))
 
     def forward(self,x, **kwargs):

@@ -42,33 +42,30 @@ class Policy(BasePolicy):
             action = [self.action_space.sample()]
         return action
     
+    @torch.no_grad()
     def predict_action(self,state, **kwargs):
         ''' predict action
         '''
-        with torch.no_grad():
-            state = torch.tensor(np.array(state), device=self.device, dtype=torch.float32).unsqueeze(dim=0)
-            q_values = self.policy_net(state)
-            action = q_values.max(1)[1].cpu().numpy() # choose action corresponding to the maximum q value
-        return action
+        state = [torch.tensor(np.array(state), device=self.device, dtype=torch.float32).unsqueeze(dim=0)]
+        _ = self.policy_net(state)
+        actions = self.policy_net.action_layers.get_actions()
+        return actions
     
     def learn(self, **kwargs):
         ''' learn policy
         '''
         states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
-        # convert numpy to tensor
-        states = torch.tensor(states, device=self.device, dtype=torch.float32)
-        actions = torch.tensor(actions, device=self.device, dtype=torch.int64)
-        next_states = torch.tensor(next_states, device=self.device, dtype=torch.float32)
-        rewards = torch.tensor(rewards, device=self.device, dtype=torch.float32).unsqueeze(dim=1)
-        dones = torch.tensor(dones, device=self.device, dtype=torch.float32).unsqueeze(dim=1)
         # compute current Q values
-        q_values = self.policy_net(states).gather(1, actions)
+        _ = self.policy_net(states)
+        q_values = self.policy_net.action_layers.get_qvalues()
+        actual_qvalues = q_values.gather(1, actions)
         # compute next max q value
-        next_q_values = self.target_net(next_states).max(1)[0].unsqueeze(dim=1)
+        _ = self.target_net(next_states)
+        next_q_values_max = self.target_net.action_layers.get_qvalues().max(1)[0].unsqueeze(dim=1)
         # compute target Q values
-        target_q_values = rewards + (1 - dones) * self.gamma * next_q_values
+        target_q_values = rewards + (1 - dones) * self.gamma * next_q_values_max
         # compute loss
-        self.loss = nn.MSELoss()(q_values, target_q_values)
+        self.loss = nn.MSELoss()(actual_qvalues, target_q_values)
         self.optimizer.zero_grad()
         self.loss.backward()
         # clip to avoid gradient explosion
