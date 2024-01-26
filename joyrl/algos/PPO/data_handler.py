@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-05-17 01:08:36
 LastEditor: JiangJi
-LastEditTime: 2024-01-25 23:19:39
+LastEditTime: 2024-01-26 13:14:37
 Discription: 
 '''
 import numpy as np
@@ -85,6 +85,7 @@ class DataHandler(BaseDataHandler):
                 discounted_segment = self._discount_cumsum(segment, gamma)
                 returns[start_idx:end_idx] = discounted_segment
                 start_idx = i + 1
+        returns = (returns - returns.mean()) / (returns.std() + 1e-5) # 1e-5 to avoid division by zero
         return returns
     # def _compute_returns(self, rewards, dones):
     #     # monte carlo estimate of state rewards

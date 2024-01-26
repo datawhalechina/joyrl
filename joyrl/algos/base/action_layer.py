@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-01-26 10:01:05
+LastEditTime: 2024-01-26 13:09:02
 Discription: 
 '''
 from enum import Enum
@@ -38,6 +38,7 @@ class BaseActionLayer(nn.Module):
             return self.predict_action()
         else:
             raise NotImplementedError
+        
 class DQNActionLayer(BaseActionLayer):
     def __init__(self, cfg, input_size, action_dim, id = 0, **kwargs):
         super(DQNActionLayer, self).__init__(cfg=cfg, input_size=input_size, action_dim=action_dim, id=id)
@@ -83,10 +84,6 @@ class DQNActionLayer(BaseActionLayer):
         ''' get action
         '''
         return torch.argmax(self.q_value).detach().cpu().numpy().item()
-
-
-    
-
 
 class DiscreteActionLayer(BaseActionLayer):
     def __init__(self, cfg, input_size, action_dim, id = 0, **kwargs):
@@ -166,13 +163,13 @@ class ContinuousActionLayer(BaseActionLayer):
 
     def forward(self,x, **kwargs):
         mu = self.mu_layer(x)
-        sigma = torch.exp(self.log_std)
+        sigma = torch.ones_like(mu) * torch.exp(self.log_std)
         # log_prob = -0.5 * (sigma.log() + ((mu - x) / sigma).pow(2) + math.log(2 * math.pi))
         # sigma = F.softplus(self.fc4(x)) + 0.001 # std of normal distribution, add a small value to avoid 0
         # sigma = torch.clamp(sigma, min=-0.25, max=0.25) # clamp the std between 0.001 and 1
-        output = {"mu": mu, "sigma": sigma}
-        self.mu = mu
-        self.sigma = sigma
+        self.mu = mu.squeeze(dim=1) # [batch_size]
+        self.sigma = sigma.squeeze(dim=1) # [batch_size]
+        output = {"mu": self.mu, "sigma": self.sigma}
         self.mean = self.mu * self.action_scale + self.action_bias
         self.std = self.sigma
         return output
@@ -198,12 +195,12 @@ class ContinuousActionLayer(BaseActionLayer):
         ''' get log_probs
         '''
         # action shape is [batch_size, action_dim]
-        dist = Normal(self.mean,self.std)
+        dist = Normal(self.mean, self.std)
         if not isinstance(action, torch.Tensor):
             action = torch.tensor(action, dtype=torch.float32, device=self.mean.device)
             # action = action.squeeze(dim=0)
         log_prob = dist.log_prob(action)
-        log_prob = torch.sum(log_prob, dim=1) # sum the log_prob of each action_dim
+
         return log_prob
     
     def get_mean_entropy(self):

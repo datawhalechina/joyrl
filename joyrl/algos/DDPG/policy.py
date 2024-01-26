@@ -94,12 +94,6 @@ class Policy(BasePolicy):
         ''' train policy
         '''
         states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
-        # convert numpy to tensor
-        states = torch.tensor(states, device=self.device, dtype=torch.float32)
-        actions = torch.tensor(actions, device=self.device, dtype=torch.float32)
-        next_states = torch.tensor(next_states, device=self.device, dtype=torch.float32)
-        rewards = torch.tensor(rewards, device=self.device, dtype=torch.float32).unsqueeze(dim=1)
-        dones = torch.tensor(dones, device=self.device, dtype=torch.float32).unsqueeze(dim=1)
         # calculate policy loss
         self.policy_loss = -self.critic([states, self.actor(states)[0]['mu']]).mean() * self.cfg.policy_loss_weight
         # calculate value loss

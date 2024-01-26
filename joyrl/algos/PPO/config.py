@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-02-20 21:53:39
 LastEditor: JiangJi
-LastEditTime: 2024-01-15 13:26:35
+LastEditTime: 2024-01-26 12:28:23
 Discription: 
 '''
 class AlgoConfig(object):
@@ -26,7 +26,7 @@ class AlgoConfig(object):
         self.lr = 0.0001 # for shared optimizer
         self.actor_lr = 0.0003 # learning rate for actor, must be specified if share_optimizer is False
         self.critic_lr = 0.001 # learning rate for critic, must be specified if share_optimizer is False
-        self.critic_loss_coef = 0.5 # critic loss coefficient
+        self.critic_loss_coef = 0.001 # critic loss coefficient
         self.entropy_coef = 0.01 # entropy coefficient
         self.batch_size = 256 # ppo train batch size
         self.sgd_batch_size = 32 # sgd batch size

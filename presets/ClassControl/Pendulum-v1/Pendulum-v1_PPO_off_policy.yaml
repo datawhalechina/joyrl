@@ -13,13 +13,13 @@ general_cfg:
   seed: 1 
   online_eval: true 
   online_eval_episode: 10 
-  model_save_fre: 10 
+  model_save_fre: 500 
   policy_summary_fre: 2
 algo_cfg:
   independ_actor: true
   share_optimizer: false
   actor_branch_layers:
-    - name: feature_1
+    - name: state
       layers:
       - layer_type: linear
         layer_size: [256]
@@ -28,7 +28,7 @@ algo_cfg:
         layer_size: [256]
         activation: relu
   critic_branch_layers:
-    - name: feature_1
+    - name: state
       layers:
       - layer_type: linear
         layer_size: [256]
@@ -36,19 +36,17 @@ algo_cfg:
       - layer_type: linear
         layer_size: [256]
         activation: relu
-  buffer_type: ONPOLICY_QUE
-  actor_lr: 0.0003
-  critic_lr: 0.001
-  entropy_coef: 0.01
-  critic_loss_coef: 0.001
+  buffer_type: REPLAY_QUE
+  max_buffer_size: 2000
+  actor_lr: 0.003
+  critic_lr: 0.01
+  entropy_coef: 0.02
   eps_clip: 0.2
   gamma: 0.99
-  k_epochs: 4
+  k_epochs: 1
   batch_size: 256
   sgd_batch_size: 256
 env_cfg:
-  id: CartPole-v1
+  id: Pendulum-v1
   render_mode: null
-  wrappers:
-    - wrapper_name: CartPoleActionWrapper
   
