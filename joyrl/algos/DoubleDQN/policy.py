@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2023-12-24 20:11:40
+LastEditTime: 2024-01-26 10:15:56
 Discription: 
 '''
 import torch
@@ -32,9 +32,8 @@ class Policy(BasePolicy):
         self.create_summary() # create summary
 
     def create_graph(self):
-        self.state_size_list, self.action_size_list = self.get_state_action_size()
-        self.policy_net = QNetwork(self.cfg, self.state_size_list, self.action_size_list).to(self.device)
-        self.target_net = QNetwork(self.cfg, self.state_size_list, self.action_size_list).to(self.device)
+        self.policy_net = QNetwork(self.cfg,self.state_size_list).to(self.device)
+        self.target_net = QNetwork(self.cfg,self.state_size_list).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict()) # or use this to copy parameters
         self.create_optimizer()
 
@@ -48,42 +47,38 @@ class Policy(BasePolicy):
         if random.random() > self.epsilon:
             action = self.predict_action(state)
         else:
-            action = self.action_space.sample()
+            action = [self.action_space.sample()]
         return action
     
+    @torch.no_grad()
     def predict_action(self,state,**kwargs):
         ''' predict action
         '''
-        with torch.no_grad():
-            state = torch.tensor(np.array(state), device=self.device, dtype=torch.float32).unsqueeze(dim=0)
-            q_values = self.policy_net(state)
-            action = q_values.max(1)[1].item() # choose action corresponding to the maximum q value
-        return action
+        state = [torch.tensor(np.array(state), device=self.device, dtype=torch.float32).unsqueeze(dim=0)]
+        _ = self.policy_net(state)
+        actions = self.policy_net.action_layers.get_actions()
+        return actions
 
     def learn(self, **kwargs):
         ''' train policy
         '''
         states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
-        update_step = kwargs.get('update_step')
+        _ = self.policy_net(states)
+        q_values = self.policy_net.action_layers.get_qvalues()
+        actual_qvalues = q_values.gather(1, actions)
 
-        # convert numpy to tensor
-        states = torch.tensor(states, device=self.device, dtype=torch.float32)
-        actions = torch.tensor(actions, device=self.device, dtype=torch.int64).unsqueeze(dim=1)
-        next_states = torch.tensor(next_states, device=self.device, dtype=torch.float32)
-        rewards = torch.tensor(rewards, device=self.device, dtype=torch.float32).unsqueeze(dim=1)
-        dones = torch.tensor(dones, device=self.device, dtype=torch.float32).unsqueeze(dim=1)
-
-        # compute current Q values Q(s_t, a_t)
-        q_values = self.policy_net(states).gather(dim=1, index=actions)  # shape(batchsize,1)
         # compute next Q values Q(s_t+1, a)
-        next_q_values = self.policy_net(next_states)
+        _ = self.policy_net(next_states)
+        next_q_values = self.policy_net.action_layers.get_qvalues()
+
         # compute next target Q values Q'(s_t+1, a)，which is different from DQN
-        next_target_value_batch = self.target_net(next_states)
-        # compute Q'(s_t+1, a=argmax Q(s_t+1, a))
-        next_target_q_value_batch = next_target_value_batch.gather(1, torch.max(next_q_values, 1)[1].unsqueeze(
-            1))  # shape(batchsize,1)
-        expected_q_values = rewards + self.gamma * next_target_q_value_batch * (1 - dones)  
-        self.loss = nn.MSELoss()(q_values, expected_q_values)  
+        _ = self.target_net(next_states)
+        next_target_qvalues = self.target_net.action_layers.get_qvalues()
+
+        next_target_q_values_action = next_target_qvalues.gather(1, torch.max(next_q_values, 1)[1].unsqueeze(1))
+
+        expected_q_values = rewards + self.gamma * next_target_q_values_action * (1 - dones)  
+        self.loss = nn.MSELoss()(actual_qvalues, expected_q_values)  
         self.optimizer.zero_grad()  
         self.loss.backward()  
         # clip to avoid gradient explosion
