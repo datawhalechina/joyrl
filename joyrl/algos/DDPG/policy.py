@@ -11,13 +11,10 @@ class Policy(BasePolicy):
     def __init__(self,cfg) -> None:
         super(Policy, self).__init__(cfg)
         self.cfg = cfg
-        self.action_type_list = cfg.action_type
         self.ou_noise = OUNoise(self.action_space)  
         self.gamma = cfg.gamma
         self.tau = cfg.tau
         self.device = torch.device(cfg.device)
-        self.action_scale = torch.FloatTensor((self.action_space.high - self.action_space.low) / 2.).to(self.device)
-        self.action_bias = torch.FloatTensor((self.action_space.high + self.action_space.low) / 2.).to(self.device)
         self.create_graph() # create graph and optimizer
         self.create_summary() # create summary
         self.to(self.device)
@@ -29,8 +26,8 @@ class Policy(BasePolicy):
         # action_size must be [action_dim_1, action_dim_2, ...]
         self.action_size_list = [self.action_space.shape[0]]
         self.action_type_list = ['dpg']
-        self.action_high_list = [self.action_space.high]
-        self.action_low_list = [self.action_space.low]
+        self.action_high_list = [self.action_space.high[0]]
+        self.action_low_list = [self.action_space.low[0]]
         setattr(self.cfg, 'action_size_list', self.action_size_list)
         setattr(self.cfg, 'action_type_list', self.action_type_list)
         setattr(self.cfg, 'action_high_list', self.action_high_list)
@@ -95,7 +92,7 @@ class Policy(BasePolicy):
         '''
         states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
         # calculate policy loss
-        self.policy_loss = -self.critic([states, self.actor(states)[0]['mu']]).mean() * self.cfg.policy_loss_weight
+        self.policy_loss = - self.critic([states, self.actor(states)[0]['mu']]).mean() * self.cfg.policy_loss_weight
         # calculate value loss
         next_actions = self.target_actor(next_states)[0]['mu'].detach()
         # next_state_actions = torch.cat([next_states, next_actions], dim=1)

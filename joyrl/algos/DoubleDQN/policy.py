@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-26 10:15:56
+LastEditTime: 2024-01-27 12:00:29
 Discription: 
 '''
 import torch
@@ -65,7 +65,7 @@ class Policy(BasePolicy):
         states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
         _ = self.policy_net(states)
         q_values = self.policy_net.action_layers.get_qvalues()
-        actual_qvalues = q_values.gather(1, actions)
+        actual_qvalues = q_values.gather(1, actions.long())
 
         # compute next Q values Q(s_t+1, a)
         _ = self.policy_net(next_states)

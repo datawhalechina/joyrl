@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# coding=utf-8
+'''
+Author: JiangJi
+Email: johnjim0816@gmail.com
+Date: 2024-01-25 09:58:33
+LastEditor: JiangJi
+LastEditTime: 2024-01-27 11:59:15
+Discription: 
+'''
 import torch
 import torch.nn as nn
 import math,random
@@ -58,7 +68,7 @@ class Policy(BasePolicy):
         # compute current Q values
         _ = self.policy_net(states)
         q_values = self.policy_net.action_layers.get_qvalues()
-        actual_qvalues = q_values.gather(1, actions)
+        actual_qvalues = q_values.gather(1, actions.long())
         # compute next max q value
         _ = self.target_net(next_states)
         next_q_values_max = self.target_net.action_layers.get_qvalues().max(1)[0].unsqueeze(dim=1)

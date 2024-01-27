@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-01-26 10:03:13
+LastEditTime: 2024-01-27 11:58:27
 Discription: 
 '''
 import torch
@@ -43,7 +43,7 @@ class BaseDataHandler:
         dones = np.array([exp.done for exp in exps])
         # convert numpy to tensor
         states = torch.tensor(states, device=self.cfg.device, dtype=torch.float32)
-        actions = torch.tensor(actions, device=self.cfg.device, dtype=torch.int64)
+        actions = torch.tensor(actions, device=self.cfg.device, dtype=torch.float32)
         next_states = torch.tensor(next_states, device=self.cfg.device, dtype=torch.float32)
         rewards = torch.tensor(rewards, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)
         dones = torch.tensor(dones, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)

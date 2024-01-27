@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-01-26 13:09:02
+LastEditTime: 2024-01-27 22:46:52
 Discription: 
 '''
 from enum import Enum
@@ -150,8 +150,8 @@ class DiscreteActionLayer(BaseActionLayer):
 class ContinuousActionLayer(BaseActionLayer):
     def __init__(self, cfg, input_size, action_dim, id = 0, **kwargs):
         super(ContinuousActionLayer, self).__init__(cfg=cfg, input_size=input_size, action_dim=action_dim, id=id)
-        self.action_high = self.cfg.action_high_list[self.id][0]
-        self.action_low = self.cfg.action_low_list[self.id][0]
+        self.action_high = self.cfg.action_high_list[self.id]
+        self.action_low = self.cfg.action_low_list[self.id]
         self.action_scale = (self.action_high - self.action_low)/2
         self.action_bias = (self.action_high + self.action_low)/2
         self.min_policy = cfg.min_policy
@@ -214,8 +214,8 @@ class ContinuousActionLayer(BaseActionLayer):
 class DPGActionLayer(BaseActionLayer):
     def __init__(self, cfg, input_size, action_dim, id = 0, **kwargs):
         super(DPGActionLayer, self).__init__(cfg=cfg, input_size=input_size, action_dim=action_dim, id=id)
-        self.action_high = self.cfg.action_high_list[self.id][0]
-        self.action_low = self.cfg.action_low_list[self.id][0]
+        self.action_high = self.cfg.action_high_list[self.id]
+        self.action_low = self.cfg.action_low_list[self.id]
         self.action_scale = (self.action_high - self.action_low)/2
         self.action_bias = (self.action_high + self.action_low)/2
         self.action_dim = action_dim

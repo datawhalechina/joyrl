@@ -21,26 +21,36 @@ class Policy(BasePolicy):
         self.update_step = 0
         self.explore_steps = cfg.explore_steps # exploration steps before training
         self.device = torch.device(cfg.device)
-        self.action_scale = torch.tensor((self.action_space.high - self.action_space.low)/2, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
-        self.action_bias = torch.tensor((self.action_space.high + self.action_space.low)/2, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
+        self.action_scale = torch.tensor((self.action_space.high - self.action_space.low)/2, device=self.device, dtype=torch.float32)
+        self.action_bias = torch.tensor((self.action_space.high + self.action_space.low)/2, device=self.device, dtype=torch.float32)
         self.create_graph() # create graph and optimizer
         self.create_summary() # create summary
+        self.to(self.device)
+
+    def get_action_size(self):
+        ''' get action size
+        '''
+        # action_size must be [action_dim_1, action_dim_2, ...]
+        self.action_size_list = [self.action_space.shape[0]]
+        self.action_type_list = ['dpg']
+        self.action_high_list = [self.action_space.high[0]]
+        self.action_low_list = [self.action_space.low[0]]
+        setattr(self.cfg, 'action_size_list', self.action_size_list)
+        setattr(self.cfg, 'action_type_list', self.action_type_list)
+        setattr(self.cfg, 'action_high_list', self.action_high_list)
+        setattr(self.cfg, 'action_low_list', self.action_low_list)
     
     def create_graph(self):
-        self.state_size_list, self.action_size_list = self.get_state_action_size()
-        self.n_actions = self.action_size_list[-1]
-        self.input_head_size = [None, self.state_size_list[-1]+self.action_size_list[-1]]
-        # Actor
-        self.actor = ActorNetwork(self.cfg, self.state_size_list, self.action_space).to(self.device)
-        self.actor_target = ActorNetwork(self.cfg, self.state_size_list, self.action_space).to(self.device)
-        self.actor_target.load_state_dict(self.actor.state_dict())
-        # critice - 2Q
-        self.critic_1 = CriticNetwork(self.cfg, self.input_head_size).to(self.device)
-        self.critic_2 = CriticNetwork(self.cfg, self.input_head_size).to(self.device)
-        self.critic_1_target = CriticNetwork(self.cfg, self.input_head_size).to(self.device)
-        self.critic_2_target = CriticNetwork(self.cfg, self.input_head_size).to(self.device)
-        self.critic_1_target.load_state_dict(self.critic_1.state_dict())
-        self.critic_2_target.load_state_dict(self.critic_2.state_dict())
+        critic_input_size_list = self.state_size_list + [[None, self.action_size_list[0]]]
+        self.actor = ActorNetwork(self.cfg, input_size_list = self.state_size_list)
+        self.critic_1 = CriticNetwork(self.cfg, input_size_list = critic_input_size_list)
+        self.critic_2 = CriticNetwork(self.cfg, input_size_list = critic_input_size_list)
+        self.target_actor = ActorNetwork(self.cfg, input_size_list = self.state_size_list)
+        self.target_critic_1 = CriticNetwork(self.cfg, input_size_list = critic_input_size_list)
+        self.target_critic_2 = CriticNetwork(self.cfg, input_size_list = critic_input_size_list)
+        self.target_actor.load_state_dict(self.actor.state_dict())
+        self.target_critic_1.load_state_dict(self.critic_1.state_dict())
+        self.target_critic_2.load_state_dict(self.critic_2.state_dict())
         self.create_optimizer() 
 
     def create_optimizer(self):
@@ -79,59 +89,51 @@ class Policy(BasePolicy):
             return self.action_space.sample()
         else:
             action = self.predict_action(state, **kwargs)
-            action_noise = np.random.normal(0, self.action_scale.cpu().numpy()[0] * self.expl_noise, size=self.n_actions)
+            action_noise = np.random.normal(0, self.action_scale * self.expl_noise, size=self.action_size_list[0])
             action = (action + action_noise).clip(self.action_space.low, self.action_space.high)
             return action
 
     @torch.no_grad()
     def predict_action(self, state,  **kwargs):
-        state = torch.tensor(state, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
-        action = self.actor(state)
-        action = self.action_scale * action + self.action_bias
-        return action.detach().cpu().numpy()[0]
+        state = [torch.tensor(state, device=self.device, dtype=torch.float32).unsqueeze(dim=0)]
+        _ = self.actor(state)
+        action = self.actor.action_layers.get_actions()
+        return action[0]
 
     def learn(self, **kwargs):
         # state, action, reward, next_state, done = self.memory.sample(self.batch_size)
-        state, action, next_state, reward, done = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
-        # convert to tensor
-        state = torch.tensor(np.array(state), device=self.device, dtype=torch.float32)
-        action = torch.tensor(np.array(action), device=self.device, dtype=torch.float32)
-        next_state = torch.tensor(np.array(next_state), device=self.device, dtype=torch.float32)
-        reward = torch.tensor(reward, device=self.device, dtype=torch.float32).unsqueeze(1)
-        done = torch.tensor(done, device=self.device, dtype=torch.float32).unsqueeze(1)
+        states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
+   
         # update critic
-        noise = (torch.randn_like(action) * self.policy_noise).clamp(-self.noise_clip, self.noise_clip)
-        # print ("")
-        next_action = ((self.actor_target(next_state) + noise) * self.action_scale + self.action_bias).clamp(-self.action_scale+self.action_bias, self.action_scale+self.action_bias)
-        next_sa = torch.cat([next_state, next_action], 1) # shape:[train_batch_size,n_states+n_actions]
-        target_q1, target_q2 = self.critic_1_target(next_sa).detach(), self.critic_2_target(next_sa).detach()
+        noise = (torch.randn_like(actions) * self.policy_noise).clamp(-self.noise_clip, self.noise_clip)
+        next_actions = self.target_actor(next_states)[0]['mu']
+        next_actions = ((next_actions + noise) * self.action_scale + self.action_bias).clamp(-self.action_scale+self.action_bias, self.action_scale+ self.action_bias)
+        target_q1, target_q2 = self.target_critic_1([next_states, next_actions]).detach(), self.target_critic_2([next_states, next_actions]).detach()
         target_q = torch.min(target_q1, target_q2) # shape:[train_batch_size,n_actions]
-        target_q = reward + self.gamma * target_q * (1 - done)
-        sa = torch.cat([state, action], 1)
-        current_q1, current_q2 = self.critic_1(sa), self.critic_2(sa)
+        target_q = rewards + self.gamma * target_q * (1 - dones)
+        current_q1, current_q2 = self.critic_1([states, actions]), self.critic_2([states, actions])
         # compute critic loss
         critic_1_loss = F.mse_loss(current_q1, target_q)
         critic_2_loss = F.mse_loss(current_q2, target_q)
         self.value_loss1, self.value_loss2 = critic_1_loss, critic_2_loss
-
         self.critic_1_optimizer.zero_grad()
         critic_1_loss.backward()
         self.critic_1_optimizer.step()
         self.critic_2_optimizer.zero_grad()
         critic_2_loss.backward()
         self.critic_2_optimizer.step()
+        self.soft_update(self.critic_1, self.target_critic_1, self.tau)
+        self.soft_update(self.critic_2, self.target_critic_2, self.tau)
         # Delayed policy updates
         if self.sample_count % self.policy_freq == 0:
             # compute actor loss
-            actor_loss = -self.critic_1(torch.cat([state, self.actor(state)], 1)).mean()
+            actor_loss = -self.critic_1([states, self.actor(states)[0]['mu']]).mean()
             self.policy_loss = actor_loss
             self.tot_loss = self.policy_loss + self.value_loss1 + self.value_loss2
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
             self.actor_optimizer.step()
-            self.soft_update(self.actor, self.actor_target, self.tau)
-            self.soft_update(self.critic_1, self.critic_1_target, self.tau)
-            self.soft_update(self.critic_2, self.critic_2_target, self.tau)
+            self.soft_update(self.actor, self.target_actor, self.tau)   
         self.update_step += 1
         self.update_summary()
 

@@ -1,27 +1,37 @@
 general_cfg:
+  joyrl_version: 0.5.2
   algo_name: TD3
   env_name: gym 
-  device: cuda 
+  device: cpu 
   mode: train 
   load_checkpoint: false
   load_path: Train_ray_Pendulum-v1_DDPG_20230527-001715 
   load_model_step: best 
   max_episode: 400 
   max_step: 200 
-  seed: 10 
+  seed: 1
   online_eval: true 
   online_eval_episode: 20 
   model_save_fre: 2000 
 algo_cfg:
-  action_type: dpg
-  actor_layers:
-    - layer_type: linear
-      layer_size: [256]
-      activation: tanh
-    - layer_type: linear
-      layer_size: [256]
-      activation: tanh
-  critic_layers:
+  learn_frequency: 1
+  actor_branch_layers:
+    - name: state
+      layers:
+      - layer_type: linear
+        layer_size: [256]
+        activation: tanh
+      - layer_type: linear
+        layer_size: [256]
+        activation: tanh
+  critic_branch_layers:
+    - name: state
+      layers:
+      - layer_type: none
+    - name: action
+      layers:
+      - layer_type: none
+  critic_merge_layers:
     - layer_type: linear
       layer_size: [256]
       activation: tanh

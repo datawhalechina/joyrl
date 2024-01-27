@@ -44,8 +44,8 @@ class BasePolicy(nn.Module):
         if isinstance(self.action_space, Box):
             self.action_size_list = [self.action_space.shape[0]]
             self.action_type_list = ["CONTINUOUS"]
-            self.action_high_list = [self.action_space.high]
-            self.action_low_list = [self.action_space.low]  
+            self.action_high_list = [self.action_space.high[0]]
+            self.action_low_list = [self.action_space.low[0]]  
         elif isinstance(self.action_space, Discrete):
             self.action_size_list = [self.action_space.n]
             self.action_type_list = ["DISCRETE"]

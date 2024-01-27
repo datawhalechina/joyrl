@@ -69,8 +69,8 @@ class ReplayBufferQue:
     '''
     def __init__(self, cfg: MergedConfig):
         if hasattr(cfg, 'max_buffer_size'): self.capacity = cfg.max_buffer_size
-        self.learn_frequecy = 1
-        if hasattr(cfg, 'learn_frequecy'): self.learn_frequecy = cfg.learn_frequecy
+        self.learn_frequency = 1
+        if hasattr(cfg, 'learn_frequency'): self.learn_frequency = cfg.learn_frequency
         self.batch_size = cfg.batch_size
         self.buffer = deque(maxlen=self.capacity)
         self.new_exp_cnt = 0
@@ -88,9 +88,9 @@ class ReplayBufferQue:
         sequential = kwargs.get('sequential', False)
         if self.batch_size > len(self.buffer): # if the buffer is not full, return None
             return None
-        if self.new_exp_cnt < self.learn_frequecy: # if the buffer is not full, return None
+        if self.new_exp_cnt < self.learn_frequency: # if the buffer is not full, return None
             return None
-        self.new_exp_cnt -= self.learn_frequecy
+        self.new_exp_cnt -= self.learn_frequency
         if sequential: # sequential sampling
             rand = random.randint(0, len(self.buffer) - self.batch_size)
             batch = [self.buffer[i] for i in range(rand, rand + self.batch_size)]

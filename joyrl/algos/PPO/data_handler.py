@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-05-17 01:08:36
 LastEditor: JiangJi
-LastEditTime: 2024-01-26 13:14:37
+LastEditTime: 2024-01-27 18:30:42
 Discription: 
 '''
 import numpy as np
@@ -36,9 +36,9 @@ class DataHandler(BaseDataHandler):
         returns = self._compute_returns(rewards, dones, self.cfg.gamma).copy()
 
         actions = torch.tensor(actions, device=self.cfg.device, dtype=torch.float32)
-        states = [torch.tensor(states, device=self.cfg.device, dtype=torch.float32)]
+        states = torch.tensor(states, device=self.cfg.device, dtype=torch.float32)
         rewards = torch.tensor(rewards, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)
-        next_states = [torch.tensor(next_states, device=self.cfg.device, dtype=torch.float32)]
+        next_states = torch.tensor(next_states, device=self.cfg.device, dtype=torch.float32)
         dones = torch.tensor(dones, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)
         log_probs = torch.tensor(log_probs, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)
         returns = torch.tensor(returns, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)

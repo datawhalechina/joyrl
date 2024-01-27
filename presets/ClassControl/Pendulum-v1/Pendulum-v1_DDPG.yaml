@@ -1,5 +1,5 @@
 general_cfg:
-  joyrl_version: 0.5.0
+  joyrl_version: 0.5.2
   algo_name: DDPG
   env_name: gym 
   device: cpu 
@@ -9,12 +9,11 @@ general_cfg:
   load_model_step: best 
   max_episode: -1 
   max_step: 200 
-  seed: 10 
+  seed: 1
   online_eval: true 
   online_eval_episode: 20 
   model_save_fre: 2000 
 algo_cfg:
-  action_type: dpg
   actor_branch_layers:
     - name: state
       layers:

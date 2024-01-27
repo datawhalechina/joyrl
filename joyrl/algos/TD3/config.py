@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 00:37:19
 LastEditor: JiangJi
-LastEditTime: 2023-12-25 00:51:20
+LastEditTime: 2024-01-27 11:54:20
 Discription: 
 '''
 class AlgoConfig:
@@ -23,11 +23,9 @@ class AlgoConfig:
         self.noise_clip = 0.5 # range to clip target policy noise
         self.batch_size = 100 # batch size for both actor and critic
         self.max_buffer_size = 1000000 # replay buffer size
-        self.actor_layers = [
-            {'layer_type': 'Linear', 'layer_size': [200], 'activation': 'ReLU'},
-            {'layer_type': 'Linear', 'layer_size': [200], 'activation': 'ReLU'},
-        ]
-        self.critic_layers = [
-            {'layer_type': 'Linear', 'layer_size': [200], 'activation': 'ReLU'},
-            {'layer_type': 'Linear', 'layer_size': [200], 'activation': 'ReLU'},
-        ]
+        self.branch_layers = []
+        self.merge_layers = []
+        self.actor_branch_layers = []
+        self.actor_merge_layers = []
+        self.critic_branch_layers = []
+        self.critic_merge_layers = []
