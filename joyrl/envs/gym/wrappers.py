@@ -6,6 +6,71 @@ import numpy as np
 from torchvision import transforms
 from gymnasium.spaces import Box
 from gymnasium.wrappers import FrameStack
+from typing import List
+
+
+class BaseSkipFrame(gym_wrapper.Wrapper):
+    def __init__(
+            self, 
+            env, 
+            skip: int, 
+            cut_slices: List[List[int]]=None,
+            start_skip: int=None,
+            int_action_flag: bool=False
+        ):
+        """_summary_
+        Args:
+            env (_type_): _description_
+            skip (int): skip frames
+            cut_slices (List[List[int]], optional): pic observation cut. Defaults to None.
+            start_skip (int, optional): skip several frames to start. Defaults to None.
+            int_action_flag (bool): if the action only a int,  set true. Defaults to False.
+        """
+        super().__init__(env)
+        self._skip = skip
+        self.pic_cut_slices = cut_slices
+        self.start_skip = start_skip
+        self.int_action_flag = int_action_flag
+
+    def _cut_slice(self, obs):
+        slice_list = []
+        for idx, dim_i_slice in enumerate(self.pic_cut_slices):
+            slice_list.append(eval('np.s_[{st}:{ed}]'.format(st=dim_i_slice[0], ed=dim_i_slice[1])))
+
+        obs = obs[tuple(i for i in slice_list)]
+        return obs
+
+    def step(self, action):
+        tt_reward_list = []
+        done = False
+        total_reward = 0
+        if self.int_action_flag:
+            action = action[0]
+        print(f'action={action}')
+        for i in range(self._skip):
+            obs, reward, terminated, truncated, info = self.env.step(action)
+            done_f = terminated or truncated
+            total_reward += reward
+            tt_reward_list.append(reward)
+            if done:
+                break
+
+        obs = self._cut_slice(obs)  if self.pic_cut_slices is not None else obs
+        return obs, total_reward, done_f, truncated, info
+
+    def _start_skip(self):
+        a = np.array([0.0, 0.0, 0.0]) if hasattr(self.env.action_space, 'low') else np.array(0) 
+        for i in range(self.start_skip):
+            obs, reward, terminated, truncated, info = self.env.step(a)
+        return obs, info
+
+    def reset(self, seed=0, options=None):
+        s, info = self.env.reset(seed=seed, options=options)
+        if self.start_skip is not None:
+            obs, info = self._start_skip()
+        obs = self._cut_slice(obs)  if self.pic_cut_slices is not None else obs
+        return obs, info
+
 
 class CartPoleActionWrapper(gym_wrapper.Wrapper):
     def __init__(self, env):
