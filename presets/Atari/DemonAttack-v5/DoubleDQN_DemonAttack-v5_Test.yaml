@@ -77,3 +77,5 @@ env_cfg:
       shape: 84
     - wrapper_name: FrameStack
       num_stack: 4
+
+version: '0.5.2'

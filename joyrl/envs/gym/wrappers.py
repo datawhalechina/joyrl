@@ -46,7 +46,6 @@ class BaseSkipFrame(gym_wrapper.Wrapper):
         total_reward = 0
         if self.int_action_flag:
             action = action[0]
-        print(f'action={action}')
         for i in range(self._skip):
             obs, reward, terminated, truncated, info = self.env.step(action)
             done_f = terminated or truncated
