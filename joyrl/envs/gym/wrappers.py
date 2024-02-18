@@ -164,14 +164,16 @@ class CliffWalkingWapper(gym_wrapper.Wrapper):
 
 
 class CarV2SkipFrame(gym_wrapper.Wrapper):
-    def __init__(self, env, skip: int = 5):
+    def __init__(self, env, skip: int = 5, continue_flag: bool=False):
         """skip frame
         Args:
             env (_type_): _description_
             skip (int): skip frames
+            continue_flag (bool): continuous flag in carRacing env 
         """
         super().__init__(env)
         self._skip = skip
+        self.continue_flag = continue_flag
     
     def step(self, action):
         tt_reward_list = []
@@ -197,8 +199,9 @@ class CarV2SkipFrame(gym_wrapper.Wrapper):
     def reset(self, seed=0, options=None):
         s, info = self.env.reset(seed=seed, options=options)
         # continue
-        # a = np.array([0.0, 0.0, 0.0]) 
         a = 0
+        if self.continue_flag:
+            a = np.array([0.0, 0.0, 0.0]) 
         for i in range(45):
             obs, reward, done, info, _ = self.env.step(a)
 
