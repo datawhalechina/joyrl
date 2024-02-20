@@ -214,8 +214,10 @@ class ContinuousActionLayer(BaseActionLayer):
 class DPGActionLayer(BaseActionLayer):
     def __init__(self, cfg, input_size, action_dim, id = 0, **kwargs):
         super(DPGActionLayer, self).__init__(cfg=cfg, input_size=input_size, action_dim=action_dim, id=id)
-        self.action_high = self.cfg.action_high_list[self.id]
-        self.action_low = self.cfg.action_low_list[self.id]
+        # self.action_high = self.cfg.action_high_list[self.id]
+        # self.action_low = self.cfg.action_low_list[self.id]
+        self.action_high = self.cfg.action_space.high
+        self.action_low = self.cfg.action_space.low
         self.action_scale = (self.action_high - self.action_low)/2
         self.action_bias = (self.action_high + self.action_low)/2
         self.action_dim = action_dim
@@ -247,14 +249,16 @@ class DPGActionLayer(BaseActionLayer):
     def sample_action(self):
         ''' get action
         '''
-        action = self.action_scale * self.mu + self.action_bias
+        device_ = self.mu.device 
+        action = torch.FloatTensor(self.action_scale).to(device_) * self.mu + torch.FloatTensor(self.action_bias).to(device_)
         action = action.detach().cpu().numpy()[0]
         return action
     
     def predict_action(self):
         ''' get action
         '''
-        action = self.action_scale * self.mu + self.action_bias
+        device_ = self.mu.device 
+        action = torch.FloatTensor(self.action_scale).to(device_) * self.mu + torch.FloatTensor(self.action_bias).to(device_)
         action = action.detach().cpu().numpy()[0]
         return action
         
