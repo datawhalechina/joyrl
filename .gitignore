@@ -10,3 +10,5 @@ tasks
 test
 test.py
 *.log
+presets/Box2D/CarRacing-v2/*.ipynb
+presets/Box2D/CarRacing-v2/TD3*Test.yaml

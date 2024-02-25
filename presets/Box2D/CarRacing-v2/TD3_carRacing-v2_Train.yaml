@@ -10,7 +10,7 @@ general_cfg:
   load_checkpoint: false
   load_path: None
   load_model_step: best 
-  max_episode: 5000 
+  max_episode: 1600 
   max_step: 1000
   seed: 2024 
   online_eval: true 
@@ -99,11 +99,11 @@ algo_cfg:
       - layer_type: linear
         layer_size: [128]
         activation: relu
-  actor_lr: 2.0e-4
+  actor_lr: 1.0e-4
   batch_size: 64 
   max_buffer_size: 1024100
   buffer_type: REPLAY_QUE
-  critic_lr: 7.5e-4
+  critic_lr: 1.5e-3
   expl_noise: 0.45
   explore_steps: 200
   gamma: 0.99

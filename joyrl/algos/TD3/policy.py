@@ -101,6 +101,9 @@ class Policy(BasePolicy):
         _ = self.actor(state)
         action = self.actor.action_layers.get_actions()
         return action[0]
+    
+    def return_mu(self, act):
+        return (act - self.action_bias) / self.action_scale
 
     def learn(self, **kwargs):
         # state, action, reward, next_state, done = self.memory.sample(self.batch_size)
@@ -111,9 +114,11 @@ class Policy(BasePolicy):
         next_actions = self.target_actor(next_states)[0]['mu']
         # next_actions = ((next_actions + noise) * self.action_scale + self.action_bias).clamp(-self.action_scale+self.action_bias, self.action_scale+ self.action_bias)
         next_actions = (next_actions * self.action_scale + self.action_bias + noise).clamp(self.action_low, self.action_high)
+        next_actions = self.return_mu(next_actions)
         target_q1, target_q2 = self.target_critic_1([next_states, next_actions]).detach(), self.target_critic_2([next_states, next_actions]).detach()
         target_q = torch.min(target_q1, target_q2) # shape:[train_batch_size,n_actions]
         target_q = rewards + self.gamma * target_q * (1 - dones)
+        actions = self.return_mu(actions)
         current_q1, current_q2 = self.critic_1([states, actions]), self.critic_2([states, actions])
         # compute critic loss
         critic_1_loss = F.mse_loss(current_q1, target_q)
@@ -130,7 +135,7 @@ class Policy(BasePolicy):
         # Delayed policy updates
         if self.sample_count % self.policy_freq == 0:
             # compute actor loss
-            act_ = self.actor(states)[0]['mu'] * self.action_scale + self.action_bias
+            act_ = self.actor(states)[0]['mu']
             actor_loss = -self.critic_1([states, act_]).mean()
             self.policy_loss = actor_loss
             self.tot_loss = self.policy_loss + self.value_loss1 + self.value_loss2
