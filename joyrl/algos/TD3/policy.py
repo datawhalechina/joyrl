@@ -21,6 +21,8 @@ class Policy(BasePolicy):
         self.update_step = 0
         self.explore_steps = cfg.explore_steps # exploration steps before training
         self.device = torch.device(cfg.device)
+        self.action_high = torch.FloatTensor(self.action_space.high).to(self.device)
+        self.action_low = torch.FloatTensor(self.action_space.low).to(self.device)
         self.action_scale = torch.tensor((self.action_space.high - self.action_space.low)/2, device=self.device, dtype=torch.float32)
         self.action_bias = torch.tensor((self.action_space.high + self.action_space.low)/2, device=self.device, dtype=torch.float32)
         self.create_graph() # create graph and optimizer
@@ -89,13 +91,13 @@ class Policy(BasePolicy):
             return self.action_space.sample()
         else:
             action = self.predict_action(state, **kwargs)
-            action_noise = np.random.normal(0, self.action_scale * self.expl_noise, size=self.action_size_list[0])
+            action_noise = self.expl_noise * np.random.normal(0, self.action_scale.cpu().detach().numpy(), size=self.action_size_list[0])
             action = (action + action_noise).clip(self.action_space.low, self.action_space.high)
             return action
 
     @torch.no_grad()
     def predict_action(self, state,  **kwargs):
-        state = [torch.tensor(state, device=self.device, dtype=torch.float32).unsqueeze(dim=0)]
+        state = [torch.tensor(np.array(state), device=self.device, dtype=torch.float32).unsqueeze(dim=0)]
         _ = self.actor(state)
         action = self.actor.action_layers.get_actions()
         return action[0]
@@ -107,7 +109,8 @@ class Policy(BasePolicy):
         # update critic
         noise = (torch.randn_like(actions) * self.policy_noise).clamp(-self.noise_clip, self.noise_clip)
         next_actions = self.target_actor(next_states)[0]['mu']
-        next_actions = ((next_actions + noise) * self.action_scale + self.action_bias).clamp(-self.action_scale+self.action_bias, self.action_scale+ self.action_bias)
+        # next_actions = ((next_actions + noise) * self.action_scale + self.action_bias).clamp(-self.action_scale+self.action_bias, self.action_scale+ self.action_bias)
+        next_actions = (next_actions * self.action_scale + self.action_bias + noise).clamp(self.action_low, self.action_high)
         target_q1, target_q2 = self.target_critic_1([next_states, next_actions]).detach(), self.target_critic_2([next_states, next_actions]).detach()
         target_q = torch.min(target_q1, target_q2) # shape:[train_batch_size,n_actions]
         target_q = rewards + self.gamma * target_q * (1 - dones)
@@ -127,7 +130,8 @@ class Policy(BasePolicy):
         # Delayed policy updates
         if self.sample_count % self.policy_freq == 0:
             # compute actor loss
-            actor_loss = -self.critic_1([states, self.actor(states)[0]['mu']]).mean()
+            act_ = self.actor(states)[0]['mu'] * self.action_scale + self.action_bias
+            actor_loss = -self.critic_1([states, act_]).mean()
             self.policy_loss = actor_loss
             self.tot_loss = self.policy_loss + self.value_loss1 + self.value_loss2
             self.actor_optimizer.zero_grad()
