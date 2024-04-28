@@ -32,11 +32,13 @@ class DataHandler(BaseDataHandler):
         rewards = np.array([exp.reward for exp in exps])
         next_states = np.array([exp.next_state for exp in exps])
         dones = np.array([exp.done for exp in exps])
-        log_probs = [exp.log_prob for exp in exps] 
+        # log_probs = [0 for exp in exps]
+        log_probs = [exp.log_prob for exp in exps]
         returns = self._compute_returns(rewards, dones, self.cfg.gamma).copy()
 
         actions = torch.tensor(actions, device=self.cfg.device, dtype=torch.float32)
         states = torch.tensor(states, device=self.cfg.device, dtype=torch.float32)
+        states = [states]
         rewards = torch.tensor(rewards, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)
         next_states = torch.tensor(next_states, device=self.cfg.device, dtype=torch.float32)
         dones = torch.tensor(dones, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)

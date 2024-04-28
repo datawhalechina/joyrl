@@ -164,7 +164,7 @@ class CliffWalkingWapper(gym_wrapper.Wrapper):
 
 
 class CarV2SkipFrame(gym_wrapper.Wrapper):
-    def __init__(self, env, skip: int = 5):
+    def __init__(self, env, skip: int = 5, continue_flag: bool=False):
         """skip frame
         Args:
             env (_type_): _description_
@@ -238,3 +238,94 @@ class ResizeObservation(gym_wrapper.ObservationWrapper):
         tf = transforms.Compose([transforms.Resize(self.shape), transforms.Normalize(0, 255)])
         return tf(observation).squeeze(0)
 
+# 跳帧
+class SkipFrame(gym_wrapper.Wrapper):
+    def __init__(self, env, skip: int = 5, skip_start: int = 0):
+        """skip frame
+        Args:
+            env (_type_): _description_
+            skip (int): skip frames
+            skip_start (int): skip start frames
+        """
+        super().__init__(env)
+        self._skip = skip
+        self._skip_start = skip_start
+    
+    def step(self, action):
+        tt_reward_list = []
+        done = False
+        total_reward = 0
+        for i in range(self._skip):
+            if type(action) != int:
+                action = action[0]
+            obs, reward, done, truncated, info = self.env.step(action)
+            total_reward += reward
+            tt_reward_list.append(reward)
+            if done:
+                break
+        return obs, total_reward, done, truncated, info
+
+    def reset(self, seed=0, options=None):
+        obs, info = self.env.reset(seed=seed, options=options)
+        action = 0
+        for i in range(self._skip_start):
+            obs, reward, done, truncated, info = self.env.step(action)
+
+        return obs, info
+
+# 裁剪
+class CropFrame(gym_wrapper.ObservationWrapper):
+    def __init__(self, env, x1=0, x2=0, y1=0, y2=0):
+        """crop frame
+        Args:
+            env (_type_): _description_
+            x1 (int): crop left
+            x2 (int): crop right
+            y1 (int): crop top
+            y2 (int): crop bottom
+        """
+        super().__init__(env)
+        self.x1 = x1
+        self.x2 = x2
+        self.y1 = y1
+        self.y2 = y2
+    
+    def observation(self, obs):
+        # save_img(obs)
+        if self.x1 or self.x2:
+            obs = obs[:, self.x1:self.x2, :]
+        if self.y1 or self.y2:
+            obs = obs[self.y1:self.y2, :, :]
+        return obs
+
+class InfoRewardFrame(gym_wrapper.Wrapper):
+    def __init__(self, env, goods=[], bads=[]):
+        """skip frame
+        Args:
+            env (_type_): _description_
+            skip (int): skip frames
+            skip_start (int): skip start frames
+        """
+        super().__init__(env)
+        self._goods = goods
+        self._bads = bads
+        self.last_info = None
+    
+    def step(self, action):
+        obs, reward, done, truncated, info = self.env.step(action)
+        if not self.last_info:
+            self.last_info = info
+        for good in self._goods:
+            rate = self._goods[good]
+            reward += (info[good] - self.last_info[good]) * rate
+        for bad in self._bads:
+            rate = self._bads[bad]
+            reward += (info[bad] - self.last_info[bad]) * -rate
+        self.last_info = info
+        # print(info, reward)
+        return obs, reward, done, truncated, info
+
+    def reset(self, seed=0, options=None):
+        self.last_info = None
+        obs, info = self.env.reset(seed=seed, options=options)
+        return obs, info
