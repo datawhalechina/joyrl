@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-02-20 21:53:39
 LastEditor: JiangJi
-LastEditTime: 2024-01-26 12:28:23
+LastEditTime: 2024-05-10 01:05:41
 Discription: 
 '''
 class AlgoConfig(object):
@@ -15,6 +15,7 @@ class AlgoConfig(object):
         self.share_optimizer = False # if True, lr for actor and critic will be the same
         self.ppo_type = 'clip' # clip or kl
         self.eps_clip = 0.2 # clip parameter for PPO
+        self.gae_lambda = 0.95 # lambda for GAE
         # for kl penalty version of PPO
         self.kl_target = 0.1 # target KL divergence
         self.kl_lambda = 0.5 # lambda for KL penalty, 0.5 is the default value in the paper

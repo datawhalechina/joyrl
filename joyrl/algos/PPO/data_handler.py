@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-05-17 01:08:36
 LastEditor: JiangJi
-LastEditTime: 2024-05-10 01:00:45
+LastEditTime: 2024-05-10 01:05:20
 Discription: 
 '''
 import numpy as np
@@ -30,9 +30,11 @@ class DataHandler(BaseDataHandler):
         exp_len = self.get_exp_len(exps)
         next_value = exps[-1].value
         adv = 0 # advantage
+        gae_lambda = getattr(self.cfg, 'gae_lambda', 0.95)
+        gamma = getattr(self.cfg, 'gamma', 0.99)    
         for t in reversed(range(0, exp_len)):
-            delta = exps[t].reward + self.cfg.gamma * next_value * (1 - exps[t].done) - exps[t].value
-            adv = delta + self.cfg.gamma * self.cfg.lam * (1 - exps[t].done) * adv
+            delta = exps[t].reward + gamma * next_value * (1 - exps[t].done) - exps[t].value
+            adv = delta + gamma * gae_lambda * (1 - exps[t].done) * adv
             exps[t].advantage = adv
             exps[t].return_sum = adv + exps[t].value
             next_value = exps[t].value
