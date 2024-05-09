@@ -44,7 +44,7 @@ class Collector(Moduler):
         msg_type, msg_data = msg.type, msg.data
         if msg_type == MsgType.COLLECTOR_PUT_EXPS:
             exps = msg_data
-            # self.data_handler.add_exps(exps)
+            # self.data_handler.handle_and_add_exps(exps)
             while True:
                 try:
                     self._raw_exps_que.put(exps, block=True, timeout=0.01)
@@ -70,7 +70,7 @@ class Collector(Moduler):
         while True:
             try:
                 exps = self._raw_exps_que.get() # get exps from raw_exps_que
-                self.data_handler.add_exps(exps) # add exps to data handler
+                self.data_handler.handle_and_add_exps(exps) # add exps to data handler
                 # exec_method(self.logger, 'info', True, "[Collector._handle_exps] add exps to data handler")
             except Empty:
                 # exec_method(self.logger, 'warning', True, "[Collector._handle_exps] raw_exps_que is empty!")

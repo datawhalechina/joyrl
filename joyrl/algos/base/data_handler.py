@@ -21,7 +21,7 @@ class BaseDataHandler:
         self.buffer = BufferCreator(cfg)()
         self.data_after_train = {}
 
-    def add_exps(self, exps):
+    def handle_and_add_exps(self, exps):
         self.buffer.push(exps)
         
     def sample_training_data(self):

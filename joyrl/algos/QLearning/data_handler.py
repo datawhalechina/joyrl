@@ -17,7 +17,7 @@ class DataHandler(BaseDataHandler):
         self.cfg = cfg
         self.buffer = []
         self.data_after_train = {}
-    def add_exps(self, exps):
+    def handle_and_add_exps(self, exps):
         ''' add transition to buffer
         '''
         self.buffer.append(exps)
