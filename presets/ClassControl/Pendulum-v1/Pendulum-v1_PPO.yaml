@@ -7,45 +7,55 @@ general_cfg:
   load_checkpoint: false 
   load_path: Train_CartPole-v1_PPO_20231225-124842 # if load checkpoint, then config path in 'tasks' dir
   load_model_step: best 
-  n_interactors: 1
+  n_interactors: 10
   max_episode: -1
   max_step: 200 
   seed: 1 
   online_eval: true 
   online_eval_episode: 10 
   model_save_fre: 10 
-  policy_summary_fre: 2
+  policy_summary_fre: 5
+  interact_summary_fre: 100
 algo_cfg:
-  independ_actor: true
-  share_optimizer: false
+  exps_trucation_size: 200
+  independ_actor: false
+  share_optimizer: true
   actor_branch_layers:
     - name: state
       layers:
       - layer_type: linear
         layer_size: [256]
-        activation: tanh
-      - layer_type: linear
-        layer_size: [256]
-        activation: tanh
+        activation: relu
+      # - layer_type: linear
+      #   layer_size: [256]
+      #   activation: tanh
   critic_branch_layers:
     - name: state
       layers:
       - layer_type: linear
         layer_size: [256]
-        activation: tanh
+        activation: relu
+      # - layer_type: linear
+      #   layer_size: [256]
+      #   activation: tanh
+  branch_layers:
+    - name: state
+      layers:
       - layer_type: linear
         layer_size: [256]
-        activation: tanh
+        activation: relu
   buffer_type: ONPOLICY_QUE
+  lr: 0.0003
   actor_lr: 0.003
   critic_lr: 0.01
-  entropy_coef: 0.02
+  entropy_coef: 0.001
   critic_loss_coef: 0.5
   eps_clip: 0.2
-  gamma: 0.99
-  k_epochs: 10
-  batch_size: 256
-  sgd_batch_size: 256
+  gamma: 0.95
+  gae_lambda: 0.95
+  k_epochs: 4
+  batch_size: 2000
+  sgd_batch_size: 50
 env_cfg:
   id: Pendulum-v1
   render_mode: null

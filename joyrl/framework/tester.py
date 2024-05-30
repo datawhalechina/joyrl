@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-01-07 22:07:11
+LastEditTime: 2024-05-30 17:48:29
 Discription: 
 '''
 import time
@@ -30,7 +30,7 @@ class OnlineTester(Moduler):
         self._t_start()
 
     def _t_start(self):
-        exec_method(self.logger, 'info', False, "[OnlineTester._t_start] Start online tester!")
+        exec_method(self.logger, 'info', 'remote', "[OnlineTester._t_start] Start online tester!")
         self._t_eval_policy = threading.Thread(target=self._eval_policy)
         self._t_eval_policy.setDaemon(True)
         self._t_eval_policy.start()
@@ -72,11 +72,11 @@ class OnlineTester(Moduler):
                 except:
                     pass
                 mean_eval_reward = sum_eval_reward / self.cfg.online_eval_episode
-                exec_method(self.logger, 'info', True, f"test_step: {self.curr_test_step}, online_eval_reward: {mean_eval_reward:.3f}")
+                exec_method(self.logger, 'info', 'get', f"online_eval step: {self.curr_test_step}, online_eval_reward: {mean_eval_reward:.3f}")
                 # logger_info = f"test_step: {self.curr_test_step}, online_eval_reward: {mean_eval_reward:.3f}"
                 # self.logger.info.remote(logger_info) if self.use_ray else self.logger.info(logger_info)
                 if mean_eval_reward >= self.best_eval_reward:
-                    exec_method(self.logger, 'info', True, f"current test step obtain a better online_eval_reward: {mean_eval_reward:.3f}, save the best model!")
+                    exec_method(self.logger, 'info', 'get', f"current online_eval step obtain a better reward: {mean_eval_reward:.3f}, save the best model!")
                     self.policy.save_model(f"{self.cfg.model_dir}/best")
                     self.best_eval_reward = mean_eval_reward
             time.sleep(1)

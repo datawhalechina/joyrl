@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-04-28 16:18:44
 LastEditor: JiangJi
-LastEditTime: 2024-01-11 13:19:23
+LastEditTime: 2024-05-30 17:48:58
 Discription: 
 '''
 import ray 
@@ -15,7 +15,7 @@ import pickle
 import time
 import threading
 
-import pandas
+import pandas as pd
 from queue import Queue
 from torch.utils.tensorboard import SummaryWriter  
 from joyrl.framework.message import Msg, MsgType
@@ -30,11 +30,11 @@ class Recorder(Moduler):
         super().__init__(cfg, **kwargs)
         self.type = kwargs.get('type', 'recorder')
         self.writter = SummaryWriter(log_dir=f"{self.cfg.tb_dir}/{self.type}")
-        self._summary_que = RayQueue(maxsize = 256) if self.use_ray else Queue(maxsize = 128)
+        self._summary_que = RayQueue(maxsize = 256)
         self._t_start() # TODO, slow down the training speed when using threading 
 
     def _t_start(self):
-        exec_method(self.logger, 'info', False, f"Start {self.type} recorder!")
+        exec_method(self.logger, 'info', 'remote', f"[Recorder._t_start] Start {self.type} recorder!")
         self._t_save_summary = threading.Thread(target=self._save_summary)
         self._t_save_summary.setDaemon(True)
         self._t_save_summary.start()
@@ -65,19 +65,19 @@ class Recorder(Moduler):
                 # time.sleep(0.001)
                 pass
 
-    def _write_tb_scalar(self, step, summary):
+    def _write_tb_scalar(self, step: int, summary: dict):
         for key, value in summary.items():
-            self.writter.add_scalar(tag = f"{self.cfg.mode.lower()}_{key}", scalar_value=value, global_step = step)
+            self.writter.add_scalar(tag = f"{self.cfg.mode.lower()}_{key}", scalar_value = value, global_step = step)
 
-    def _write_dataframe(self, step, summary):
+    def _write_dataframe(self, step: int, summary: dict):
         df_file = f"{self.cfg.res_dir}/{self.type}.csv"
         if Path(df_file).exists():
-            df = pandas.read_csv(df_file)
+            df = pd.read_csv(df_file)
         else:
-            df = pandas.DataFrame()
+            df = pd.DataFrame()
         saved_dict = {f"{self.type}_step": step}
         saved_dict.update(summary)
-        df = df.append(saved_dict, ignore_index=True)
+        df = pd.concat([df, pd.DataFrame(saved_dict, index=[0])], ignore_index = True)
         df.to_csv(df_file, index = False)
 
     def _save_summary(self):

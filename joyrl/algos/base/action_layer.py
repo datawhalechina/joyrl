@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-01-27 22:46:52
+LastEditTime: 2024-05-26 20:17:08
 Discription: 
 '''
 from enum import Enum
@@ -32,10 +32,11 @@ class BaseActionLayer(nn.Module):
 
     def get_action(self, **kwargs):
         mode = kwargs.get("mode", "sample")
+        actor_output = kwargs.get("actor_output", None)
         if mode == "sample":
-            return self.sample_action()
+            return self.sample_action(**actor_output)
         elif mode == "predict":
-            return self.predict_action()
+            return self.predict_action(**actor_output)
         else:
             raise NotImplementedError
         
@@ -167,46 +168,54 @@ class ContinuousActionLayer(BaseActionLayer):
         # log_prob = -0.5 * (sigma.log() + ((mu - x) / sigma).pow(2) + math.log(2 * math.pi))
         # sigma = F.softplus(self.fc4(x)) + 0.001 # std of normal distribution, add a small value to avoid 0
         # sigma = torch.clamp(sigma, min=-0.25, max=0.25) # clamp the std between 0.001 and 1
-        self.mu = mu.squeeze(dim=1) # [batch_size]
-        self.sigma = sigma.squeeze(dim=1) # [batch_size]
-        output = {"mu": self.mu, "sigma": self.sigma}
+        self.mu = mu # [batch_size, 1]
+        self.sigma = sigma # [batch_size]
         self.mean = self.mu * self.action_scale + self.action_bias
         self.std = self.sigma
+        output = {"mu": self.mu, "sigma": self.sigma, "mean": self.mean, "std": self.std}
         return output
     
-    def sample_action(self):
+    def sample_action(self, **kwargs):
         ''' get action
         '''
-        dist = Normal(self.mean,self.std)
+        mean = kwargs.get("mean", None)
+        std = kwargs.get("std", None)
+        dist = Normal(mean, std)
         action = dist.sample()
-        self.log_prob = dist.log_prob(action)
-        action = torch.clamp(action, torch.tensor(self.action_low, device=self.cfg.device, dtype=torch.float32), torch.tensor(self.action_high, device=self.cfg.device, dtype=torch.float32))
-        return action.detach().cpu().numpy().item()
+        log_prob = dist.log_prob(action)
+        return {"action": action.detach().cpu().numpy().item(), "log_prob": log_prob.detach().cpu().numpy().item()}
 
-    def predict_action(self):
+
+    def predict_action(self, **kwargs):
         ''' get action
         '''
-        return self.mean.detach().cpu().numpy().item()
+        return {"action": self.mean.detach().cpu().numpy().item(), "log_prob": None}
     
-    def get_log_prob(self):
+    def get_log_prob(self, **kwargs):
+        ''' get log_probs
+        '''
+        mean = kwargs.get("mean", None)
+        std = kwargs.get("std", None)
+        dist = Normal(mean, std)
+        action = dist.sample()
         return self.log_prob
     
-    def get_log_prob_action(self, action):
+    def get_log_prob_action(self, actor_output, action):
         ''' get log_probs
         '''
         # action shape is [batch_size, action_dim]
-        dist = Normal(self.mean, self.std)
-        if not isinstance(action, torch.Tensor):
-            action = torch.tensor(action, dtype=torch.float32, device=self.mean.device)
-            # action = action.squeeze(dim=0)
+        mean = actor_output.get("mean", None)
+        std = actor_output.get("std", None)
+        dist = Normal(mean, std)
         log_prob = dist.log_prob(action)
-
         return log_prob
     
-    def get_mean_entropy(self):
+    def get_entropy(self, actor_output):
         ''' get entropy
         '''
-        dist = Normal(self.mean,self.std)
+        mean = actor_output.get("mean", None)
+        std = actor_output.get("std", None)
+        dist = Normal(mean, std)
         entropy = dist.entropy()
         entropy_mean = torch.mean(entropy)
         return entropy_mean
@@ -239,14 +248,15 @@ class DPGActionLayer(BaseActionLayer):
     
     def get_action(self, **kwargs):
         mode = kwargs.get("mode", "sample")
+        actor_output = kwargs.get("actor_output", None)
         if mode == "sample":
-            return self.sample_action()
+            return self.sample_action(actor_output)
         elif mode == "predict":
-            return self.predict_action()
+            return self.predict_action(actor_output)
         else:
             raise NotImplementedError
         
-    def sample_action(self):
+    def sample_action(self, actor_outputs):
         ''' get action
         '''
         device_ = self.mu.device 
@@ -254,7 +264,7 @@ class DPGActionLayer(BaseActionLayer):
         action = action.detach().cpu().numpy()[0]
         return action
     
-    def predict_action(self):
+    def predict_action(self, actor_outputs):
         ''' get action
         '''
         device_ = self.mu.device 

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-21 17:45:27
+LastEditTime: 2024-05-30 17:48:51
 Discription: 
 '''
 import time
@@ -27,12 +27,12 @@ class PolicyMgr(Moduler):
     def __init__(self, cfg: MergedConfig, *args, **kwargs) -> None:
         super().__init__(cfg, *args, **kwargs)
         self.policy = copy.deepcopy(kwargs['policy'])
-        self._latest_model_params_dict = {'step': 0, 'model_params': self.policy.get_model_params()}
-        self._saved_model_que = RayQueue(maxsize = 128) if self.use_ray else Queue(maxsize = 128)
+        self._latest_model_params_dict = kwargs.get('latest_model_params_dict', None)
+        self._saved_model_que = RayQueue(maxsize = 128)
         self._t_start()
         
     def _t_start(self):
-        exec_method(self.logger, 'info', False, "[PolicyMgr._t_start] Start policy manager!")
+        exec_method(self.logger, 'info', 'get', "[PolicyMgr._t_start] Start policy manager!")
         self._t_save_policy = threading.Thread(target=self._save_policy)
         self._t_save_policy.setDaemon(True)
         self._t_save_policy.start()
@@ -41,9 +41,9 @@ class PolicyMgr(Moduler):
         ''' publish message
         '''
         msg_type, msg_data = msg.type, msg.data
-        if msg_type == MsgType.MODEL_MGR_PUT_MODEL_PARAMS:
+        if msg_type == MsgType.POLICY_MGR_PUT_MODEL_PARAMS:
             self._put_model_params(msg_data)
-        elif msg_type == MsgType.MODEL_MGR_GET_MODEL_PARAMS:
+        elif msg_type == MsgType.POLICY_MGR_GET_MODEL_PARAMS: # not used in this version
             return self._get_model_params()
         else:
             raise NotImplementedError
@@ -52,22 +52,21 @@ class PolicyMgr(Moduler):
         ''' put model params
         '''
         update_step, model_params = msg_data
-        if update_step > self._latest_model_params_dict['step']:
-            self._latest_model_params_dict['step'] = update_step
-            self._latest_model_params_dict['model_params'] = model_params
+        exec_method(self._latest_model_params_dict, 'set_value', 'remote', {'step': update_step, 'model_params': model_params})
         if update_step % self.cfg.model_save_fre == 0:
             while True:
                 try: # if queue is full, wait for 0.01s
                     self._saved_model_que.put((update_step, model_params), block=False)
                     break
                 except:
-                    exec_method(self.logger, 'warning', True, "[PolicyMgr._put_model_params] saved_model_que is full!")
+                    exec_method(self.logger, 'warning', 'get', "[PolicyMgr._put_model_params] saved_model_que is full!")
                     # time.sleep(0.001)
 
     def _get_model_params(self):
         ''' get policy
         '''
-        return self._latest_model_params_dict['model_params']
+        model_params_dict = exec_method(self._latest_model_params_dict, 'get_value', 'get')
+        return model_params_dict
 
     def _save_policy(self):
         ''' async run

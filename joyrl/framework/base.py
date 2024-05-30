@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 17:30:36
 LastEditor: JiangJi
-LastEditTime: 2024-01-04 23:48:51
+LastEditTime: 2024-05-30 17:43:52
 Discription: 
 '''
 import ray
@@ -13,12 +13,12 @@ from joyrl.framework.config import MergedConfig
 from joyrl.framework.message import Msg
 from joyrl.utils.utils import Logger, create_module
 
+
 class Moduler(object):
     def __init__(self, cfg: MergedConfig, **kwargs) -> None:
         self.cfg = cfg
-        self.use_ray = kwargs.get('use_ray', False)
-        # self.logger = Logger(self.cfg.log_dir)
-        self.logger = create_module(Logger, self.use_ray, {'num_cpus':0} , self.cfg.log_dir)
+        self.name = kwargs.get('name', 'Moduler')
+        self.logger = Logger(self.cfg.log_dir, log_name = self.name)
         
     def _t_start(self):
         ''' start threads
@@ -45,8 +45,4 @@ class Moduler(object):
         '''
         raise NotImplementedError
 
-    def ray_run(self):
-        ''' asyn run module in ray
-        '''
-        raise NotImplementedError
 

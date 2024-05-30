@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-01-21 18:18:30
+LastEditTime: 2024-05-14 14:53:22
 Discription: 
 '''
 import os,copy
@@ -177,7 +177,7 @@ class Launcher(object):
                                 policy = policy,
                                 data_handler = data_handler,
                                 )
-        exec_method(trainer, 'run', True)
+        exec_method(trainer, 'run', 'get')
 
 def run(**kwargs):
     launcher = Launcher(**kwargs)

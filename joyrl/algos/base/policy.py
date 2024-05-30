@@ -6,21 +6,23 @@ import numpy as np
 from collections import defaultdict
 from gymnasium.spaces import Box, Discrete
 from joyrl.algos.base.action_layer import ActionLayerType
-class BasePolicy(nn.Module):
+from joyrl.framework.config import MergedConfig
+from joyrl.algos.base.network import BaseNework
+class BasePolicy(object):
     ''' base policy for DRL
     '''
-    def __init__(self,cfg) -> None:
-        super().__init__()
+    def __init__(self, cfg : MergedConfig) -> None:
         self.cfg = cfg
         self.device = torch.device(cfg.device) 
         self.obs_space = cfg.obs_space
         self.action_space = cfg.action_space
-        self.optimizer = None
         self.policy_transition = {}
         self.data_after_train = {}
         self.get_state_size()
         self.get_action_size()
-
+        self.create_model()
+        self.create_optimizer()
+    
     def get_state_size(self):
         ''' get state size
         '''
@@ -58,18 +60,23 @@ class BasePolicy(nn.Module):
         setattr(self.cfg, 'action_high_list', self.action_high_list)
         setattr(self.cfg, 'action_low_list', self.action_low_list)
     
+    def create_model(self):
+        ''' create model
+        '''
+        self.model = BaseNework(self.cfg, [None, 1])
+
     def create_optimizer(self):
-        self.optimizer = optim.Adam(self.parameters(), lr=self.cfg.lr) 
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.cfg.lr) 
 
     def get_model_params(self):
         ''' get model params
         '''
-        return copy.deepcopy(self.state_dict())
+        return self.model.state_dict()
     
     def put_model_params(self, model_params):
         ''' put model params
         '''
-        self.load_state_dict(model_params)
+        self.model.load_state_dict(model_params)
 
     def get_action(self, state, **kwargs):
         ''' get action
@@ -92,6 +99,7 @@ class BasePolicy(nn.Module):
         ''' predict action
         '''
         raise NotImplementedError
+    
     def update_policy_transition(self):
         ''' update policy transition
         '''
@@ -127,14 +135,14 @@ class BasePolicy(nn.Module):
     def save_model(self, fpath):
         ''' save model
         '''
-        torch.save(self.state_dict(), fpath)
+        torch.save(self.model.state_dict(), fpath)
     def load_model(self, fpath):
         ''' load model
         '''
         try:
-            self.load_state_dict(torch.load(fpath, map_location=self.device))
+            self.model.load_state_dict(torch.load(fpath, map_location=self.device))
         except:
-            print(f"load model from {fpath} failed, try to load model from cpu")
+            print(f"[BasePolicy.load_model] load model from {fpath} failed, please check the model path!")
 
 class ToyPolicy:
     ''' base policy for traditional RL or non DRL

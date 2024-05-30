@@ -17,7 +17,7 @@ class DataHandler(BaseDataHandler):
         self.cfg = cfg
         self.buffer = []
         self.data_after_train = {}
-    def handle_and_add_exps(self, exps):
+    def add_exps(self, exps):
         ''' add transition to buffer
         '''
         self.buffer.append(exps)
@@ -28,8 +28,8 @@ class DataHandler(BaseDataHandler):
         if len(self.buffer) == 0:
             return None
         exp = self.buffer.pop()[0]
-        return self.handle_exps_before_train(exp)
-    def handle_exps_before_train(self, exp, **kwargs):
+        return self._handle_exps_before_train(exp)
+    def _handle_exps_before_train(self, exp, **kwargs):
         ''' convert exps to training data
         '''
         state = np.array(exp.state)

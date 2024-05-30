@@ -28,8 +28,8 @@ class MsgType(Enum):
     RECORDER_PUT_SUMMARY = 40
     
     # policy_mgr
-    MODEL_MGR_PUT_MODEL_PARAMS = 70
-    MODEL_MGR_GET_MODEL_PARAMS = 71
+    POLICY_MGR_PUT_MODEL_PARAMS = 70
+    POLICY_MGR_GET_MODEL_PARAMS = 71
 
 @dataclass
 class Msg(object):

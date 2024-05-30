@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-01-27 11:58:27
+LastEditTime: 2024-05-27 13:56:22
 Discription: 
 '''
 import torch
@@ -20,8 +20,23 @@ class BaseDataHandler:
         self.cfg = cfg
         self.buffer = BufferCreator(cfg)()
         self.data_after_train = {}
-
-    def handle_and_add_exps(self, exps):
+        
+    def _get_exp_len(self, exps, max_step: int = 1):
+        ''' get exp len
+        '''
+        exp_len = len(exps)
+        if exp_len <= max_step or exps[-1].done:
+            exp_len = max(exp_len, 0)
+        else:
+            exp_len = exp_len - max_step
+        return exp_len
+    
+    def handle_exps_after_interact(self, exps: list) -> list:
+        ''' handle exps after interact
+        '''
+        return exps
+    
+    def add_exps(self, exps):
         self.buffer.push(exps)
         
     def sample_training_data(self):
@@ -29,11 +44,11 @@ class BaseDataHandler:
         '''
         exps = self.buffer.sample()
         if exps is not None:
-            return self.handle_exps_before_train(exps)
+            return self._handle_exps_before_train(exps)
         else:
             return None
 
-    def handle_exps_before_train(self, exps, **kwargs):
+    def _handle_exps_before_train(self, exps, **kwargs):
         ''' convert exps to training data
         '''
         states = np.array([exp.state for exp in exps])
@@ -47,6 +62,7 @@ class BaseDataHandler:
         next_states = torch.tensor(next_states, device=self.cfg.device, dtype=torch.float32)
         rewards = torch.tensor(rewards, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)
         dones = torch.tensor(dones, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)
+    
         data = {'states': states, 'actions': actions, 'rewards': rewards, 'next_states': next_states, 'dones': dones}
         return data
     

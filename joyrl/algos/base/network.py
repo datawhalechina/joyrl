@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-01-26 09:59:44
+LastEditTime: 2024-05-27 09:50:26
 Discription: 
 '''
 import copy
@@ -113,9 +113,9 @@ class ActionLayers(nn.Module):
             self.action_layers.append(action_layer)
 
     def forward(self, x, **kwargs):
-        self.actor_outputs = []
+        self.actor_outputs = {}
         for i, action_layer in enumerate(self.action_layers):
-            self.actor_outputs.append(action_layer(x, **kwargs))
+            self.actor_outputs[i] = action_layer(x, **kwargs)
         return self.actor_outputs
     
     def get_mus(self):
@@ -131,31 +131,44 @@ class ActionLayers(nn.Module):
         return qvalues[0]
     
     def get_actions(self, **kwargs):
+        mode = kwargs.get('mode', 'train')
+        actor_outputs = kwargs.get('actor_outputs', self.actor_outputs)
         actions = []
         for i, action_layer in enumerate(self.action_layers):
-            actions.append(action_layer.get_action(**kwargs))
-        return actions # [action_1, action_2, ...]
+            action_layer_output = action_layer.get_action(mode = mode, actor_output = actor_outputs[i])
+            actions.append(action_layer_output['action'])
+        return actions
     
-    def get_log_probs(self):
-        return self.action_layers[0].get_log_prob()
+    def get_actions_and_log_probs(self, **kwargs):
+        mode = kwargs.get('mode', 'train')
+        actor_outputs = kwargs.get('actor_outputs', self.actor_outputs)
+        actions = []
+        log_probs_sum = 0
+        for i, action_layer in enumerate(self.action_layers):
+            action_layer_output = action_layer.get_action(mode = mode, actor_output = actor_outputs[i])
+            actions.append(action_layer_output['action'])
+            log_probs_sum += action_layer_output['log_prob']
+        return actions, log_probs_sum
     
-    def get_log_probs_action(self, actions):
-        return self.action_layers[0].get_log_prob_action(actions)
-        # log_prob_sum = 0
-        # for i, action_layer in enumerate(self.action_layers):
-        #     log_prob_sum += action_layer.get_log_prob(actions[i])
-        # return log_prob_sum
     
-    def get_mean_entropy(self):
-        return self.action_layers[0].get_mean_entropy()
-        # entropy_sum = 0
-        # for i, action_layer in enumerate(self.action_layers):
-        #     entropy_sum += action_layer.get_entropy()
-        # entropy_mean = entropy_sum / len(self.action_layers)
-        # return entropy_mean
+    def get_log_probs_action(self, actor_outputs, actions):
+        log_prob_sum = 0
+        for i, action_layer in enumerate(self.action_layers):
+            actor_output = actor_outputs[i]
+            action = actions[i]
+            log_prob = action_layer.get_log_prob_action(actor_output, action)
+            log_prob_sum += log_prob
+        return log_prob_sum
     
+    def get_mean_entropy(self, actor_outputs):
+        entropy_sum = 0
+        for i, action_layer in enumerate(self.action_layers):
+            entropy_sum += action_layer.get_entropy(actor_outputs[i])
+        entropy_mean = entropy_sum / len(self.action_layers)
+        return entropy_mean
+     
 class BaseNework(nn.Module):
-    def __init__(self, cfg: MergedConfig, input_size_list, **kwargs) -> None:
+    def __init__(self, cfg: MergedConfig, input_size_list) -> None:
         super(BaseNework, self).__init__()
         self.cfg = cfg
         self.input_size_list = input_size_list
@@ -227,23 +240,22 @@ class QNetwork(BaseNework):
 class ActorCriticNetwork(BaseNework):
     ''' Value network, for policy-based methods,  in which the branch_layers and critic share the same network
     '''
-    def __init__(self, cfg: MergedConfig) -> None:
-        super(ActorCriticNetwork, self).__init__(cfg)
+    def __init__(self, cfg: MergedConfig, input_size_list: list) -> None:
+        super(ActorCriticNetwork, self).__init__(cfg, input_size_list)
         self.action_type_list = self.cfg.action_type_list
         self.create_graph()
         
     def create_graph(self):
-        self.branch_layers = BranchLayers(self.cfg.branch_layers, self.state_size_list)
+        self.branch_layers = BranchLayers(self.cfg.branch_layers, self.input_size_list)
         self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
-        self.value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
-        self.value_layer, _ = create_layer(self.merge_layer.output_size, self.value_layer_cfg)
-        self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size, self.action_type_list, self.action_size_list)
+        self.value_layer, _ = create_layer(self.merge_layer.output_size, LayerConfig(layer_type='linear', layer_size=[1], activation='none'))
+        self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size,)
         
     def forward(self, x, pre_legal_actions=None):
         x = self.branch_layers(x)
         x = self.merge_layer(x)
         value = self.value_layer(x)
-        action_outputs = self.action_layers(x, pre_legal_actions)
+        action_outputs = self.action_layers(x, pre_legal_actions = pre_legal_actions)
         return value, action_outputs
 
 

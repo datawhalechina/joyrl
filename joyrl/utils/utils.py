@@ -5,7 +5,7 @@ Author: John
 Email: johnjim0816@gmail.com
 Date: 2021-03-12 16:02:24
 LastEditor: John
-LastEditTime: 2024-01-04 23:10:57
+LastEditTime: 2024-05-30 17:48:11
 Discription: 
 Environment: 
 '''
@@ -179,7 +179,7 @@ def create_module(class_name, is_remote, remote_options, *args, **kwargs):
         return class_name(*args, **kwargs)
 
     
-def exec_method(instance_name, method_name, need_get, *args, **kwargs):
+def exec_method(instance_name, method_name, way: str, *args, **kwargs):
     ''' execute method of class_name, which can be remote or local
 
     Args:
@@ -193,8 +193,10 @@ def exec_method(instance_name, method_name, need_get, *args, **kwargs):
     '''
     is_remote = isinstance(instance_name, ray.actor.ActorHandle)
     if is_remote:
-        if need_get:
+        if way == "get":
             return ray.get(getattr(instance_name, method_name).remote(*args, **kwargs))
+        elif way == "wait":
+            return ray.wait([getattr(instance_name, method_name).remote(*args, **kwargs)])
         else:
             return getattr(instance_name, method_name).remote(*args, **kwargs)
     else:
@@ -227,15 +229,14 @@ class Logger(object):
     ''' Logger for print log to console
     '''
     def __init__(self, log_dir, *args, **kwargs) -> None:
-        self.logger = logging.getLogger(name= "Log")
-        if kwargs.get('log_name', None) is not None: # set log name
-            self.logger.name = kwargs['log_name']
+        self.name = kwargs.get('log_name', '')
+        self.logger = logging.getLogger(name = f"Log_{self.name}")
         self.logger.setLevel(logging.INFO) # default level is INFO
         self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: - %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S')
         # output to file by using FileHandler
         if not self.logger.handlers: # avoid duplicate print
-            fh = logging.FileHandler(f"{log_dir}/log.txt")
+            fh = logging.FileHandler(f"{log_dir}/Log_{self.name}.txt")
             fh.setLevel(logging.DEBUG)
             fh.setFormatter(self.formatter)
             self.logger.addHandler(fh)

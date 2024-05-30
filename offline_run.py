@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-01-21 18:18:41
+LastEditTime: 2024-05-30 17:47:46
 Discription: 
 '''
 import os,copy
@@ -165,19 +165,11 @@ class Launcher(object):
         return policy, data_handler
 
     def run(self) -> None:
+        ray.init()     
         env = self.env_config() # create single env
-        policy, data_handler = self.policy_config() # configure policy and data_handler
-        is_remote = False
-        if self.cfg.n_interactors > 1: 
-            is_remote = True
-            ray.init()                           
-        trainer = create_module(Trainer, is_remote, {'num_cpus':0}, 
-                                self.cfg,
-                                env = env,
-                                policy = policy,
-                                data_handler = data_handler,
-                                )
-        exec_method(trainer, 'run', True)
+        policy, data_handler = self.policy_config() # configure policy and data_handler                         
+        trainer = Trainer(self.cfg, name = "Trainer", env = env, policy = policy, data_handler = data_handler) # create trainer
+        trainer.run()
 
 def run(**kwargs):
     launcher = Launcher(**kwargs)

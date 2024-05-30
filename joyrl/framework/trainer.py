@@ -5,23 +5,26 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-01-21 18:01:28
+LastEditTime: 2024-05-30 18:02:34
 Discription: 
 '''
+import copy
 import time
 import ray
-from queue import Queue
 from ray.util.queue import Queue as RayQueue
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
 from joyrl.framework.collector import Collector
 from joyrl.framework.tracker import Tracker
-from joyrl.framework.interactor import InteractorMgr
-from joyrl.framework.learner import LearnerMgr
+from joyrl.framework.interactor import Interactor
+from joyrl.framework.learner import Learner
 from joyrl.framework.tester import OnlineTester
 from joyrl.framework.policy_mgr import PolicyMgr
+from joyrl.framework.recorder import Recorder
 from joyrl.utils.utils import exec_method, create_module
+from joyrl.utils.utils import Logger
+from joyrl.framework.utils import SharedData
 
 class Trainer(Moduler):
     ''' Collector for collecting training data
@@ -32,48 +35,84 @@ class Trainer(Moduler):
         self.policy = kwargs['policy']
         self.data_handler = kwargs['data_handler']
         self._print_cfgs() # print parameters
-        self._create_data_ques() # create data queues
+        self._create_shared_data() # create data queues
         self._create_modules() # create modules
-    def _create_data_ques(self):
-        self.raw_exps_que = RayQueue(maxsize = 256) if self.use_ray else Queue(maxsize = 256)
+        
+    def _create_shared_data(self):
+        self.raw_exps_que = RayQueue(maxsize = 256) 
+        self.latest_model_params_dict = SharedData.options(**{'num_cpus': 0}).remote({'step': 0, 'model_params': self.policy.get_model_params()})
+        
     def _create_modules(self):
         ''' create modules
         '''
         if self.cfg.online_eval:
-            self.online_tester = create_module(OnlineTester, False, {'num_cpus':0}, self.cfg, env = self.env, policy = self.policy)
-        self.tracker = create_module(Tracker, self.use_ray, {'num_cpus':0}, self.cfg)
-        self.collector = create_module(Collector, self.use_ray, {'num_cpus':1},
-                                        self.cfg, 
-                                        data_handler = self.data_handler,
-                                        raw_exps_que = self.raw_exps_que
-                                        )
-        self.policy_mgr = create_module(PolicyMgr, self.use_ray, {'num_cpus':0}, self.cfg, policy = self.policy)
-        self.interactor_mgr = create_module(InteractorMgr, self.use_ray, {'num_cpus':0},
-                                            self.cfg, 
-                                            env = self.env, 
-                                            policy = self.policy, 
-                                            collector = self.collector, 
-                                            tracker = self.tracker, 
-                                            policy_mgr = self.policy_mgr,
-                                            raw_exps_que = self.raw_exps_que
-                                            )
-        self.learner_mgr = create_module(LearnerMgr, self.use_ray, {'num_cpus':0},
-                                            self.cfg, 
-                                            policy = self.policy,
-                                            collector = self.collector,
-                                            tracker = self.tracker,
-                                            policy_mgr = self.policy_mgr
-                                            )
+            self.online_tester = OnlineTester(
+                self.cfg, 
+                name = 'OnlineTester',
+                env = copy.deepcopy(self.env), 
+                policy = copy.deepcopy(self.policy),
+            )
+        self.tracker = ray.remote(Tracker).remote(self.cfg)
+        self.collector = ray.remote(Collector).options(**{'num_cpus': 1}).remote(
+            self.cfg,
+            name = 'Collector',
+            data_handler = self.data_handler,
+            raw_exps_que = self.raw_exps_que,
+        )
+        self.policy_mgr = ray.remote(PolicyMgr).options(**{'num_cpus': 0}).remote(
+            self.cfg,
+            name = 'PolicyMgr',
+            policy = copy.deepcopy(self.policy),
+            latest_model_params_dict = self.latest_model_params_dict,
+        )
+        self.interactors = []
+        recorder = ray.remote(Recorder).options(**{'num_cpus': 0}).remote(self.cfg,
+                                                                            name = 'RecorderInteractor',
+                                                                            type = 'interactor')
+        for i in range(self.cfg.n_interactors):
+            interactor = ray.remote(Interactor).options(**{'num_cpus': 1}).remote(
+                self.cfg,
+                id = i,
+                name = f"Interactor_{i}",
+                env = copy.deepcopy(self.env),
+                policy = copy.deepcopy(self.policy),
+                data_handler = copy.deepcopy(self.data_handler),  # only use the static method handle_exps_after_interact
+                tracker = self.tracker,
+                collector = self.collector,
+                recorder = recorder,
+                policy_mgr = self.policy_mgr,
+                raw_exps_que = self.raw_exps_que,
+                latest_model_params_dict = self.latest_model_params_dict,
+                )
+            self.interactors.append(interactor)
+        self.learners = []
+        recorder = ray.remote(Recorder).options(**{'num_cpus': 0}).remote(self.cfg,
+                                                                            name = 'RecorderLearner',
+                                                                            type = 'learner')
+        for i in range(self.cfg.n_learners):
+            learner = ray.remote(Learner).remote(
+                self.cfg,
+                id = i,
+                name = f"Learner_{i}",
+                policy = copy.deepcopy(self.policy),
+                policy_mgr = self.policy_mgr,
+                collector = self.collector,
+                data_handler = self.data_handler,
+                tracker = self.tracker,
+                raw_exps_que = self.raw_exps_que,
+                recorder = recorder,
+                )
+            self.learners.append(learner)
 
     def _print_cfgs(self):
         ''' print parameters
         '''
         def print_cfg(cfg, name = ''):
             cfg_dict = vars(cfg)
-            exec_method(self.logger, 'info', True, f"{name}:")
-            exec_method(self.logger, 'info', True, ''.join(['='] * 80))
+            exec_method(self.logger, 'info', 'get', f"{name}:")
+            exec_method(self.logger, 'info', 'get', ''.join(['='] * 80))
             tplt = "{:^20}\t{:^20}\t{:^20}"
-            exec_method(self.logger, 'info', True, tplt.format("Name", "Value", "Type"))
+            exec_method(self.logger, 'info', 'get', tplt.format("Name", "Value", "Type"))
             for k, v in cfg_dict.items():
                 if v.__class__.__name__ == 'list': # convert list to str
                     v = str(v)
@@ -81,8 +120,8 @@ class Trainer(Moduler):
                     v = 'None'
                 if "support" in k: # avoid ndarray
                     v = str(v[0])
-                exec_method(self.logger, 'info', True, tplt.format(k, v, str(type(v))))
-            exec_method(self.logger, 'info', True, ''.join(['='] * 80))
+                exec_method(self.logger, 'info', 'get', tplt.format(k, v, str(type(v))))
+            exec_method(self.logger, 'info', 'get', ''.join(['='] * 80))
         print_cfg(self.cfg.general_cfg, name = 'General Configs')
         print_cfg(self.cfg.algo_cfg, name = 'Algo Configs')
         print_cfg(self.cfg.env_cfg, name = 'Env Configs')
@@ -90,28 +129,28 @@ class Trainer(Moduler):
     def run(self):
         ''' run the trainer
         '''
-        exec_method(self.logger, 'info', True, f"[Trainer.run] Start {self.cfg.mode}ing!")
+        exec_method(self.logger, 'info', 'get', f"[Trainer.run] Start {self.cfg.mode}ing!")
         s_t = time.time()
-        if (not self.cfg.on_policy) and self.use_ray: # if off-policy, async training
-            exec_method(self.interactor_mgr, 'run', False)
-            exec_method(self.learner_mgr, 'run', False)
+        # self.cfg.on_policy = False
+        if self.cfg.on_policy:
             while True:
-                if exec_method(self.tracker, 'pub_msg', True, Msg(type = MsgType.TRACKER_CHECK_TASK_END)):
+                ray.get([interactor.run.remote() for interactor in self.interactors])
+                ray.get([learner.run.remote() for learner in self.learners])
+                if exec_method(self.tracker, 'pub_msg', 'get', Msg(type = MsgType.TRACKER_CHECK_TASK_END)):
                     e_t = time.time()
-                    exec_method(self.logger, 'info', True, f"[Trainer.run] Finish {self.cfg.mode}ing! Time cost: {e_t - s_t:.3f} s")
+                    exec_method(self.logger, 'info', 'get', f"[Trainer.run] Finish {self.cfg.mode}ing! Time cost: {e_t - s_t:.3f} s")
                     time.sleep(5)
                     ray.shutdown()
                     break
-                time.sleep(0.1)
-        else: # if on-policy or simple training,  sync training
+        else:
             while True:
-                exec_method(self.interactor_mgr, 'run', True)
-                if self.cfg.mode.lower() == 'train':
-                    exec_method(self.learner_mgr, 'run', True)
-                if exec_method(self.tracker, 'pub_msg', True, Msg(type = MsgType.TRACKER_CHECK_TASK_END)):
+                for interactor in self.interactors:
+                    interactor.run.remote()
+                for learner in self.learners:
+                    learner.run.remote()
+                if exec_method(self.tracker, 'pub_msg', 'get', Msg(type = MsgType.TRACKER_CHECK_TASK_END)):
                     e_t = time.time()
-                    exec_method(self.logger, 'info', True, f"[Trainer.run] Finish {self.cfg.mode}ing! Time cost: {e_t - s_t:.3f} s")
+                    exec_method(self.logger, 'info', 'get', f"[Trainer.run] Finish {self.cfg.mode}ing! Time cost: {e_t - s_t:.3f} s")
                     time.sleep(5)
+                    ray.shutdown()
                     break
-
-    
