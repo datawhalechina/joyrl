@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-02-25 15:46:04
 LastEditor: JiangJi
-LastEditTime: 2024-05-30 17:55:42
+LastEditTime: 2024-05-31 11:33:13
 Discription: 
 '''
 import gymnasium as gym
@@ -58,7 +58,7 @@ class Interactor(Moduler):
                 self._raw_exps_que.put(self.exps, block=True, timeout=0.1)
                 break
             except:
-                exec_method(self.logger, 'warning', 'get', "[Interactor._put_exps] raw_exps_que is full!")
+                # exec_method(self.logger, 'warning', 'get', "[Interactor._put_exps] raw_exps_que is full!")
                 time.sleep(0.1)
         self.exps = []
 
@@ -75,7 +75,7 @@ class Interactor(Moduler):
         ''' run in sync mode
         '''
         run_step = 0 # local run step
-        while True: 
+        while True:
             action = self.policy.get_action(self.curr_obs)
             obs, reward, terminated, truncated, info = self.env.step(action)
             interact_transition = {'interactor_id': self.id, 'state': self.curr_obs, 'action': action,'reward': reward, 'next_state': obs, 'done': terminated or truncated, 'info': info}

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-05-30 18:02:34
+LastEditTime: 2024-05-31 11:27:31
 Discription: 
 '''
 import copy
@@ -34,6 +34,7 @@ class Trainer(Moduler):
         self.env = kwargs['env']
         self.policy = kwargs['policy']
         self.data_handler = kwargs['data_handler']
+        # self.cfg.on_policy = False
         self._print_cfgs() # print parameters
         self._create_shared_data() # create data queues
         self._create_modules() # create modules
@@ -46,11 +47,15 @@ class Trainer(Moduler):
         ''' create modules
         '''
         if self.cfg.online_eval:
+            recorder = ray.remote(Recorder).options(**{'num_cpus': 0}).remote(self.cfg,
+                                                                            name = 'RecorderOnlineTester',
+                                                                            type = 'online_tester')
             self.online_tester = OnlineTester(
                 self.cfg, 
                 name = 'OnlineTester',
                 env = copy.deepcopy(self.env), 
                 policy = copy.deepcopy(self.policy),
+                recorder = recorder,
             )
         self.tracker = ray.remote(Tracker).remote(self.cfg)
         self.collector = ray.remote(Collector).options(**{'num_cpus': 1}).remote(
@@ -131,7 +136,6 @@ class Trainer(Moduler):
         '''
         exec_method(self.logger, 'info', 'get', f"[Trainer.run] Start {self.cfg.mode}ing!")
         s_t = time.time()
-        # self.cfg.on_policy = False
         if self.cfg.on_policy:
             while True:
                 ray.get([interactor.run.remote() for interactor in self.interactors])
@@ -143,14 +147,13 @@ class Trainer(Moduler):
                     ray.shutdown()
                     break
         else:
+            [interactor.run.remote() for interactor in self.interactors]
+            [learner.run.remote() for learner in self.learners]
             while True:
-                for interactor in self.interactors:
-                    interactor.run.remote()
-                for learner in self.learners:
-                    learner.run.remote()
                 if exec_method(self.tracker, 'pub_msg', 'get', Msg(type = MsgType.TRACKER_CHECK_TASK_END)):
                     e_t = time.time()
                     exec_method(self.logger, 'info', 'get', f"[Trainer.run] Finish {self.cfg.mode}ing! Time cost: {e_t - s_t:.3f} s")
                     time.sleep(5)
                     ray.shutdown()
                     break
+                time.sleep(1)

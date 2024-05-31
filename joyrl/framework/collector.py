@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-05-30 17:42:50
+LastEditTime: 2024-05-31 11:21:07
 Discription: 
 '''
 import ray
@@ -25,7 +25,7 @@ class Collector(Moduler):
         super().__init__(cfg, **kwargs)
         self.data_handler = kwargs['data_handler']
         self._raw_exps_que = kwargs['raw_exps_que']
-        self._training_data_que = Queue(maxsize = 2)
+        self._training_data_que = Queue(maxsize = 1)
         self._t_start()
 
     def _t_start(self):
@@ -100,7 +100,8 @@ class Collector(Moduler):
                             s_t = time.time()
                             consumed_exp_len = 0
                     except Full:
-                        exec_method(self.logger, 'warning', 'get', "[Collector._prepare_training_data] training_data_que is full!")
+                        pass
+                        # exec_method(self.logger, 'warning', 'get', "[Collector._prepare_training_data] training_data_que is full!")
             # time.sleep(0.002)
             
     def _get_training_data(self):

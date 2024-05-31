@@ -116,8 +116,10 @@ class OnPolicyBufferQue(ReplayBufferQue):
     def __init__(self, cfg: MergedConfig):
         self.cfg = cfg
         self.buffer = deque(maxlen=10)
+        
     def push(self, exps: list):
         self.buffer.append(exps)
+
     def sample(self,**kwargs):
         ''' sample all the transitions
         '''

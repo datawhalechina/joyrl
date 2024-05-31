@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-05-30 17:48:29
+LastEditTime: 2024-05-31 11:29:45
 Discription: 
 '''
 import time
@@ -14,6 +14,7 @@ import os
 import threading
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
+from joyrl.framework.message import Msg, MsgType
 from joyrl.utils.utils import exec_method
     
 class OnlineTester(Moduler):
@@ -23,6 +24,7 @@ class OnlineTester(Moduler):
         super().__init__(cfg, *args, **kwargs)
         self.env = copy.deepcopy(kwargs['env'])
         self.policy = copy.deepcopy(kwargs['policy'])
+        self.recorder = kwargs['recorder']
         self.seed = self.cfg.seed
         self.best_eval_reward = -float('inf')
         self.curr_test_step = -1
@@ -73,6 +75,7 @@ class OnlineTester(Moduler):
                     pass
                 mean_eval_reward = sum_eval_reward / self.cfg.online_eval_episode
                 exec_method(self.logger, 'info', 'get', f"online_eval step: {self.curr_test_step}, online_eval_reward: {mean_eval_reward:.3f}")
+                exec_method(self.recorder, 'pub_msg', 'remote', Msg(type = MsgType.RECORDER_PUT_SUMMARY, data = [(model_step, {'online_eval_reward': mean_eval_reward})])) # put summary to stats recorder
                 # logger_info = f"test_step: {self.curr_test_step}, online_eval_reward: {mean_eval_reward:.3f}"
                 # self.logger.info.remote(logger_info) if self.use_ray else self.logger.info(logger_info)
                 if mean_eval_reward >= self.best_eval_reward:
