@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-05-26 20:17:08
+LastEditTime: 2024-06-01 18:23:12
 Discription: 
 '''
 from enum import Enum
@@ -163,16 +163,14 @@ class ContinuousActionLayer(BaseActionLayer):
         self.log_std = nn.Parameter(torch.zeros(1, self.action_dim))
 
     def forward(self,x, **kwargs):
-        mu = self.mu_layer(x)
+        mu = self.mu_layer(x) # [batch_size, 1]
         sigma = torch.ones_like(mu) * torch.exp(self.log_std)
         # log_prob = -0.5 * (sigma.log() + ((mu - x) / sigma).pow(2) + math.log(2 * math.pi))
         # sigma = F.softplus(self.fc4(x)) + 0.001 # std of normal distribution, add a small value to avoid 0
         # sigma = torch.clamp(sigma, min=-0.25, max=0.25) # clamp the std between 0.001 and 1
-        self.mu = mu # [batch_size, 1]
-        self.sigma = sigma # [batch_size]
-        self.mean = self.mu * self.action_scale + self.action_bias
-        self.std = self.sigma
-        output = {"mu": self.mu, "sigma": self.sigma, "mean": self.mean, "std": self.std}
+        mean = mu * self.action_scale + self.action_bias
+        std = sigma
+        output = {"mu": mu, "sigma": sigma, "mean": mean, "std": std}
         return output
     
     def sample_action(self, **kwargs):
@@ -184,21 +182,12 @@ class ContinuousActionLayer(BaseActionLayer):
         action = dist.sample()
         log_prob = dist.log_prob(action)
         return {"action": action.detach().cpu().numpy().item(), "log_prob": log_prob.detach().cpu().numpy().item()}
-
-
+    
     def predict_action(self, **kwargs):
         ''' get action
         '''
-        return {"action": self.mean.detach().cpu().numpy().item(), "log_prob": None}
-    
-    def get_log_prob(self, **kwargs):
-        ''' get log_probs
-        '''
         mean = kwargs.get("mean", None)
-        std = kwargs.get("std", None)
-        dist = Normal(mean, std)
-        action = dist.sample()
-        return self.log_prob
+        return {"action": mean.detach().cpu().numpy().item(), "log_prob": None}
     
     def get_log_prob_action(self, actor_output, action):
         ''' get log_probs

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-05-27 09:50:26
+LastEditTime: 2024-06-01 18:30:15
 Discription: 
 '''
 import copy
@@ -132,7 +132,7 @@ class ActionLayers(nn.Module):
     
     def get_actions(self, **kwargs):
         mode = kwargs.get('mode', 'train')
-        actor_outputs = kwargs.get('actor_outputs', self.actor_outputs)
+        actor_outputs = kwargs.get('actor_outputs', None)
         actions = []
         for i, action_layer in enumerate(self.action_layers):
             action_layer_output = action_layer.get_action(mode = mode, actor_output = actor_outputs[i])
@@ -141,7 +141,7 @@ class ActionLayers(nn.Module):
     
     def get_actions_and_log_probs(self, **kwargs):
         mode = kwargs.get('mode', 'train')
-        actor_outputs = kwargs.get('actor_outputs', self.actor_outputs)
+        actor_outputs = kwargs.get('actor_outputs')
         actions = []
         log_probs_sum = 0
         for i, action_layer in enumerate(self.action_layers):
@@ -149,7 +149,6 @@ class ActionLayers(nn.Module):
             actions.append(action_layer_output['action'])
             log_probs_sum += action_layer_output['log_prob']
         return actions, log_probs_sum
-    
     
     def get_log_probs_action(self, actor_outputs, actions):
         log_prob_sum = 0
@@ -187,7 +186,6 @@ class QNetwork(BaseNework):
     '''
     def __init__(self, cfg: MergedConfig, input_size_list: list) -> None:
         '''_summary_
-
         Args:
             cfg (_type_): _description_
             state_size (_type_): [[None, state_dim_1], [None, None, state_dim_2], ...]
@@ -206,14 +204,6 @@ class QNetwork(BaseNework):
         action_type_list = ['dqnaction'] * len(self.cfg.action_type_list) 
         setattr(self.cfg, 'action_type_list', action_type_list)
         self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size)
-        # if self.dueling:
-        #     state_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
-        #     self.state_value_layer, _ = create_layer(self.merge_layer.output_size, state_value_layer_cfg)
-        #     action_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_size_list[0]], activation='none')
-        #     self.action_value_layer, _ = create_layer(self.merge_layer.output_size, action_value_layer_cfg)
-        # else:
-        #     action_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_size_list[0]], activation='none')
-        #     self.action_value_layer, _ = create_layer(self.merge_layer.output_size, action_layer_cfg)
 
     def forward(self, x):
         x = self.branch_layers(x)
@@ -221,22 +211,12 @@ class QNetwork(BaseNework):
         actor_outputs = self.action_layers(x)
         return actor_outputs
     
-    
-        if self.dueling:
-            state_value = self.state_value_layer(x)
-            action_value = self.action_value_layer(x)
-            q_value = state_value + action_value - action_value.mean(dim=1, keepdim=True)
-        else:
-            q_value = self.action_value_layer(x)
-        return q_value
-    
     def reset_noise(self):
         ''' reset noise for noisy layers
         '''
         self.branch_layers.reset_noise()
         self.merge_layer.reset_noise()
 
-   
 class ActorCriticNetwork(BaseNework):
     ''' Value network, for policy-based methods,  in which the branch_layers and critic share the same network
     '''
@@ -255,9 +235,8 @@ class ActorCriticNetwork(BaseNework):
         x = self.branch_layers(x)
         x = self.merge_layer(x)
         value = self.value_layer(x)
-        action_outputs = self.action_layers(x, pre_legal_actions = pre_legal_actions)
-        return value, action_outputs
-
+        actor_outputs = self.action_layers(x, pre_legal_actions = pre_legal_actions)
+        return {'value': value, 'actor_outputs': actor_outputs}
 
 class ActorNetwork(BaseNework):
     def __init__(self, cfg: MergedConfig, input_size_list) -> None:

@@ -5,60 +5,17 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-05-28 00:17:20
+LastEditTime: 2024-06-01 18:23:54
 Discription: 
 '''
-import copy
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
-from torch.distributions import Categorical,Normal
 import torch.utils.data as Data
 import numpy as np
 from joyrl.algos.base.network import ActorCriticNetwork, CriticNetwork, ActorNetwork
 from joyrl.algos.base.policy import BasePolicy
 from joyrl.framework.config import MergedConfig
-
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-from torch.distributions import Normal
-
-def init_linear_weights(m):
-    if isinstance(m, nn.Linear):
-        nn.init.normal_(m.weight, mean=0., std=0.1)
-        nn.init.constant_(m.bias, 0.1)
-
-class Model(nn.Module):
-    def __init__(self, input_dim, output_dim, hidden_dim, std=0.0):
-        super(Model, self).__init__()
-        
-        self.critic = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            # nn.Linear(hidden_dim, hidden_dim),
-            # nn.ReLU(),
-            nn.Linear(hidden_dim, 1)
-        )
-        
-        self.actor = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            # nn.Linear(hidden_dim, hidden_dim),
-            # nn.ReLU(),
-            nn.Linear(hidden_dim, output_dim),
-        )
-        self.log_std = nn.Parameter(torch.ones(1, output_dim) * std)
-        
-        # self.apply(init_linear_weights)
-        
-    def forward(self, x):
-        value = self.critic(x)
-        mu = self.actor(x)
-        mu = torch.tanh(mu)
-        std = self.log_std.exp().expand_as(mu)
-        return mu, std, value
 
 class Policy(BasePolicy):
     def __init__(self, cfg: MergedConfig) -> None:
@@ -107,16 +64,8 @@ class Policy(BasePolicy):
     def create_model(self):
         self.model = ActorCriticNetwork(self.cfg, self.state_size_list).to(self.device)
 
-        
-        # self.model = Model(self.state_size_list[0][1], self.action_size_list[0], 256, std=0.0).to(self.device)
-
     def create_optimizer(self):
-        self.optimizer = optim.Adam(self.model.parameters(), lr = self.cfg.lr)
-        # if not self.independ_actor:
-        #     self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.cfg.lr) 
-        # else:
-        #     self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.cfg.actor_lr)
-        #     self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.cfg.critic_lr)  
+        self.optimizer = optim.Adam(self.model.parameters(), lr = self.cfg.lr)  
 
     def update_policy_transition(self):
         self.policy_transition = {'value': self.value.detach().cpu().numpy().item(), 'log_prob': self.log_prob}
@@ -126,28 +75,12 @@ class Policy(BasePolicy):
         # single state shape must be [batch_size, state_dim]
         if state.dim() == 1: 
             state = state.unsqueeze(dim=0)
-        self.value, self.actor_outputs = self.model(state)
-        actions, self.log_prob = self.model.action_layers.get_actions_and_log_probs(mode = 'sample', actor_outputs = self.actor_outputs)
+        model_outputs = self.model(state)
+        self.value = model_outputs['value']
+        actor_outputs = model_outputs['actor_outputs']
+        actions, self.log_prob = self.model.action_layers.get_actions_and_log_probs(mode = 'sample', actor_outputs = actor_outputs)
         self.update_policy_transition()
         return actions
-
-    def compute_return_mc(self, rewards, masks):
-        returns = []
-        discounted_return = 0
-        for step in reversed(range(len(rewards))):
-            discounted_return = rewards[step] + self.gamma * discounted_return * masks[step]
-            returns.insert(0, discounted_return)
-        # return returns
-        # print("return",returns)
-        # print("masks",masks)
-        # print(rewards)
-        # normalize can help to stabilize training
-        returns = torch.cat(returns)
-        normed_returns = (returns - returns.mean()) / (returns.std() + 1e-5)
-        # normed_returns = []
-        # for ret in returns:
-        #     normed_returns.append((ret - ret.mean()) / (ret.std() + 1e-5))
-        return normed_returns
 
     @torch.no_grad()
     def predict_action(self, state, **kwargs):
@@ -155,8 +88,9 @@ class Policy(BasePolicy):
         # single state shape must be [batch_size, state_dim]
         if state.dim() == 1: 
             state = state.unsqueeze(dim=0)
-        self.value, self.actor_outputs = self.model(state)
-        actions = self.model.action_layers.get_actions(mode = 'predict', actor_outputs = self.actor_outputs)
+        model_outputs = self.model(state)
+        actor_outputs = model_outputs['actor_outputs']
+        actions = self.model.action_layers.get_actions(mode = 'predict', actor_outputs = actor_outputs)
         return actions
 
     def learn(self, **kwargs):
@@ -179,7 +113,9 @@ class Policy(BasePolicy):
                 idx += len(actions)
                 old_log_probs = data[idx]
                 returns = data[idx+1]
-                values, actor_outputs = self.model(old_states)
+                model_outputs = self.model(old_states)
+                values = model_outputs['value']
+                actor_outputs = model_outputs['actor_outputs']
                 new_log_probs = self.model.action_layers.get_log_probs_action(actor_outputs, old_actions)
                 # new_log_probs = self.model.action_layers.get_log_probs_action(old_actions)
                 entropy_mean = self.model.action_layers.get_mean_entropy(actor_outputs)

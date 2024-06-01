@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-01-25 09:58:33
 LastEditor: JiangJi
-LastEditTime: 2024-01-27 11:59:15
+LastEditTime: 2024-06-01 17:45:42
 Discription: 
 '''
 import torch
@@ -18,7 +18,6 @@ from joyrl.algos.base.network import QNetwork
 class Policy(BasePolicy):
     def __init__(self,cfg) -> None:
         super(Policy, self).__init__(cfg)
-        self.cfg = cfg
         self.gamma = cfg.gamma  
         # e-greedy parameters
         self.epsilon_start = cfg.epsilon_start
@@ -27,16 +26,11 @@ class Policy(BasePolicy):
         self.target_update = cfg.target_update
         self.sample_count = 0
         self.update_step = 0
-        self.create_graph() # create graph and optimizer
-        self.create_summary() # create summary
-        self.to(self.device)
         
-    def create_graph(self):
-
-        self.policy_net = QNetwork(self.cfg,self.state_size_list).to(self.device)
-        self.target_net = QNetwork(self.cfg,self.state_size_list).to(self.device)
-        self.target_net.load_state_dict(self.policy_net.state_dict()) # or use this to copy parameters
-        self.create_optimizer()
+    def create_model(self):
+        self.model = QNetwork(self.cfg,self.state_size_list).to(self.device)
+        self.target_model = QNetwork(self.cfg,self.state_size_list).to(self.device)
+        self.target_model.load_state_dict(self.model.state_dict()) # or use this to copy parameters
 
     def sample_action(self, state,  **kwargs):
         ''' sample action
@@ -57,8 +51,8 @@ class Policy(BasePolicy):
         ''' predict action
         '''
         state = [torch.tensor(np.array(state), device=self.device, dtype=torch.float32).unsqueeze(dim=0)]
-        _ = self.policy_net(state)
-        actions = self.policy_net.action_layers.get_actions()
+        _ = self.model(state)
+        actions = self.model.action_layers.get_actions()
         return actions
     
     def learn(self, **kwargs):
@@ -66,12 +60,12 @@ class Policy(BasePolicy):
         '''
         states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
         # compute current Q values
-        _ = self.policy_net(states)
-        q_values = self.policy_net.action_layers.get_qvalues()
+        _ = self.model(states)
+        q_values = self.model.action_layers.get_qvalues()
         actual_qvalues = q_values.gather(1, actions.long())
         # compute next max q value
-        _ = self.target_net(next_states)
-        next_q_values_max = self.target_net.action_layers.get_qvalues().max(1)[0].unsqueeze(dim=1)
+        _ = self.target_model(next_states)
+        next_q_values_max = self.target_model.action_layers.get_qvalues().max(1)[0].unsqueeze(dim=1)
         # compute target Q values
         target_q_values = rewards + (1 - dones) * self.gamma * next_q_values_max
         # compute loss
@@ -79,12 +73,12 @@ class Policy(BasePolicy):
         self.optimizer.zero_grad()
         self.loss.backward()
         # clip to avoid gradient explosion
-        for param in self.policy_net.parameters():
+        for param in self.model.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
         # update target net every C steps
         if self.update_step % self.target_update == 0: 
-            self.target_net.load_state_dict(self.policy_net.state_dict())
+            self.target_model.load_state_dict(self.model.state_dict())
         self.update_step += 1
         self.update_summary() # update summary
  
