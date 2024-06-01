@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 14:35:38
+LastEditTime: 2024-06-01 16:41:58
 Discription: 
 '''
 import ray
@@ -35,7 +35,7 @@ class Learner(Moduler):
         self._init_update_steps()
 
     def _init_update_steps(self):
-        if self.cfg.is_learner_async:
+        if not self.cfg.is_learner_async:
             self.n_update_steps = 1
         else:
             self.n_update_steps = float('inf')
@@ -51,10 +51,6 @@ class Learner(Moduler):
                 # put updated model params to policy_mgr
                 model_params = self.policy.get_model_params()
                 exec_method(self.policy_mgr, 'pub_msg', 'remote', Msg(type = MsgType.POLICY_MGR_PUT_MODEL_PARAMS, data = (global_update_step, model_params)))
-                avg_model_step_training_data = np.mean(training_data['model_steps'])
-                avg_train_lag = global_update_step - avg_model_step_training_data
-                # print(f"[Learner.run] update_step: {global_update_step}, avg_train_lag: {avg_train_lag:.2f}")
-                # put policy summary to recorder
                 if global_update_step % self.cfg.policy_summary_fre == 0:
                     avg_model_step_training_data = np.mean(training_data['model_steps'])
                     avg_train_lag = global_update_step - avg_model_step_training_data

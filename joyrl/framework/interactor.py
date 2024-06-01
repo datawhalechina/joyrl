@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-02-25 15:46:04
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 14:35:35
+LastEditTime: 2024-06-01 16:41:50
 Discription: 
 '''
 import gymnasium as gym
@@ -45,7 +45,7 @@ class Interactor(Moduler):
     def _init_n_sample_steps(self):
         ''' when learner_mode is serial, learner will run after interact finishes n_sample_steps
         '''
-        if self.cfg.is_learner_async:
+        if not self.cfg.is_learner_async:
             self.n_sample_steps = self.cfg.exps_trucation_size
         else:
             self.n_sample_steps = float('inf')

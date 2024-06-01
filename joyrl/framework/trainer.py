@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 14:35:44
+LastEditTime: 2024-06-01 16:41:28
 Discription: 
 '''
 import copy
@@ -135,7 +135,7 @@ class Trainer(Moduler):
         '''
         exec_method(self.logger, 'info', 'get', f"[Trainer.run] Start {self.cfg.mode}ing!")
         s_t = time.time()
-        if self.cfg.is_learner_async:
+        if not self.cfg.is_learner_async:
             while True:
                 ray.get([interactor.run.remote() for interactor in self.interactors])
                 ray.get([learner.run.remote() for learner in self.learners])
