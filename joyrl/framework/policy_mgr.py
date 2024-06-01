@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-05-30 17:48:51
+LastEditTime: 2024-06-01 11:33:53
 Discription: 
 '''
 import time
@@ -52,7 +52,7 @@ class PolicyMgr(Moduler):
         ''' put model params
         '''
         update_step, model_params = msg_data
-        exec_method(self._latest_model_params_dict, 'set_value', 'remote', {'step': update_step, 'model_params': model_params})
+        exec_method(self._latest_model_params_dict, 'set_value', 'get', {'step': update_step, 'model_params': model_params})
         if update_step % self.cfg.model_save_fre == 0:
             while True:
                 try: # if queue is full, wait for 0.01s

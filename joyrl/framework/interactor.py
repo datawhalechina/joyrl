@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-02-25 15:46:04
 LastEditor: JiangJi
-LastEditTime: 2024-05-31 11:33:13
+LastEditTime: 2024-06-01 13:27:56
 Discription: 
 '''
 import gymnasium as gym
@@ -37,7 +37,9 @@ class Interactor(Moduler):
         self.summary = [] # reset summary
         self.ep_reward, self.ep_step = 0, 0 # reset params per episode
         self.curr_obs, self.curr_info = self.env.reset(seed = self.seed) # reset env
-        self._update_policy()
+        self.truncated, self.terminated = False, False
+        self.curr_model_step, self.last_model_step = 0, 0
+        self.need_update_policy = False
         self._init_n_sample_steps()
 
     def _init_n_sample_steps(self):
@@ -52,43 +54,62 @@ class Interactor(Moduler):
     def _put_exps(self):
         ''' put exps to collector
         '''
-        while True:
-            try:
-                self.exps = exec_method(self.data_handler, 'handle_exps_after_interact', 'get', self.exps)
-                self._raw_exps_que.put(self.exps, block=True, timeout=0.1)
-                break
-            except:
-                # exec_method(self.logger, 'warning', 'get', "[Interactor._put_exps] raw_exps_que is full!")
-                time.sleep(0.1)
-        self.exps = []
+        if len(self.exps) >= self.cfg.exps_trucation_size or self.terminated or self.truncated:
+            while True:
+                try:
+                    exec_method(self.collector, 'pub_msg', 'remote', Msg(type = MsgType.COLLECTOR_PUT_EXPS, data = self.exps))
+                    # self._raw_exps_que.put(self.exps, block=True, timeout=0.1)
+                    break
+                except:
+                    exec_method(self.logger, 'warning', 'get', f"[Interactor._put_exps] interactor {self.id} raw_exps_que is full!")
+                    time.sleep(0.01)
+            self.exps = []
+            self.need_update_policy = True
+        else:
+            self.need_update_policy = False
 
     def _update_policy(self):
         ''' update policy
         '''
+        if not self.need_update_policy:
+            return 
+
+        # while True:
+        #     model_params_dict = exec_method(self._latest_model_params_dict, 'get_value', 'get') # get model params
+        #     model_params = model_params_dict['model_params']
+        #     self.curr_model_step = model_params_dict['step']
+        #     if self.curr_model_step > self.last_model_step:
+        #         self.last_model_step = self.curr_model_step
+        #         # exec_method(self.logger, 'info', 'get', f"Interactor {self.id} update policy with model step {self.curr_model_step}")
+        #         self.policy.put_model_params(model_params)
+        #         break
+        #     time.sleep(0.1)
+        
         model_params_dict = exec_method(self._latest_model_params_dict, 'get_value', 'get') # get model params
         model_params = model_params_dict['model_params']
-        model_step = model_params_dict['step']
-        # exec_method(self.logger, 'info', 'get', f"Interactor {self.id} update policy with model step {model_step}")
+        self.curr_model_step = model_params_dict['step']
+        # print(f"[Interactor._update_policy] interactor {self.id} update policy with model step {self.curr_model_step}")
         self.policy.put_model_params(model_params)
-
+        
     def run(self):
         ''' run in sync mode
         '''
         run_step = 0 # local run step
         while True:
+            self._update_policy()
             action = self.policy.get_action(self.curr_obs)
-            obs, reward, terminated, truncated, info = self.env.step(action)
-            interact_transition = {'interactor_id': self.id, 'state': self.curr_obs, 'action': action,'reward': reward, 'next_state': obs, 'done': terminated or truncated, 'info': info}
+            obs, reward, self.terminated, self.truncated, info = self.env.step(action)
+            interact_transition = {'interactor_id': self.id, 'model_step': self.curr_model_step, 'state': self.curr_obs, 'action': action,'reward': reward, 'next_state': obs, 'done': self.terminated or self.truncated, 'info': info}
             policy_transition = self.policy.get_policy_transition()
             self.exps.append(Exp(**interact_transition, **policy_transition))
             self.curr_obs, self.curr_info = obs, info
             self.ep_reward += reward
             self.ep_step += 1
-            if terminated or truncated or self.ep_step >= self.cfg.max_step > 0:
-                exec_method(self.tracker, 'pub_msg', 'get', Msg(MsgType.TRACKER_INCREASE_EPISODE))
+            if self.terminated or self.truncated or self.ep_step >= self.cfg.max_step > 0:
+                exec_method(self.tracker, 'pub_msg', 'remote', Msg(MsgType.TRACKER_INCREASE_EPISODE))
                 global_episode = exec_method(self.tracker, 'pub_msg', 'get', Msg(type = MsgType.TRACKER_GET_EPISODE))
                 if global_episode % self.cfg.interact_summary_fre == 0: 
-                    exec_method(self.logger, 'info', 'remote', f"Interactor {self.id} finished episode {global_episode} with reward {self.ep_reward:.3f} in {self.ep_step} steps, truncated: {truncated}, terminated: {terminated}")
+                    exec_method(self.logger, 'info', 'remote', f"Interactor {self.id} finished episode {global_episode} with reward {self.ep_reward:.3f} in {self.ep_step} steps, truncated: {self.truncated}, terminated: {self.terminated}")
                     # put summary to recorder
                     interact_summary = {'reward': self.ep_reward,'step': self.ep_step}
                     self.summary.append((global_episode, interact_summary))
@@ -96,9 +117,7 @@ class Interactor(Moduler):
                     self.summary = [] # reset summary
                 self.ep_reward, self.ep_step = 0, 0
                 self.curr_obs, self.curr_info = self.env.reset(seed = self.seed)      
-            if len(self.exps) >= self.cfg.exps_trucation_size or terminated or truncated:
-                self._update_policy() 
-                self._put_exps()    
+            self._put_exps()
             run_step += 1
             if run_step >= self.n_sample_steps:
                 break

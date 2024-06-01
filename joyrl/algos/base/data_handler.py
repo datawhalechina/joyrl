@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-05-27 13:56:22
+LastEditTime: 2024-06-01 13:11:59
 Discription: 
 '''
 import torch
@@ -37,6 +37,7 @@ class BaseDataHandler:
         return exps
     
     def add_exps(self, exps):
+        exps = self.handle_exps_after_interact(exps)
         self.buffer.push(exps)
         
     def sample_training_data(self):
@@ -44,27 +45,31 @@ class BaseDataHandler:
         '''
         exps = self.buffer.sample()
         if exps is not None:
-            return self._handle_exps_before_train(exps)
+            self._handle_exps_before_train(exps)
+            return self.data_after_train
         else:
             return None
 
-    def _handle_exps_before_train(self, exps, **kwargs):
+    def _handle_exps_before_train(self, exps: list):
         ''' convert exps to training data
         '''
-        states = np.array([exp.state for exp in exps])
-        actions = np.array([exp.action for exp in exps])
-        rewards = np.array([exp.reward for exp in exps])
-        next_states = np.array([exp.next_state for exp in exps])
-        dones = np.array([exp.done for exp in exps])
-        # convert numpy to tensor
-        states = torch.tensor(states, device=self.cfg.device, dtype=torch.float32)
-        actions = torch.tensor(actions, device=self.cfg.device, dtype=torch.float32)
-        next_states = torch.tensor(next_states, device=self.cfg.device, dtype=torch.float32)
-        rewards = torch.tensor(rewards, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)
-        dones = torch.tensor(dones, device=self.cfg.device, dtype=torch.float32).unsqueeze(dim=1)
-    
-        data = {'states': states, 'actions': actions, 'rewards': rewards, 'next_states': next_states, 'dones': dones}
-        return data
+        model_steps = np.array([exp.model_step for exp in exps]) # [batch_size]
+        states = np.array([exp.state for exp in exps]) # [batch_size, state_dim]
+        actions = np.array([exp.action for exp in exps]) # [batch_size, action_dim]
+        rewards = np.array([exp.reward for exp in exps]) # [batch_size]
+        next_states = np.array([exp.next_state for exp in exps]) # [batch_size, state_dim]
+        dones = np.array([exp.done for exp in exps]) # [batch_size]
+
+        # multi-head state
+        states = [ torch.tensor(states, dtype = torch.float32, device = self.cfg.device) ]
+        # multi-head action
+        actions = [ torch.tensor(actions, dtype = torch.float32, device = self.cfg.device) ]
+        rewards = torch.tensor(rewards, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
+        next_states = torch.tensor(next_states, dtype = torch.float32, device = self.cfg.device)
+        dones = torch.tensor(dones, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
+        
+        self.data_after_train = {'model_steps': model_steps, 'states': states, 'actions': actions, 'rewards': rewards, 'next_states': next_states, 'dones': dones}
+
     
     def handle_exps_after_train(self):
         ''' handle exps after train

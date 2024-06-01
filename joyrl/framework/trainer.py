@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-05-31 11:27:31
+LastEditTime: 2024-06-01 13:31:45
 Discription: 
 '''
 import copy
@@ -34,7 +34,7 @@ class Trainer(Moduler):
         self.env = kwargs['env']
         self.policy = kwargs['policy']
         self.data_handler = kwargs['data_handler']
-        # self.cfg.on_policy = False
+        self.cfg.on_policy = False
         self._print_cfgs() # print parameters
         self._create_shared_data() # create data queues
         self._create_modules() # create modules
@@ -137,8 +137,13 @@ class Trainer(Moduler):
         exec_method(self.logger, 'info', 'get', f"[Trainer.run] Start {self.cfg.mode}ing!")
         s_t = time.time()
         if self.cfg.on_policy:
+            # for _ in range(5):
+            #     ray.get([interactor.run.remote() for interactor in self.interactors])
+            #     # time.sleep(0.1)
+            #     ray.get([learner.run.remote() for learner in self.learners])
             while True:
                 ray.get([interactor.run.remote() for interactor in self.interactors])
+                # time.sleep(0.15) # wait for collector to handle raw exps
                 ray.get([learner.run.remote() for learner in self.learners])
                 if exec_method(self.tracker, 'pub_msg', 'get', Msg(type = MsgType.TRACKER_CHECK_TASK_END)):
                     e_t = time.time()
