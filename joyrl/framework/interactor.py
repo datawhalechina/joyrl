@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-02-25 15:46:04
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 16:41:50
+LastEditTime: 2024-06-01 16:53:05
 Discription: 
 '''
 import gymnasium as gym
@@ -25,7 +25,6 @@ class Interactor(Moduler):
         self.id = kwargs.get('id', 0)
         self.env = kwargs.get('env', None)
         self.policy = copy.deepcopy(kwargs['policy'])
-        self._raw_exps_que = kwargs.get('raw_exps_que', None)
         self.data_handler = kwargs['data_handler']
         self.tracker = kwargs['tracker']
         self.collector = kwargs['collector']
@@ -54,14 +53,7 @@ class Interactor(Moduler):
         ''' put exps to collector
         '''
         if len(self.exps) >= self.cfg.exps_trucation_size or self.terminated or self.truncated:
-            while True:
-                try:
-                    exec_method(self.collector, 'pub_msg', 'remote', Msg(type = MsgType.COLLECTOR_PUT_EXPS, data = self.exps))
-                    # self._raw_exps_que.put(self.exps, block=True, timeout=0.1)
-                    break
-                except:
-                    exec_method(self.logger, 'warning', 'get', f"[Interactor._put_exps] interactor {self.id} raw_exps_que is full!")
-                    time.sleep(0.01)
+            exec_method(self.collector, 'pub_msg', 'remote', Msg(type = MsgType.COLLECTOR_PUT_EXPS, data = self.exps))
             self.exps = []
             self.need_update_policy = True
         else:

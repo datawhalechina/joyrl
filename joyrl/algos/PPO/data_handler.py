@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-05-17 01:08:36
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 13:12:16
+LastEditTime: 2024-06-01 17:19:43
 Discription: 
 '''
 import numpy as np
@@ -53,11 +53,9 @@ class DataHandler(BaseDataHandler):
     def add_exps(self, exps):
         exps = self.handle_exps_after_interact(exps)
         self.batch_exps.extend(exps)
-        # print(f"[DataHandler.add_exps] len(self.batch_exps): {len(self.batch_exps)}, interactor_id: {exps[0].interactor_id}")
         if len(self.batch_exps) >= self.cfg.batch_size:
             self.buffer.push(self.batch_exps)
             self.batch_exps = []
-        # print(f"[DataHandler.add_exps] len(self.batch_exps): {len(self.batch_exps)}")
 
     def _handle_exps_before_train(self, exps: list):
         ''' convert exps to training data

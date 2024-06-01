@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-05-14 14:53:22
+LastEditTime: 2024-06-01 17:17:47
 Discription: 
 '''
 import os,copy
@@ -140,7 +140,6 @@ class Launcher(object):
             wrapper_name = wrapper['wrapper_name']
             wrapper_kwargs = copy.deepcopy(wrapper)
             wrapper_kwargs.pop("wrapper_name")
-            mm = importlib.import_module('joyrl.envs.gym')
             env_wapper_cls = eval(f'mm.wrappers.{wrapper_name}')
             try:
                 env = env_wapper_cls(env, **wrapper_kwargs)
@@ -162,22 +161,15 @@ class Launcher(object):
             policy.load_model(f"tasks/{self.cfg.load_path}/models/{self.cfg.load_model_step}")
             policy.save_model(f"{self.cfg.model_dir}/{self.cfg.load_model_step}")
         data_handler = data_handler_mod.DataHandler(self.cfg)
+        # data_handler = ray.remote(data_handler_mod.DataHandler).options(**{'num_cpus': 0}).remote(self.cfg)
         return policy, data_handler
 
     def run(self) -> None:
+        ray.init()     
         env = self.env_config() # create single env
-        policy, data_handler = self.policy_config() # configure policy and data_handler
-        is_remote = False
-        if self.cfg.n_interactors > 1: 
-            is_remote = True
-            ray.init()                           
-        trainer = create_module(Trainer, is_remote, {'num_cpus':0}, 
-                                self.cfg,
-                                env = env,
-                                policy = policy,
-                                data_handler = data_handler,
-                                )
-        exec_method(trainer, 'run', 'get')
+        policy, data_handler = self.policy_config() # configure policy and data_handler                         
+        trainer = Trainer(self.cfg, name = "Trainer", env = env, policy = policy, data_handler = data_handler) # create trainer
+        trainer.run()
 
 def run(**kwargs):
     launcher = Launcher(**kwargs)

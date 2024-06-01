@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 13:28:24
+LastEditTime: 2024-06-01 16:52:10
 Discription: 
 '''
 import ray
@@ -25,8 +25,6 @@ class Collector(Moduler):
     def __init__(self, cfg: MergedConfig, **kwargs) -> None:
         super().__init__(cfg, **kwargs)
         self.data_handler = kwargs['data_handler']
-        self._raw_exps_que = kwargs['raw_exps_que']
-        self._training_data_que = DeQueue(maxsize=2)
         self._get_training_data_time = time.time()
         self._consumed_exp_len = 0
         self._handle_exps_time = time.time()
@@ -35,14 +33,7 @@ class Collector(Moduler):
         self._t_start()
 
     def _t_start(self):
-
-        exec_method(self.logger, 'info', 'get', "[Collector._t_start] Start collector!")
-        # self._t_handle_exps = threading.Thread(target = self._handle_exps)
-        # self._t_handle_exps.setDaemon(True)
-        # self._t_handle_exps.start()
-        # self._t_prepare_training_data = threading.Thread(target = self._prepare_training_data)
-        # self._t_prepare_training_data.setDaemon(True)
-        # self._t_prepare_training_data.start()  
+        exec_method(self.logger, 'info', 'get', "[Collector._t_start] Start collector!") 
 
     def pub_msg(self, msg: Msg):
         ''' publish message
@@ -56,7 +47,6 @@ class Collector(Moduler):
                 training_data = self._get_training_data()
                 if training_data is None:
                     return None
-                # training_data = self._training_data_que.pop(block = True, timeout = 0.01)
                 self._consumed_exp_len += training_data['dones'].shape[0]
                 if time.time() - self._get_training_data_time >= self._t_interval:
                     exec_method(self.logger, 'info', 'remote', f"[Collector.pub_msg] SAMPLE CONSUMPTION SPEED per second: {self._consumed_exp_len/self._t_interval:.2f}")

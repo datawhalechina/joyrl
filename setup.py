@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:01:23
 LastEditor: JiangJi
-LastEditTime: 2023-12-22 14:07:48
+LastEditTime: 2024-06-01 17:01:07
 Discription: 
 '''
 import sys,os
@@ -19,24 +19,17 @@ def get_version() -> str:
 
 def get_install_requires() -> str:
     return [
-        "argparse==1.4.0",
-        "dill==0.3.5.1",
-        "glfw==2.5.5",
-        "gymnasium==0.28.1",
-        "imageio==2.22.4",
-        "importlib-metadata<5.0",
-        "matplotlib==3.5.3",
-        "numpy==1.24.3",
-        "pandas==1.3.5",
-        "Pillow==9.4.0",
-        "pygame==2.1.2",
-        "pyglet==2.0.0",
-        "pyyaml==6.0",
-        "ray==2.6.3",
-        "six==1.16.0",
-        "seaborn==0.12.1",
-        "setuptools==59.5.0",
-        "tensorboard==2.11.2",
+        "ray[default]==2.6.3",
+        "torch==2.2.1",
+        "torchaudio==2.2.1",
+        "torchvision==0.17.1",
+        "gymnasium==0.29.1",
+        "tensorboard==2.16.2",
+        "matplotlib==3.8.4",
+        "seaborn==0.13.2",
+        "dill==0.3.8",
+        "scipy==1.13.0",
+        "pygame==2.5.2",
     ]
 
 def get_extras_require() -> str:

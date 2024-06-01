@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 16:41:28
+LastEditTime: 2024-06-01 16:53:24
 Discription: 
 '''
 import copy
@@ -39,7 +39,6 @@ class Trainer(Moduler):
         self._create_modules() # create modules
         
     def _create_shared_data(self):
-        self.raw_exps_que = RayQueue(maxsize = 256) 
         self.latest_model_params_dict = SharedData.options(**{'num_cpus': 0}).remote({'step': 0, 'model_params': self.policy.get_model_params()})
         
     def _create_modules(self):
@@ -61,7 +60,6 @@ class Trainer(Moduler):
             self.cfg,
             name = 'Collector',
             data_handler = self.data_handler,
-            raw_exps_que = self.raw_exps_que,
         )
         self.policy_mgr = ray.remote(PolicyMgr).options(**{'num_cpus': 0}).remote(
             self.cfg,
@@ -85,7 +83,6 @@ class Trainer(Moduler):
                 collector = self.collector,
                 recorder = recorder,
                 policy_mgr = self.policy_mgr,
-                raw_exps_que = self.raw_exps_que,
                 latest_model_params_dict = self.latest_model_params_dict,
                 )
             self.interactors.append(interactor)
@@ -103,7 +100,6 @@ class Trainer(Moduler):
                 collector = self.collector,
                 data_handler = self.data_handler,
                 tracker = self.tracker,
-                raw_exps_que = self.raw_exps_que,
                 recorder = recorder,
                 )
             self.learners.append(learner)

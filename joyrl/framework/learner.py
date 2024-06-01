@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 16:41:58
+LastEditTime: 2024-06-01 16:53:20
 Discription: 
 '''
 import ray
@@ -31,7 +31,6 @@ class Learner(Moduler):
         self.data_handler = kwargs.get('data_handler', None)
         self.tracker = kwargs.get('tracker', None)
         self.recorder = kwargs.get('recorder', None)
-        self._raw_exps_que = kwargs.get('raw_exps_que', None)
         self._init_update_steps()
 
     def _init_update_steps(self):

@@ -10,14 +10,12 @@
 
 ```bash
 # you need to install Anaconda first
-conda create -n joyrl python=3.8
+conda create -n joyrl python=3.10
 conda activate joyrl
 pip install -U joyrl
 ```
 
-Torch install:
-
-Pip install is recommended, but if you encounter network error, you can try conda install or pip install with mirrors.
+Torch GPU install:
 
 ```bash
 # pip CPU only
