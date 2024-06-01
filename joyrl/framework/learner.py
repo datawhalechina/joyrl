@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 11:34:17
+LastEditTime: 2024-06-01 14:35:38
 Discription: 
 '''
 import ray
@@ -35,7 +35,7 @@ class Learner(Moduler):
         self._init_update_steps()
 
     def _init_update_steps(self):
-        if self.cfg.on_policy:
+        if self.cfg.is_learner_async:
             self.n_update_steps = 1
         else:
             self.n_update_steps = float('inf')

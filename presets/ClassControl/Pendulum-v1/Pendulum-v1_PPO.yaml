@@ -4,6 +4,7 @@ general_cfg:
   env_name: gym 
   device: cpu 
   mode: train 
+  is_learner_async: true
   load_checkpoint: false 
   load_path: Train_CartPole-v1_PPO_20231225-124842 # if load checkpoint, then config path in 'tasks' dir
   load_model_step: best 
