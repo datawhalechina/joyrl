@@ -1,5 +1,5 @@
 general_cfg:
-  joyrl_version: 0.6.0.2
+  joyrl_version: 0.6.1.1
   algo_name: DQN 
   env_name: gym 
   device: cpu 
