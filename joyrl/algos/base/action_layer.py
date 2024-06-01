@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 18:23:12
+LastEditTime: 2024-06-02 00:17:16
 Discription: 
 '''
 from enum import Enum
@@ -63,28 +63,15 @@ class DQNActionLayer(BaseActionLayer):
         else:
             q_value = self.action_value_layer(x)
         output = {"q_value": q_value}
-        self.q_value = q_value
         return output
     
-    def get_qvalue(self):
-        return self.q_value
+    def sample_action(self, **kwargs):
+        q_value = kwargs.get("q_value", None)
+        return {"action": torch.argmax(q_value).detach().cpu().numpy().item()}
     
-    def get_action(self, **kwargs):
-        mode = kwargs.get("mode", "sample")
-        if mode == "sample":
-            return self.sample_action()
-        elif mode == "predict":
-            return self.predict_action()
-        else:
-            raise NotImplementedError
-        
-    def sample_action(self):
-        return torch.argmax(self.q_value).detach().cpu().numpy().item()
-    
-    def predict_action(self):
-        ''' get action
-        '''
-        return torch.argmax(self.q_value).detach().cpu().numpy().item()
+    def predict_action(self, **kwargs):
+        q_value = kwargs.get("q_value", None)
+        return {"action": torch.argmax(q_value).detach().cpu().numpy().item()}
 
 class DiscreteActionLayer(BaseActionLayer):
     def __init__(self, cfg, input_size, action_dim, id = 0, **kwargs):

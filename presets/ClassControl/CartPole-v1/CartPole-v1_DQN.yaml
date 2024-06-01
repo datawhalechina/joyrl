@@ -1,9 +1,10 @@
 general_cfg:
-  joyrl_version: 0.5.0
+  joyrl_version: 0.6.0.2
   algo_name: DQN 
   env_name: gym 
   device: cpu 
   mode: train 
+  is_learner_async: false
   collect_traj: false 
   n_interactors: 1
   load_checkpoint: false
@@ -15,7 +16,7 @@ general_cfg:
   online_eval: true 
   online_eval_episode: 10 
   model_save_fre: 500
-  policy_summary_fre: 2
+  policy_summary_fre: 10
 
 algo_cfg:
   learn_frequency: 1

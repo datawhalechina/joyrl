@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-01-25 09:58:33
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 17:45:42
+LastEditTime: 2024-06-02 00:19:46
 Discription: 
 '''
 import torch
@@ -51,8 +51,9 @@ class Policy(BasePolicy):
         ''' predict action
         '''
         state = [torch.tensor(np.array(state), device=self.device, dtype=torch.float32).unsqueeze(dim=0)]
-        _ = self.model(state)
-        actions = self.model.action_layers.get_actions()
+        model_outputs = self.model(state)
+        actor_outputs = model_outputs['actor_outputs']
+        actions = self.model.action_layers.get_actions(mode = 'predict', actor_outputs = actor_outputs)
         return actions
     
     def learn(self, **kwargs):
@@ -60,16 +61,17 @@ class Policy(BasePolicy):
         '''
         states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
         # compute current Q values
-        _ = self.model(states)
-        q_values = self.model.action_layers.get_qvalues()
-        actual_qvalues = q_values.gather(1, actions.long())
-        # compute next max q value
-        _ = self.target_model(next_states)
-        next_q_values_max = self.target_model.action_layers.get_qvalues().max(1)[0].unsqueeze(dim=1)
-        # compute target Q values
-        target_q_values = rewards + (1 - dones) * self.gamma * next_q_values_max
-        # compute loss
-        self.loss = nn.MSELoss()(actual_qvalues, target_q_values)
+        self.loss = 0
+        actor_outputs = self.model(states)['actor_outputs']
+        target_actor_outputs = self.target_model(next_states)['actor_outputs']
+        for i in range(len(self.action_size_list)):
+            actual_q_value = actor_outputs[i]['q_value'].gather(1, actions[i].long())
+            # compute next max q value
+            next_q_value_max = target_actor_outputs[i]['q_value'].max(1)[0].unsqueeze(dim=1)
+            # compute target Q values
+            target_q_value = rewards + (1 - dones) * self.gamma * next_q_value_max
+            # compute loss
+            self.loss += nn.MSELoss()(actual_q_value, target_q_value)
         self.optimizer.zero_grad()
         self.loss.backward()
         # clip to avoid gradient explosion

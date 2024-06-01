@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 18:30:15
+LastEditTime: 2024-06-02 00:11:14
 Discription: 
 '''
 import copy
@@ -128,7 +128,7 @@ class ActionLayers(nn.Module):
         qvalues = []
         for _, action_layer in enumerate(self.action_layers):
             qvalues.append(action_layer.get_qvalue())
-        return qvalues[0]
+        return qvalues
     
     def get_actions(self, **kwargs):
         mode = kwargs.get('mode', 'train')
@@ -209,7 +209,7 @@ class QNetwork(BaseNework):
         x = self.branch_layers(x)
         x = self.merge_layer(x)
         actor_outputs = self.action_layers(x)
-        return actor_outputs
+        return {"actor_outputs": actor_outputs}
     
     def reset_noise(self):
         ''' reset noise for noisy layers

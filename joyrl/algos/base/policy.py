@@ -22,6 +22,7 @@ class BasePolicy(object):
         self.get_action_size()
         self.create_model()
         self.create_optimizer()
+        self.create_summary()
     
     def get_state_size(self):
         ''' get state size
