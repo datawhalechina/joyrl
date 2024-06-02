@@ -16,7 +16,7 @@ general_cfg:
   online_eval: true 
   online_eval_episode: 10 
   model_save_fre: 500
-  policy_summary_fre: 10
+  policy_summary_fre: 100
 
 algo_cfg:
   learn_frequency: 1

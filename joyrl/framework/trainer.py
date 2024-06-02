@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 16:53:24
+LastEditTime: 2024-06-02 10:50:35
 Discription: 
 '''
 import copy
@@ -22,8 +22,8 @@ from joyrl.framework.learner import Learner
 from joyrl.framework.tester import OnlineTester
 from joyrl.framework.policy_mgr import PolicyMgr
 from joyrl.framework.recorder import Recorder
-from joyrl.utils.utils import exec_method, create_module
-from joyrl.utils.utils import Logger
+from joyrl.framework.utils import exec_method, create_module
+from joyrl.framework.utils import Logger
 from joyrl.framework.utils import SharedData
 
 class Trainer(Moduler):

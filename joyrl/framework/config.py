@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:30:09
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 14:35:10
+LastEditTime: 2024-06-02 10:03:30
 Discription: 
 '''
 class DefaultConfig:
@@ -55,5 +55,5 @@ class GeneralConfig(object):
         self.load_path = "Train_single_CartPole-v1_DQN_20230515-211721" # path to load model
         self.load_model_step = 'best' # load model at which step
         # stats recorder settings
-        self.interact_summary_fre = 1 # record interact stats per episode
+        self.interact_summary_fre = 10 # record interact stats per episode
         self.policy_summary_fre = 100 # record update stats per update step

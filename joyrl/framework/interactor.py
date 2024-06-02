@@ -5,19 +5,16 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-02-25 15:46:04
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 16:53:05
+LastEditTime: 2024-06-02 10:57:21
 Discription: 
 '''
-import gymnasium as gym
-import ray
-import time
 import copy
 from joyrl.algos.base.experience import Exp
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
 from joyrl.framework.recorder import Recorder
-from joyrl.utils.utils import exec_method, create_module
+from joyrl.framework.utils import exec_method
 
 class Interactor(Moduler):
     def __init__(self, cfg: MergedConfig, **kwargs) -> None:

@@ -1,22 +1,27 @@
 general_cfg:
-  joyrl_version: 0.6.1.2
-  algo_name: DoubleDQN
-  env_name: gym
-  device: cpu
-  seed: 1
-  mode: train
-  max_episode: -1 
-  max_step: 200
+  joyrl_version: 0.6.2
+  algo_name: DQN 
+  env_name: gym 
+  device: cpu 
+  mode: train 
+  is_learner_async: true
+  collect_traj: false 
+  n_interactors: 5
   load_checkpoint: false
-  load_path: Train_CartPole-v1_DQN_20221026-054757
-  load_model_step: best
+  load_path: Train_single_CartPole-v1_DQN_20230515-211721
+  load_model_step: best 
+  max_episode: -1 
+  max_step: 200 
+  seed: 1 
   online_eval: true 
-  online_eval_episode: 10
+  online_eval_episode: 10 
   model_save_fre: 500
+  interact_summary_fre: 10
   policy_summary_fre: 100
 
 algo_cfg:
-  learn_frequency: 1
+  exps_trucation_size: 20
+  learn_frequency: 200
   # branch_layers:
   #   - name: feature_1
   #     layers: 
@@ -47,7 +52,7 @@ algo_cfg:
   epsilon_decay: 500
   epsilon_end: 0.01
   epsilon_start: 0.95
-  gamma: 0.99
+  gamma: 0.95
   lr: 0.0001
   target_update: 4
 env_cfg:

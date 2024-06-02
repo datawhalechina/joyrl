@@ -5,19 +5,16 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 16:52:10
+LastEditTime: 2024-06-02 10:57:06
 Discription: 
 '''
-import ray
 import time
 import multiprocessing as mp
 from queue import Queue, Empty, Full
-import threading
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
-from joyrl.utils.utils import exec_method
-from joyrl.framework.utils import DeQueue
+from joyrl.framework.utils import exec_method
 
 class Collector(Moduler):
     ''' Collector for collecting training data

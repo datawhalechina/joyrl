@@ -5,13 +5,12 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 13:11:59
+LastEditTime: 2024-06-02 10:50:56
 Discription: 
 '''
 import torch
 import numpy as np
 from joyrl.algos.base.buffer import BufferCreator
-from joyrl.algos.base.experience import Exp
 
 class BaseDataHandler:
     ''' Basic data handler

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 17:17:47
+LastEditTime: 2024-06-02 10:47:58
 Discription: 
 '''
 import os,copy
@@ -15,7 +15,7 @@ import gymnasium as gym
 from pathlib import Path
 from joyrl.framework.config import GeneralConfig, MergedConfig, DefaultConfig
 from joyrl.framework.trainer import Trainer
-from joyrl.utils.utils import merge_class_attrs, all_seed, create_module,exec_method
+from joyrl.framework.utils import merge_class_attrs, all_seed, create_module, exec_method
 
 class Launcher(object):
     def __init__(self, **kwargs):

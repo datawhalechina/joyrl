@@ -112,31 +112,39 @@ class BasePolicy(object):
     def create_summary(self):
         ''' create policy summary
         '''
-        self.summary = {
-            'scalar': {
-                'loss': 0.0,
-            },
-        }
+        self.summary = {}
+        self.summary['scalar'] = {}
+        for i in range(len(self.action_size_list)):
+            self.summary['scalar'][f'loss_{i}'] = 0.0
+
     def update_summary(self):
         ''' update policy summary
         '''
-        self.summary['scalar']['loss'] = self.loss.item()
+        for i in range(len(self.action_size_list)):
+            self.summary['scalar'][f'loss_{i}'] = self.summary_loss[i]
+
     def get_summary(self):
         return self.summary['scalar']
+    
     def learn(self, **kwargs):
         ''' learn policy
         '''
         raise NotImplementedError
+    
     def update_data_after_learn(self):
         ''' update data after training
         '''
         self.data_after_train = {}
+        
     def get_data_after_learn(self):
+
         return self.data_after_train
+    
     def save_model(self, fpath):
         ''' save model
         '''
         torch.save(self.model.state_dict(), fpath)
+
     def load_model(self, fpath):
         ''' load model
         '''

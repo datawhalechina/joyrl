@@ -5,13 +5,13 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 17:30:36
 LastEditor: JiangJi
-LastEditTime: 2024-05-30 17:43:52
+LastEditTime: 2024-06-02 10:50:42
 Discription: 
 '''
 import ray
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.message import Msg
-from joyrl.utils.utils import Logger, create_module
+from joyrl.framework.utils import Logger, create_module
 
 
 class Moduler(object):

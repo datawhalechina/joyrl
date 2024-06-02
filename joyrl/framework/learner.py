@@ -5,19 +5,15 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 16:53:20
+LastEditTime: 2024-06-02 10:57:30
 Discription: 
 '''
-import ray
-import copy
-import time
 from typing import Tuple
 import numpy as np
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
-from joyrl.framework.recorder import Recorder
-from joyrl.utils.utils import exec_method, create_module
+from joyrl.framework.utils import exec_method
 
 class Learner(Moduler):
     ''' learner

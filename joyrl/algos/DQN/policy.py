@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-01-25 09:58:33
 LastEditor: JiangJi
-LastEditTime: 2024-06-02 00:19:46
+LastEditTime: 2024-06-02 10:14:18
 Discription: 
 '''
 import torch
@@ -61,7 +61,8 @@ class Policy(BasePolicy):
         '''
         states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
         # compute current Q values
-        self.loss = 0
+        self.summary_loss = []
+        tot_loss = 0
         actor_outputs = self.model(states)['actor_outputs']
         target_actor_outputs = self.target_model(next_states)['actor_outputs']
         for i in range(len(self.action_size_list)):
@@ -71,9 +72,11 @@ class Policy(BasePolicy):
             # compute target Q values
             target_q_value = rewards + (1 - dones) * self.gamma * next_q_value_max
             # compute loss
-            self.loss += nn.MSELoss()(actual_q_value, target_q_value)
+            loss_i = nn.MSELoss()(actual_q_value, target_q_value)
+            tot_loss += loss_i
+            self.summary_loss.append(loss_i.item())
         self.optimizer.zero_grad()
-        self.loss.backward()
+        tot_loss.backward()
         # clip to avoid gradient explosion
         for param in self.model.parameters():
             param.grad.data.clamp_(-1, 1)

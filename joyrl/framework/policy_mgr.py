@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 11:33:53
+LastEditTime: 2024-06-02 10:50:38
 Discription: 
 '''
 import time
@@ -19,7 +19,7 @@ from joyrl.framework.message import Msg, MsgType
 from joyrl.algos.base.policy import BasePolicy
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
-from joyrl.utils.utils import exec_method
+from joyrl.framework.utils import exec_method
 
 class PolicyMgr(Moduler):
     ''' model manager

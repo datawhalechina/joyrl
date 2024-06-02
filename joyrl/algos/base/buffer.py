@@ -4,7 +4,7 @@ import numpy as np
 from enum import Enum
 from collections import deque
 from joyrl.framework.config import MergedConfig
-from joyrl.utils.utils import get_shape_from_obs_space, get_shape_from_act_space
+from joyrl.framework.utils import get_shape_from_obs_space, get_shape_from_act_space
 
 def _cast(x):
     return x.transpose(1, 2, 0, 3).reshape(-1, *x.shape[3:])
@@ -278,7 +278,7 @@ class PrioritizedReplayBufferQue:
 
 
 # MAPPO beginning
-from joyrl.utils.utils import check, get_shape_from_obs_space, get_shape_from_act_space
+from joyrl.framework.utils import check, get_shape_from_obs_space, get_shape_from_act_space
 
 def _flatten(T, N, x):
     return x.reshape(T * N, *x.shape[2:])
@@ -669,7 +669,7 @@ class SeparatedReplayBuffer(object):
             yield share_obs_batch, obs_batch, rnn_states_batch, rnn_states_critic_batch, actions_batch, value_preds_batch, return_batch, masks_batch, active_masks_batch, old_action_log_probs_batch, adv_targ, available_actions_batch
 
 
-from joyrl.utils.utils import get_shape_from_obs_space, get_shape_from_act_space
+from joyrl.framework.utils import get_shape_from_obs_space, get_shape_from_act_space
 
 def _cast(x):
     return x.transpose(1, 2, 0, 3).reshape(-1, *x.shape[3:])

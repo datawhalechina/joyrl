@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-04-28 16:18:44
 LastEditor: JiangJi
-LastEditTime: 2024-05-30 17:48:58
+LastEditTime: 2024-06-02 10:50:37
 Discription: 
 '''
 import ray 
@@ -21,7 +21,7 @@ from torch.utils.tensorboard import SummaryWriter
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
-from joyrl.utils.utils import exec_method
+from joyrl.framework.utils import exec_method
 
 class Recorder(Moduler):
     ''' Recorder for recording training information

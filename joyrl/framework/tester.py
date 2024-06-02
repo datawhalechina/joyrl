@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-05-31 11:29:45
+LastEditTime: 2024-06-02 10:50:36
 Discription: 
 '''
 import time
@@ -15,7 +15,7 @@ import threading
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
 from joyrl.framework.message import Msg, MsgType
-from joyrl.utils.utils import exec_method
+from joyrl.framework.utils import exec_method
     
 class OnlineTester(Moduler):
     ''' Online tester

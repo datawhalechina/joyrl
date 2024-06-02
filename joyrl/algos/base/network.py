@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-02 00:11:14
+LastEditTime: 2024-06-02 10:51:15
 Discription: 
 '''
 import copy
@@ -14,6 +14,7 @@ import torch.nn as nn
 from joyrl.algos.base.base_layer import create_layer, LayerConfig
 from joyrl.algos.base.action_layer import ActionLayerType, DiscreteActionLayer, ContinuousActionLayer, DPGActionLayer, DQNActionLayer
 from joyrl.framework.config import MergedConfig
+
 class BranchLayers(nn.Module):
     def __init__(self, branch_layers_cfg : list, input_size_list, **kwargs) -> None:
         super(BranchLayers, self).__init__(**kwargs)
