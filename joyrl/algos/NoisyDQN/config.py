@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-02-21 20:32:11
 LastEditor: JiangJi
-LastEditTime: 2023-05-18 13:38:56
+LastEditTime: 2024-06-03 13:24:36
 Discription: 
 '''
 class AlgoConfig(object):
@@ -21,8 +21,8 @@ class AlgoConfig(object):
         self.max_buffer_size = 100000  # replay buffer size
         self.batch_size = 64  # batch size
         self.target_update = 4  # target network update frequency
-        # value network layers config
-        self.value_layers = [
+        self.branch_layers = []
+        self.merge_layers = [
             {'layer_type': 'noisy_linear', 'layer_size': [64], 'activation': 'ReLU','std_init': 0.4},
             {'layer_type': 'noisy_linear', 'layer_size': [64], 'activation': 'ReLU','std_init': 0.4},
         ]

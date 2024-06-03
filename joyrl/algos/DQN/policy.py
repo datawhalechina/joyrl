@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-01-25 09:58:33
 LastEditor: JiangJi
-LastEditTime: 2024-06-02 10:14:18
+LastEditTime: 2024-06-03 13:13:02
 Discription: 
 '''
 import torch
@@ -28,8 +28,8 @@ class Policy(BasePolicy):
         self.update_step = 0
         
     def create_model(self):
-        self.model = QNetwork(self.cfg,self.state_size_list).to(self.device)
-        self.target_model = QNetwork(self.cfg,self.state_size_list).to(self.device)
+        self.model = QNetwork(self.cfg, self.state_size_list).to(self.device)
+        self.target_model = QNetwork(self.cfg, self.state_size_list).to(self.device)
         self.target_model.load_state_dict(self.model.state_dict()) # or use this to copy parameters
 
     def sample_action(self, state,  **kwargs):

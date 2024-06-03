@@ -1,11 +1,12 @@
 general_cfg:
+  joyrl_version: 0.6.1.4
   algo_name: NoisyDQN
   env_name: gym
   device: cpu
   seed: 1
   mode: train
   collect_traj: false
-  max_episode: 100
+  max_episode: -1
   max_step: 200
   load_checkpoint: false
   load_path: Train_CartPole-v1_NoisyDQN_20231225-000846
@@ -14,7 +15,7 @@ general_cfg:
   online_eval_episode: 10
   model_save_fre: 500
 algo_cfg:
-  value_layers:
+  merge_layers:
     - layer_type: noisy_linear
       layer_size: [256]
       activation: relu
@@ -35,3 +36,5 @@ algo_cfg:
 env_cfg:
   id: CartPole-v1
   render_mode: null
+  wrappers:
+    - wrapper_name: CartPoleActionWrapper
