@@ -129,8 +129,20 @@ class BasePolicy(object):
     def learn(self, **kwargs):
         ''' learn policy
         '''
-        raise NotImplementedError
+        self.prepare_data_before_learn(**kwargs)
     
+    def prepare_data_before_learn(self, **kwargs):
+        ''' prepare data before training
+        '''
+        states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
+        # multi-head state
+        self.states = [ torch.tensor(states, dtype = torch.float32, device = self.cfg.device) ]
+        # multi-head action
+        self.actions = [ torch.tensor(actions, dtype = torch.float32, device = self.cfg.device) ]
+        self.rewards = torch.tensor(rewards, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
+        self.next_states = torch.tensor(next_states, dtype = torch.float32, device = self.cfg.device)
+        self.dones = torch.tensor(dones, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
+
     def update_data_after_learn(self):
         ''' update data after training
         '''

@@ -3,15 +3,17 @@
 '''
 Author: JiangJi
 Email: johnjim0816@gmail.com
-Date: 2023-02-20 21:53:39
+Date: 2024-06-03 13:37:11
 LastEditor: JiangJi
-LastEditTime: 2024-06-03 13:38:24
+LastEditTime: 2024-06-03 13:37:11
 Discription: 
 '''
+
 class AlgoConfig(object):
     def __init__(self):
         self.independ_actor = True # whether to use independent actor
         # whether actor and critic share the same optimizer
+        self.share_optimizer = False # if True, lr for actor and critic will be the same
         self.ppo_type = 'clip' # clip or kl
         self.eps_clip = 0.2 # clip parameter for PPO
         self.gae_lambda = 0.95 # lambda for GAE

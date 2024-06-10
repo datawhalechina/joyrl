@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-06-02 10:47:29
+LastEditTime: 2024-06-10 21:30:05
 Discription: 
 '''
 import os,copy
@@ -162,7 +162,6 @@ class Launcher(object):
             policy.load_model(f"tasks/{self.cfg.load_path}/models/{self.cfg.load_model_step}")
             policy.save_model(f"{self.cfg.model_dir}/{self.cfg.load_model_step}")
         data_handler = data_handler_mod.DataHandler(self.cfg)
-        # data_handler = ray.remote(data_handler_mod.DataHandler).options(**{'num_cpus': 0}).remote(self.cfg)
         return policy, data_handler
 
     def run(self) -> None:

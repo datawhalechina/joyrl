@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-02 10:57:30
+LastEditTime: 2024-06-10 21:15:06
 Discription: 
 '''
 from typing import Tuple
@@ -27,7 +27,9 @@ class Learner(Moduler):
         self.data_handler = kwargs.get('data_handler', None)
         self.tracker = kwargs.get('tracker', None)
         self.recorder = kwargs.get('recorder', None)
+        self.training_data_que = kwargs.get('training_data_que', None)
         self._init_update_steps()
+        exec_method(self.logger, 'info', 'remote', f"[Learner.__init__] Start learner {self.id}!")
 
     def _init_update_steps(self):
         if not self.cfg.is_learner_async:
@@ -38,7 +40,13 @@ class Learner(Moduler):
     def run(self):
         run_step = 0
         while True:
-            training_data = exec_method(self.collector, 'pub_msg', 'get', Msg(type = MsgType.COLLECTOR_GET_TRAINING_DATA))
+            training_data = None
+            if self.cfg.is_learner_async:
+                training_data = exec_method(self.training_data_que, 'pop', 'get')
+                # if not self.training_data_que.empty():
+                #     training_data = self.training_data_que.get(block=True, timeout=0.1)
+            else:
+                training_data = exec_method(self.collector, 'pub_msg', 'get', Msg(type = MsgType.COLLECTOR_GET_TRAINING_DATA))
             if training_data is not None:
                 self.policy.learn(**training_data)
                 exec_method(self.tracker, 'pub_msg', 'remote', Msg(type = MsgType.TRACKER_INCREASE_UPDATE_STEP))

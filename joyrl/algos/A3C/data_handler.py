@@ -5,13 +5,12 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-05-17 01:08:36
 LastEditor: JiangJi
-LastEditTime: 2024-06-05 14:32:55
+LastEditTime: 2024-06-03 13:39:47
 Discription: 
 '''
 import numpy as np
 import torch
 from joyrl.algos.base.data_handler import BaseDataHandler
-
 class DataHandler(BaseDataHandler):
     def __init__(self, cfg):
         super().__init__(cfg)
@@ -62,12 +61,13 @@ class DataHandler(BaseDataHandler):
         ''' convert exps to training data
         '''
         super()._handle_exps_before_train(exps)
-        log_probs = [exp.log_prob.detach().cpu().numpy().item() for exp in exps] 
-        # log_probs = torch.cat(log_probs, dim=0).detach() # [batch_size,1]
-        # log_probs = torch.tensor(log_probs, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
-        
-        returns = np.array([exp.return_mc_normed for exp in exps]) 
-        # returns = torch.tensor(returns, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
+
+        log_probs = [exp.log_prob for exp in exps] # [batch_size]
+        returns = np.array([exp.normed_return_td for exp in exps]) # [batch_size]
+
+        log_probs = torch.tensor(log_probs, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
+        returns = torch.tensor(returns, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
+
         self.data_after_train.update({'log_probs': log_probs, 'returns': returns})
 
         

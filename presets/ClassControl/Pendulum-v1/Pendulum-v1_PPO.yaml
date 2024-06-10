@@ -1,10 +1,11 @@
 general_cfg:
-  joyrl_version: 0.5.0
+  joyrl_version: 0.6.1.4
   algo_name: PPO
   env_name: gym 
   device: cpu 
   mode: train 
-  is_learner_async: true
+  exps_trucation_size: 200
+  is_learner_async: false
   load_checkpoint: false 
   load_path: Train_CartPole-v1_PPO_20231225-124842 # if load checkpoint, then config path in 'tasks' dir
   load_model_step: best 
@@ -18,9 +19,6 @@ general_cfg:
   policy_summary_fre: 5
   interact_summary_fre: 100
 algo_cfg:
-  exps_trucation_size: 200
-  independ_actor: false
-  share_optimizer: true
   actor_branch_layers:
     - name: state
       layers:

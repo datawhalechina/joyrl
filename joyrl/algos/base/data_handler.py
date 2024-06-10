@@ -5,12 +5,14 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-02 10:50:56
+LastEditTime: 2024-06-05 14:17:47
 Discription: 
 '''
 import torch
 import numpy as np
 from joyrl.algos.base.buffer import BufferCreator
+from joyrl.framework.utils import exec_method
+import threading
 
 class BaseDataHandler:
     ''' Basic data handler
@@ -39,6 +41,15 @@ class BaseDataHandler:
         exps = self.handle_exps_after_interact(exps)
         self.buffer.push(exps)
         
+
+    def get_training_data(self):
+        ''' get training data
+        '''
+        exps = self.buffer.sample()
+        if exps is not None:
+            self._handle_exps_before_train(exps)
+            return self.data_after_train
+    
     def sample_training_data(self):
         ''' sample training data from buffer
         '''
@@ -46,8 +57,7 @@ class BaseDataHandler:
         if exps is not None:
             self._handle_exps_before_train(exps)
             return self.data_after_train
-        else:
-            return None
+
 
     def _handle_exps_before_train(self, exps: list):
         ''' convert exps to training data
@@ -57,16 +67,7 @@ class BaseDataHandler:
         actions = np.array([exp.action for exp in exps]) # [batch_size, action_dim]
         rewards = np.array([exp.reward for exp in exps]) # [batch_size]
         next_states = np.array([exp.next_state for exp in exps]) # [batch_size, state_dim]
-        dones = np.array([exp.done for exp in exps]) # [batch_size]
-
-        # multi-head state
-        states = [ torch.tensor(states, dtype = torch.float32, device = self.cfg.device) ]
-        # multi-head action
-        actions = [ torch.tensor(actions, dtype = torch.float32, device = self.cfg.device) ]
-        rewards = torch.tensor(rewards, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
-        next_states = torch.tensor(next_states, dtype = torch.float32, device = self.cfg.device)
-        dones = torch.tensor(dones, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
-        
+        dones = np.array([exp.done for exp in exps]) # [batch_size] 
         self.data_after_train = {'model_steps': model_steps, 'states': states, 'actions': actions, 'rewards': rewards, 'next_states': next_states, 'dones': dones}
 
     

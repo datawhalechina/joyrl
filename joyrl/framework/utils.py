@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-05-26 23:54:07
 LastEditor: JiangJi
-LastEditTime: 2024-06-02 10:49:38
+LastEditTime: 2024-06-10 21:14:49
 Discription: 
 '''
 import os
@@ -30,9 +30,9 @@ import ray
 from threading import Lock
 from queue import Queue, Empty
 from matplotlib.font_manager import FontProperties  # 导入字体模块
-
+from collections import deque
 @ray.remote
-class SharedData:
+class DataActor:
     ''' 
     '''
     def __init__(self, initial_value: float | int | dict) -> None:
@@ -46,6 +46,25 @@ class SharedData:
     def set_value(self, new_value):
         with self.lock:
             self.value = new_value
+
+@ray.remote
+class QueueActor:
+    def __init__(self, maxsize: int = 0):
+        self.queue = deque() if maxsize == 0 else deque(maxlen=maxsize)
+
+    def put(self, item):
+        self.queue.append(item)
+
+    def pop(self):
+        if len(self.queue) == 0:
+            return None
+        return self.queue.pop()
+    
+    def get(self):
+        if len(self.queue) == 0:
+            return None
+        return self.queue.popleft()
+    
 class DeQueue(Queue):
     ''' Creating a thread-safe dequeue
     '''

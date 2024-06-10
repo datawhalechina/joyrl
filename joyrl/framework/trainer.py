@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-02 10:50:35
+LastEditTime: 2024-06-10 21:13:22
 Discription: 
 '''
 import copy
@@ -24,7 +24,7 @@ from joyrl.framework.policy_mgr import PolicyMgr
 from joyrl.framework.recorder import Recorder
 from joyrl.framework.utils import exec_method, create_module
 from joyrl.framework.utils import Logger
-from joyrl.framework.utils import SharedData
+from joyrl.framework.utils import DataActor, QueueActor
 
 class Trainer(Moduler):
     ''' Collector for collecting training data
@@ -39,7 +39,11 @@ class Trainer(Moduler):
         self._create_modules() # create modules
         
     def _create_shared_data(self):
-        self.latest_model_params_dict = SharedData.options(**{'num_cpus': 0}).remote({'step': 0, 'model_params': self.policy.get_model_params()})
+        self.latest_model_params_dict = DataActor.options(**{'num_cpus': 0}).remote({'step': 0, 'model_params': self.policy.get_model_params()})
+        self.sample_data_que = QueueActor.remote(maxsize=256)
+        self.training_data_que = QueueActor.remote(maxsize=1)
+        # self.sample_data_que = RayQueue(maxsize=256)
+        # self.training_data_que = RayQueue(maxsize=1)
         
     def _create_modules(self):
         ''' create modules
@@ -60,6 +64,8 @@ class Trainer(Moduler):
             self.cfg,
             name = 'Collector',
             data_handler = self.data_handler,
+            sample_data_que = self.sample_data_que,
+            training_data_que = self.training_data_que,
         )
         self.policy_mgr = ray.remote(PolicyMgr).options(**{'num_cpus': 0}).remote(
             self.cfg,
@@ -84,6 +90,7 @@ class Trainer(Moduler):
                 recorder = recorder,
                 policy_mgr = self.policy_mgr,
                 latest_model_params_dict = self.latest_model_params_dict,
+                sample_data_que = self.sample_data_que,
                 )
             self.interactors.append(interactor)
         self.learners = []
@@ -101,6 +108,7 @@ class Trainer(Moduler):
                 data_handler = self.data_handler,
                 tracker = self.tracker,
                 recorder = recorder,
+                training_data_que = self.training_data_que,
                 )
             self.learners.append(learner)
 
@@ -142,6 +150,7 @@ class Trainer(Moduler):
                     ray.shutdown()
                     break
         else:
+            self.collector.run.remote()
             [interactor.run.remote() for interactor in self.interactors]
             [learner.run.remote() for learner in self.learners]
             while True:

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-05 14:33:20
+LastEditTime: 2024-06-03 13:56:07
 Discription: 
 '''
 import torch
@@ -20,12 +20,7 @@ from joyrl.framework.config import MergedConfig
 class Policy(BasePolicy):
     def __init__(self, cfg: MergedConfig) -> None:
         super(Policy, self).__init__(cfg)
-        self.ppo_type = 'clip' # clip or kl
-        if self.ppo_type == 'kl':
-            self.kl_target = cfg.kl_target 
-            self.kl_lambda = cfg.kl_lambda 
-            self.kl_beta = cfg.kl_beta
-            self.kl_alpha = cfg.kl_alpha
+        self.independ_actor = cfg.independ_actor
         self.gamma = cfg.gamma
         # self.action_type_list = cfg.action_type
         # if self.action_type_list.lower() == 'continuous': # continuous action space
@@ -90,31 +85,28 @@ class Policy(BasePolicy):
         actor_outputs = model_outputs['actor_outputs']
         actions = self.model.action_layers.get_actions(mode = 'predict', actor_outputs = actor_outputs)
         return actions
-    
-    def prepare_data_before_learn(self, **kwargs):
-        super().prepare_data_before_learn(**kwargs)
-        log_probs, returns = kwargs.get('log_probs'), kwargs.get('returns')
-        self.log_probs = torch.tensor(log_probs, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
-        # self.log_probs = torch.cat(log_probs, dim=0).detach() # [batch_size,1]
-        self.returns = torch.tensor(returns, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
 
     def learn(self, **kwargs):
-        super().learn(**kwargs)
-        torch_dataset = Data.TensorDataset(*self.states, *self.actions, self.log_probs, self.returns)
-        train_loader = Data.DataLoader(dataset = torch_dataset, batch_size = self.sgd_batch_size, shuffle = True)
+        states, actions, log_probs, returns = kwargs.get('states'), kwargs.get('actions'), kwargs.get('log_probs'), kwargs.get('returns')
+
+        model_outputs = self.model(states)
+        values = model_outputs['value']
+        advantages = returns - values.detach() # shape:[batch_size,1]
+        self.actor_loss = - (log_probs * advantages).mean()
+        self.critic_loss = self.cfg.critic_loss_coef * nn.MSELoss()(returns, values) # shape: [batch_size, 1]
         self.actor_losses_epoch, self.critic_losses_epoch, self.tot_losses_epoch = [], [], []
         for _ in range(self.k_epochs):
             for data in train_loader:
                 # multi-head state
                 old_states = []
-                for i in range(len(self.states)):
+                for i in range(len(states)):
                     old_states.append(data[i])
-                idx = len(self.states)
+                idx = len(states)
                 # multi-head action
                 old_actions = []
-                for i in range(len(self.actions)):
+                for i in range(len(actions)):
                     old_actions.append(data[idx+i])
-                idx += len(self.actions)
+                idx += len(actions)
                 old_log_probs = data[idx]
                 returns = data[idx+1]
                 model_outputs = self.model(old_states)

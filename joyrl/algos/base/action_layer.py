@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-06-02 00:17:16
+LastEditTime: 2024-06-03 23:10:10
 Discription: 
 '''
 from enum import Enum
@@ -98,10 +98,11 @@ class DiscreteActionLayer(BaseActionLayer):
         self.probs = probs
         return output
 
-    def sample_action(self):
+    def sample_action(self, **kwargs):
         ''' get action
         '''
-        dist = Categorical(self.probs)
+        probs = kwargs.get("probs", None)
+        dist = Categorical(probs)
         action = dist.sample()
         self.log_prob = dist.log_prob(action)
         action = action.detach().cpu().numpy().item()
@@ -168,7 +169,8 @@ class ContinuousActionLayer(BaseActionLayer):
         dist = Normal(mean, std)
         action = dist.sample()
         log_prob = dist.log_prob(action)
-        return {"action": action.detach().cpu().numpy().item(), "log_prob": log_prob.detach().cpu().numpy().item()}
+        # return {"action": action.detach().cpu().numpy().item(), "log_prob": log_prob.detach().cpu().numpy().item()}
+        return {"action": action.detach().cpu().numpy().item(), "log_prob": log_prob}
     
     def predict_action(self, **kwargs):
         ''' get action
