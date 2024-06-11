@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-03 13:56:07
+LastEditTime: 2024-06-10 23:51:23
 Discription: 
 '''
 import torch
@@ -85,8 +85,15 @@ class Policy(BasePolicy):
         actor_outputs = model_outputs['actor_outputs']
         actions = self.model.action_layers.get_actions(mode = 'predict', actor_outputs = actor_outputs)
         return actions
-
+    
+    def prepare_data_before_learn(self, **kwargs):
+        super().prepare_data_before_learn(**kwargs)
+        log_probs, returns = kwargs.get('log_probs'), kwargs.get('returns')
+        self.log_probs = torch.cat(log_probs, dim=0).detach() # [batch_size,1]
+        self.returns = torch.tensor(returns, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
+        
     def learn(self, **kwargs):
+        super().learn(**kwargs)
         states, actions, log_probs, returns = kwargs.get('states'), kwargs.get('actions'), kwargs.get('log_probs'), kwargs.get('returns')
 
         model_outputs = self.model(states)

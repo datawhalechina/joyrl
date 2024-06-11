@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-06-03 23:10:10
+LastEditTime: 2024-06-11 13:37:03
 Discription: 
 '''
 from enum import Enum
@@ -104,34 +104,33 @@ class DiscreteActionLayer(BaseActionLayer):
         probs = kwargs.get("probs", None)
         dist = Categorical(probs)
         action = dist.sample()
-        self.log_prob = dist.log_prob(action)
-        action = action.detach().cpu().numpy().item()
-        return action
+        action = dist.sample()
+        log_prob = dist.log_prob(action)
+        return {"action": action.detach().cpu().numpy().item(), "log_prob": log_prob}
     
-    def predict_action(self):
+    def predict_action(self,**kwargs):
         ''' get action
         '''
-        return torch.argmax(self.probs).detach().cpu().numpy().item()
-    
-    def get_log_prob(self):
-        ''' get log_probs
-        '''
-        return self.log_prob
+        probs = kwargs.get("probs", None)
+        return {"action": torch.argmax(probs).detach().cpu().numpy().item(), "log_prob": None}
     
     def get_log_prob_action(self, action):
         ''' get log_probs
         '''
-        # action shape is [batch_size]
-        if not isinstance(action, torch.Tensor):
-            action = torch.tensor(action, dtype=torch.int64, device=self.probs.device)
-        dist = Categorical(self.probs)
+    def get_log_prob_action(self, actor_output, action):
+        ''' get log_probs
+        '''
+        # action shape is [batch_size, action_dim]
+        probs = actor_output.get("probs", None)
+        dist = Categorical(probs)
         log_prob = dist.log_prob(action)
         return log_prob
     
-    def get_mean_entropy(self):
+    def get_entropy(self, actor_output):
         ''' get entropy
         '''
-        dist = Categorical(self.probs)
+        probs = actor_output.get("probs", None)
+        dist = Categorical(probs)
         entropy = dist.entropy()
         entropy_mean = torch.mean(entropy)
         return entropy_mean
@@ -169,7 +168,6 @@ class ContinuousActionLayer(BaseActionLayer):
         dist = Normal(mean, std)
         action = dist.sample()
         log_prob = dist.log_prob(action)
-        # return {"action": action.detach().cpu().numpy().item(), "log_prob": log_prob.detach().cpu().numpy().item()}
         return {"action": action.detach().cpu().numpy().item(), "log_prob": log_prob}
     
     def predict_action(self, **kwargs):

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-05-17 01:08:36
 LastEditor: JiangJi
-LastEditTime: 2024-06-03 13:39:47
+LastEditTime: 2024-06-10 23:51:36
 Discription: 
 '''
 import numpy as np
@@ -61,13 +61,8 @@ class DataHandler(BaseDataHandler):
         ''' convert exps to training data
         '''
         super()._handle_exps_before_train(exps)
-
-        log_probs = [exp.log_prob for exp in exps] # [batch_size]
+        log_probs = [exp.log_prob for exp in exps] 
         returns = np.array([exp.normed_return_td for exp in exps]) # [batch_size]
-
-        log_probs = torch.tensor(log_probs, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
-        returns = torch.tensor(returns, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
-
         self.data_after_train.update({'log_probs': log_probs, 'returns': returns})
 
         

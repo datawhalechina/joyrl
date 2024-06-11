@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-10 21:26:03
+LastEditTime: 2024-06-11 13:46:02
 Discription: 
 '''
 import time
@@ -84,8 +84,8 @@ class Collector(Moduler):
                 break
             if self.cfg.is_learner_async:
                 break
-            if time.time() - get_training_data_time >= 0.1:
-                exec_method(self.logger, 'warning', 'remote', "[Collector._get_training_data] get training data timeout!")
+            if time.time() - get_training_data_time >= 0.05:
+                # exec_method(self.logger, 'warning', 'remote', "[Collector._get_training_data] get training data timeout!")
                 get_training_data_time = time.time()
                 break
         if time.time() - self._get_training_data_time >= self._t_interval:

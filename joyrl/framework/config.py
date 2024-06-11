@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:30:09
 LastEditor: JiangJi
-LastEditTime: 2024-06-02 10:03:30
+LastEditTime: 2024-06-11 13:31:40
 Discription: 
 '''
 class DefaultConfig:
@@ -37,7 +37,7 @@ class GeneralConfig(object):
         self.mode = "train" # train, test
         self.device = "cpu" # device to use
         self.seed = 0 # random seed
-        self.is_learner_async = True # if learner is async
+        self.is_learner_async = False # if learner is async
         self.max_episode = -1 # number of episodes for training, set -1 to keep running
         self.max_step = -1 # number of episodes for testing, set -1 means unlimited steps
         self.collect_traj = False # if collect trajectory or not
