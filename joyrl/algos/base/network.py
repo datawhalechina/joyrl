@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-11 23:41:41
+LastEditTime: 2024-06-12 00:06:25
 Discription: 
 '''
 import copy
@@ -219,7 +219,6 @@ class QNetwork(BaseNework):
         self.merge_layer.reset_noise()
 
 
-
 class ActorNetwork(BaseNework):
     def __init__(self, cfg: MergedConfig, input_size_list) -> None:
         super(ActorNetwork, self).__init__(cfg, input_size_list)
@@ -274,8 +273,9 @@ class ActorCriticNetwork(BaseNework):
         
     def forward(self, x, pre_legal_actions=None):
         if getattr(self.cfg, 'independ_actor', False):
-            actor_outputs = self.actor(x, pre_legal_actions)
-            value = self.critic(x)
+            # since input x is a list, need to deepcopy it to avoid changing the original x
+            actor_outputs = self.actor(copy.deepcopy(x), pre_legal_actions)
+            value = self.critic(copy.deepcopy(x))
             return {'value': value, 'actor_outputs': actor_outputs}
         else:
             x = self.branch_layers(x)

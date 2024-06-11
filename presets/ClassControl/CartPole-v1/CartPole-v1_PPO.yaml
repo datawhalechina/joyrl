@@ -1,5 +1,5 @@
 general_cfg:
-  joyrl_version: 0.6.2.1
+  joyrl_version: 0.6.2.2
   algo_name: PPO
   env_name: gym 
   device: cpu 
