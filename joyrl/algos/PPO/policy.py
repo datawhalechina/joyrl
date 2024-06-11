@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-05 14:33:20
+LastEditTime: 2024-06-11 23:38:05
 Discription: 
 '''
 import torch
@@ -63,7 +63,11 @@ class Policy(BasePolicy):
         self.model = ActorCriticNetwork(self.cfg, self.state_size_list).to(self.device)
 
     def create_optimizer(self):
-        self.optimizer = optim.Adam(self.model.parameters(), lr = self.cfg.lr)  
+        if getattr(self.cfg, 'independ_actor', False):
+            self.optimizer = optim.Adam([{'params': self.model.actor.parameters(), 'lr': self.cfg.actor_lr},
+                                         {'params': self.model.critic.parameters(), 'lr': self.cfg.critic_lr}])
+        else:
+            self.optimizer = optim.Adam(self.model.parameters(), lr = self.cfg.lr)  
 
     def update_policy_transition(self):
         self.policy_transition = {'value': self.value.detach().cpu().numpy().item(), 'log_prob': self.log_prob}
@@ -71,12 +75,11 @@ class Policy(BasePolicy):
     def sample_action(self, state, **kwargs):
         state = torch.tensor(np.array(state), device=self.device, dtype=torch.float32)
         # single state shape must be [batch_size, state_dim]
-        if state.dim() == 1: 
-            state = state.unsqueeze(dim=0)
+        if state.dim() == 1: state = state.unsqueeze(dim=0)
         model_outputs = self.model(state)
         self.value = model_outputs['value']
         actor_outputs = model_outputs['actor_outputs']
-        actions, self.log_prob = self.model.action_layers.get_actions_and_log_probs(mode = 'sample', actor_outputs = actor_outputs)
+        actions, self.log_prob = self.model.get_actions_and_log_probs(mode = 'sample', actor_outputs = actor_outputs)
         self.update_policy_transition()
         return actions
 
@@ -84,11 +87,10 @@ class Policy(BasePolicy):
     def predict_action(self, state, **kwargs):
         state = torch.tensor(np.array(state), device=self.device, dtype=torch.float32)
         # single state shape must be [batch_size, state_dim]
-        if state.dim() == 1: 
-            state = state.unsqueeze(dim=0)
+        if state.dim() == 1: state = state.unsqueeze(dim=0)
         model_outputs = self.model(state)
         actor_outputs = model_outputs['actor_outputs']
-        actions = self.model.action_layers.get_actions(mode = 'predict', actor_outputs = actor_outputs)
+        actions = self.model.get_actions(mode = 'predict', actor_outputs = actor_outputs)
         return actions
     
     def prepare_data_before_learn(self, **kwargs):
@@ -120,9 +122,9 @@ class Policy(BasePolicy):
                 model_outputs = self.model(old_states)
                 values = model_outputs['value']
                 actor_outputs = model_outputs['actor_outputs']
-                new_log_probs = self.model.action_layers.get_log_probs_action(actor_outputs, old_actions)
+                new_log_probs = self.model.get_log_probs_action(actor_outputs, old_actions)
                 # new_log_probs = self.model.action_layers.get_log_probs_action(old_actions)
-                entropy_mean = self.model.action_layers.get_mean_entropy(actor_outputs)
+                entropy_mean = self.model.get_mean_entropy(actor_outputs)
                 advantages = returns - values.detach() # shape:[batch_size,1]
                 # get action probabilities
                 # compute ratio (pi_theta / pi_theta__old):

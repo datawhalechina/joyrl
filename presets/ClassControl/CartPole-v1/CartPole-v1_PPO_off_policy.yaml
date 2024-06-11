@@ -4,6 +4,7 @@ general_cfg:
   device: cpu 
   mode: train 
   load_checkpoint: false 
+  is_learner_async: false
   load_path: Train_CartPole-v1_PPO_20231225-124842 # if load checkpoint, then config path in 'tasks' dir
   load_model_step: best 
   n_interactors: 1
@@ -11,15 +12,15 @@ general_cfg:
   max_step: 200 
   seed: 1 
   online_eval: true 
-  online_eval_episode: 10 
+  online_eval_episode: 1
   model_save_fre: 100 
-  policy_summary_fre: 2
+  policy_summary_fre: 100
+  interact_summary_fre: 100
   exps_trucation_size: 20
 algo_cfg:
   ppo_type: clip
   learn_frequency: 20 
   independ_actor: true
-  share_optimizer: false
   actor_merge_layers:
     - layer_type: linear
       layer_size: [256]
@@ -36,6 +37,7 @@ algo_cfg:
       activation: relu
   buffer_type: REPLAY_QUE
   max_buffer_size: 2000
+  lr: 0.0003
   actor_lr: 0.0003
   critic_lr: 0.001
   entropy_coef: 0.01
@@ -47,4 +49,6 @@ algo_cfg:
 env_cfg:
   id: CartPole-v1
   render_mode: null
+  wrappers:
+    - wrapper_name: CartPoleActionWrapper
   

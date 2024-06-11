@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-02 10:51:15
+LastEditTime: 2024-06-11 23:41:41
 Discription: 
 '''
 import copy
@@ -218,26 +218,7 @@ class QNetwork(BaseNework):
         self.branch_layers.reset_noise()
         self.merge_layer.reset_noise()
 
-class ActorCriticNetwork(BaseNework):
-    ''' Value network, for policy-based methods,  in which the branch_layers and critic share the same network
-    '''
-    def __init__(self, cfg: MergedConfig, input_size_list: list) -> None:
-        super(ActorCriticNetwork, self).__init__(cfg, input_size_list)
-        self.action_type_list = self.cfg.action_type_list
-        self.create_graph()
-        
-    def create_graph(self):
-        self.branch_layers = BranchLayers(self.cfg.branch_layers, self.input_size_list)
-        self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
-        self.value_layer, _ = create_layer(self.merge_layer.output_size, LayerConfig(layer_type='linear', layer_size=[1], activation='none'))
-        self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size,)
-        
-    def forward(self, x, pre_legal_actions=None):
-        x = self.branch_layers(x)
-        x = self.merge_layer(x)
-        value = self.value_layer(x)
-        actor_outputs = self.action_layers(x, pre_legal_actions = pre_legal_actions)
-        return {'value': value, 'actor_outputs': actor_outputs}
+
 
 class ActorNetwork(BaseNework):
     def __init__(self, cfg: MergedConfig, input_size_list) -> None:
@@ -272,48 +253,58 @@ class CriticNetwork(BaseNework):
         x = self.merge_layer(x)
         value = self.value_layer(x)
         return value
-
-if __name__ == "__main__":
-    # test：export PYTHONPATH=./:$PYTHONPATH
-    import torch
-    from joyrl.framework.config import MergedConfig
-    import gymnasium as gym
-    cfg = MergedConfig()
-    state_size = [[None, 4], [None, 4]]
-    cfg.n_actions = 2
-    cfg.continuous = False
-    cfg.min_policy = 0
-    cfg.branch_layers = [
-
-        [
-            {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
-            {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
-        ],
-        # [
-        #     {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
-        #     {'layer_type': 'linear', 'layer_size': [64], 'activation': 'ReLU'},
-        # ],
-    ]
-    cfg.merge_layers = [
-        {'layer_type': 'linear', 'layer_size': [2], 'activation': 'ReLU'},
-        {'layer_type': 'linear', 'layer_size': [2], 'activation': 'ReLU'},
-    ]
-    cfg.value_layers = [
-        {'layer_type': 'embed', 'n_embeddings': 10, 'embedding_dim': 32, 'activation': 'none'},
-        {'layer_type': 'Linear', 'layer_size': [64], 'activation': 'ReLU'},
-        {'layer_type': 'Linear', 'layer_size': [64], 'activation': 'ReLU'},
-    ]
-    cfg.actor_layers = [
-        {'layer_type': 'linear', 'layer_size': [256], 'activation': 'ReLU'},
-        {'layer_type': 'linear', 'layer_size': [256], 'activation': 'ReLU'},
-    ]
-    action_space = gym.spaces.Discrete(2)
-    model = QNetwork(cfg, state_size, [action_space.n])
-    x = [torch.tensor([[ 0.0012,  0.0450, -0.0356,  0.0449]]), torch.tensor([[ 0.0012,  0.0450, -0.0356,  0.0449]])]
-    x = model(x)
-    print(x)
-    # value_net = QNetwork(cfg, state_dim, cfg.n_actions)
-    # print(value_net)
-    # x = torch.tensor([36])
-    # print(x.shape)
-    # print(value_net(x))
+    
+class ActorCriticNetwork(BaseNework):
+    ''' Value network, for policy-based methods,  in which the branch_layers and critic share the same network
+    '''
+    def __init__(self, cfg: MergedConfig, input_size_list: list) -> None:
+        super(ActorCriticNetwork, self).__init__(cfg, input_size_list)
+        self.action_type_list = self.cfg.action_type_list
+        self.create_graph()
+        
+    def create_graph(self):
+        if getattr(self.cfg, 'independ_actor', False):
+            self.actor = ActorNetwork(self.cfg, self.input_size_list)
+            self.critic = CriticNetwork(self.cfg, self.input_size_list)
+        else:
+            self.branch_layers = BranchLayers(self.cfg.branch_layers, self.input_size_list)
+            self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
+            self.value_layer, _ = create_layer(self.merge_layer.output_size, LayerConfig(layer_type='linear', layer_size=[1], activation='none'))
+            self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size,)
+        
+    def forward(self, x, pre_legal_actions=None):
+        if getattr(self.cfg, 'independ_actor', False):
+            actor_outputs = self.actor(x, pre_legal_actions)
+            value = self.critic(x)
+            return {'value': value, 'actor_outputs': actor_outputs}
+        else:
+            x = self.branch_layers(x)
+            x = self.merge_layer(x)
+            value = self.value_layer(x)
+            actor_outputs = self.action_layers(x, pre_legal_actions = pre_legal_actions)
+            return {'value': value, 'actor_outputs': actor_outputs}
+        
+    def get_actions_and_log_probs(self, **kwargs):
+        if getattr(self.cfg, 'independ_actor', False):
+            return self.actor.action_layers.get_actions_and_log_probs(**kwargs)
+        else:
+            return self.action_layers.get_actions_and_log_probs(**kwargs)
+        
+    def get_log_probs_action(self, actor_outputs, actions):
+        if getattr(self.cfg, 'independ_actor', False):
+            return self.actor.action_layers.get_log_probs_action(actor_outputs, actions)
+        else:
+            return self.action_layers.get_log_probs_action(actor_outputs, actions)
+        
+    def get_mean_entropy(self, actor_outputs):
+        if getattr(self.cfg, 'independ_actor', False):
+            return self.actor.action_layers.get_mean_entropy(actor_outputs)
+        else:
+            return self.action_layers.get_mean_entropy(actor_outputs)
+    
+    def get_actions(self, **kwargs):
+        if getattr(self.cfg, 'independ_actor', False):
+            return self.actor.action_layers.get_actions(**kwargs)
+        else:
+            return self.action_layers.get_actions(**kwargs)
+        

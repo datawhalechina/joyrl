@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-05-17 01:08:36
 LastEditor: JiangJi
-LastEditTime: 2024-06-05 14:32:55
+LastEditTime: 2024-06-11 19:59:16
 Discription: 
 '''
 import numpy as np
@@ -18,7 +18,7 @@ class DataHandler(BaseDataHandler):
         self.gae_lambda = getattr(self.cfg, 'gae_lambda', 0.95)
         self.gamma = getattr(self.cfg, 'gamma', 0.95)
         self.batch_exps = []
-    
+        
     def handle_exps_after_interact(self, exps):
         exp_len = self._get_exp_len(exps)
         next_value = exps[-1].value
@@ -65,8 +65,14 @@ class DataHandler(BaseDataHandler):
         log_probs = [exp.log_prob.detach().cpu().numpy().item() for exp in exps] 
         # log_probs = torch.cat(log_probs, dim=0).detach() # [batch_size,1]
         # log_probs = torch.tensor(log_probs, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
-        
-        returns = np.array([exp.return_mc_normed for exp in exps]) 
+        if self.cfg.return_form.lower() == 'mc':
+            returns = np.array([exp.return_mc_normed for exp in exps])
+        elif self.cfg.return_form.lower() == 'td':
+            returns = np.array([exp.normed_return_td for exp in exps])
+        elif self.cfg.return_form.lower() == 'gae':
+            returns = np.array([exp.normed_return_gae for exp in exps])
+        else:
+            raise NotImplementedError("return_form not implemented")
         # returns = torch.tensor(returns, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
         self.data_after_train.update({'log_probs': log_probs, 'returns': returns})
 

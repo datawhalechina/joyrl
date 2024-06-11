@@ -5,12 +5,12 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-02-20 21:53:39
 LastEditor: JiangJi
-LastEditTime: 2024-06-03 13:38:24
+LastEditTime: 2024-06-11 23:34:11
 Discription: 
 '''
 class AlgoConfig(object):
     def __init__(self):
-        self.independ_actor = True # whether to use independent actor
+        self.independ_actor = False # whether to use independent actor
         # whether actor and critic share the same optimizer
         self.ppo_type = 'clip' # clip or kl
         self.eps_clip = 0.2 # clip parameter for PPO
@@ -21,6 +21,7 @@ class AlgoConfig(object):
         self.kl_beta = 1.5 # beta for KL penalty, 1.5 is the default value in the paper
         self.kl_alpha = 2 # alpha for KL penalty, 2 is the default value in the paper
         self.action_type_list = "continuous" # continuous action space
+        self.return_form = 'mc' # 'mc' or 'td' or 'gae'
         self.gamma = 0.99 # discount factor
         self.k_epochs = 4 # update policy for K epochs
         self.lr = 0.0001 # for shared optimizer
