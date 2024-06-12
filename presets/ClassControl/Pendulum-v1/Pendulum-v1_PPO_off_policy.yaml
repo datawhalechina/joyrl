@@ -1,51 +1,61 @@
 general_cfg:
-  joyrl_version: 0.5.0
+  joyrl_version: 0.6.2.3
   algo_name: PPO
   env_name: gym 
   device: cpu 
   mode: train 
+  exps_trucation_size: 200
+  is_learner_async: true
   load_checkpoint: false 
   load_path: Train_CartPole-v1_PPO_20231225-124842 # if load checkpoint, then config path in 'tasks' dir
   load_model_step: best 
-  n_interactors: 1
+  n_interactors: 10
   max_episode: -1
   max_step: 200 
   seed: 1 
   online_eval: true 
   online_eval_episode: 10 
-  model_save_fre: 500 
-  policy_summary_fre: 2
+  model_save_fre: 10 
+  policy_summary_fre: 10
+  interact_summary_fre: 100
 algo_cfg:
-  independ_actor: true
-  share_optimizer: false
   actor_branch_layers:
     - name: state
       layers:
       - layer_type: linear
         layer_size: [256]
         activation: relu
-      - layer_type: linear
-        layer_size: [256]
-        activation: relu
+      # - layer_type: linear
+      #   layer_size: [256]
+      #   activation: tanh
   critic_branch_layers:
     - name: state
       layers:
       - layer_type: linear
         layer_size: [256]
         activation: relu
+      # - layer_type: linear
+      #   layer_size: [256]
+      #   activation: tanh
+  branch_layers:
+    - name: state
+      layers:
       - layer_type: linear
         layer_size: [256]
         activation: relu
   buffer_type: REPLAY_QUE
-  max_buffer_size: 2000
+  max_buffer_size: 4000
+  lr: 0.0003
   actor_lr: 0.003
   critic_lr: 0.01
-  entropy_coef: 0.02
+  entropy_coef: 0.001
+  critic_loss_coef: 0.5
   eps_clip: 0.2
-  gamma: 0.99
-  k_epochs: 1
-  batch_size: 256
-  sgd_batch_size: 256
+  gamma: 0.95
+  gae_lambda: 0.95
+  k_epochs: 4
+  batch_size: 2000
+  sgd_batch_size: 50
 env_cfg:
   id: Pendulum-v1
   render_mode: null
