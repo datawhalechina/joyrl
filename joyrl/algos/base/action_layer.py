@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-06-11 13:37:03
+LastEditTime: 2024-06-13 00:18:23
 Discription: 
 '''
 from enum import Enum
@@ -103,9 +103,8 @@ class DiscreteActionLayer(BaseActionLayer):
         '''
         probs = kwargs.get("probs", None)
         dist = Categorical(probs)
-        action = dist.sample()
-        action = dist.sample()
-        log_prob = dist.log_prob(action)
+        action = dist.sample() # [batch_size]
+        log_prob = dist.log_prob(action) # [batch_size]
         return {"action": action.detach().cpu().numpy().item(), "log_prob": log_prob}
     
     def predict_action(self,**kwargs):
@@ -114,17 +113,14 @@ class DiscreteActionLayer(BaseActionLayer):
         probs = kwargs.get("probs", None)
         return {"action": torch.argmax(probs).detach().cpu().numpy().item(), "log_prob": None}
     
-    def get_log_prob_action(self, action):
-        ''' get log_probs
-        '''
     def get_log_prob_action(self, actor_output, action):
-        ''' get log_probs
+        ''' get log_prob_action
         '''
         # action shape is [batch_size, action_dim]
         probs = actor_output.get("probs", None)
         dist = Categorical(probs)
-        log_prob = dist.log_prob(action)
-        return log_prob
+        log_prob = dist.log_prob(action.squeeze(dim=1))
+        return log_prob.unsqueeze(dim=1)
     
     def get_entropy(self, actor_output):
         ''' get entropy
@@ -182,6 +178,7 @@ class ContinuousActionLayer(BaseActionLayer):
         # action shape is [batch_size, action_dim]
         mean = actor_output.get("mean", None)
         std = actor_output.get("std", None)
+        print("mean", mean.shape, "std", std.shape)
         dist = Normal(mean, std)
         log_prob = dist.log_prob(action)
         return log_prob
