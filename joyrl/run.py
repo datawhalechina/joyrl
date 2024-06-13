@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-06-10 21:30:09
+LastEditTime: 2024-06-13 13:34:50
 Discription: 
 '''
 import os,copy
@@ -88,6 +88,8 @@ class Launcher(object):
         buffer_type = getattr(self.cfg, 'buffer_type', None)
         if buffer_type is not None and buffer_type.lower().startswith('onpolicy'):
             setattr(self.cfg, 'on_policy', True)
+            # when using on-policy buffer, the batch size should be equal to the number of interactors * exps_trucation_size
+            self.cfg.batch_size = self.cfg.n_interactors * self.cfg.exps_trucation_size
         else:
             setattr(self.cfg, 'on_policy', False)
         

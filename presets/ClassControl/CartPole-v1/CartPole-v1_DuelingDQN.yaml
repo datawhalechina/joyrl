@@ -36,4 +36,4 @@ env_cfg:
   id: CartPole-v1
   render_mode: null
   wrappers:
-    - wrapper_name: CartPoleActionWrapper
+    - wrapper_name: GymDiscreteActionWrapper

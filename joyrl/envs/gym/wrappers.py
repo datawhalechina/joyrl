@@ -71,7 +71,7 @@ class BaseSkipFrame(gym_wrapper.Wrapper):
         return obs, info
 
 
-class CartPoleActionWrapper(gym_wrapper.Wrapper):
+class GymDiscreteActionWrapper(gym_wrapper.Wrapper):
     def __init__(self, env):
         gym_wrapper.Wrapper.__init__(self, env)
         # self.action_space = Box(low=-1.0, high=1.0, shape=(1, ), dtype=np.float32)

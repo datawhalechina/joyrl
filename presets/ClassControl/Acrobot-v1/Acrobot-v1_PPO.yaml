@@ -1,5 +1,5 @@
 general_cfg:
-  joyrl_version: 0.6.2.2
+  joyrl_version: 0.6.2.6
   algo_name: PPO
   env_name: gym 
   device: cpu 
@@ -9,9 +9,9 @@ general_cfg:
   load_checkpoint: false 
   load_path: Train_CartPole-v1_PPO_20231225-124842 # if load checkpoint, then config path in 'tasks' dir
   load_model_step: best 
-  n_interactors: 10
+  n_interactors: 15
   max_episode: -1
-  max_step: 200 
+  max_step: -1 
   seed: 1 
   online_eval: true 
   online_eval_episode: 15 
@@ -20,7 +20,7 @@ general_cfg:
   interact_summary_fre: 100
 algo_cfg:
   independ_actor: false
-  return_form: td
+  return_form: gae
   actor_branch_layers:
     - name: feature_1
       layers:
@@ -49,20 +49,20 @@ algo_cfg:
         layer_size: [256]
         activation: relu
   buffer_type: ONPOLICY_QUE
-  lr: 0.0003
+  lr: 0.0005
   actor_lr: 0.0003
   critic_lr: 0.001
   entropy_coef: 0.001
   critic_loss_coef: 0.001
   eps_clip: 0.1
-  gamma: 0.95
-  gae_lambda: 0.95
+  gamma: 0.99
+  gae_lambda: 0.94
   k_epochs: 4
-  batch_size: 2000
-  sgd_batch_size: 200
+  batch_size: 3000
+  sgd_batch_size: 300
   # min_policy: 0.001
 env_cfg:
-  id: CartPole-v1
+  id: Acrobot-v1
   render_mode: null
   wrappers:
     - wrapper_name: GymDiscreteActionWrapper
