@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-01-25 09:58:33
 LastEditor: JiangJi
-LastEditTime: 2024-06-03 13:13:02
+LastEditTime: 2024-06-13 11:02:38
 Discription: 
 '''
 import torch
@@ -59,18 +59,18 @@ class Policy(BasePolicy):
     def learn(self, **kwargs):
         ''' learn policy
         '''
-        states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
+        super().learn(**kwargs)
         # compute current Q values
         self.summary_loss = []
         tot_loss = 0
-        actor_outputs = self.model(states)['actor_outputs']
-        target_actor_outputs = self.target_model(next_states)['actor_outputs']
+        actor_outputs = self.model(self.states)['actor_outputs']
+        target_actor_outputs = self.target_model(self.next_states)['actor_outputs']
         for i in range(len(self.action_size_list)):
-            actual_q_value = actor_outputs[i]['q_value'].gather(1, actions[i].long())
+            actual_q_value = actor_outputs[i]['q_value'].gather(1, self.actions[i].long())
             # compute next max q value
             next_q_value_max = target_actor_outputs[i]['q_value'].max(1)[0].unsqueeze(dim=1)
             # compute target Q values
-            target_q_value = rewards + (1 - dones) * self.gamma * next_q_value_max
+            target_q_value = self.rewards + (1 - self.dones) * self.gamma * next_q_value_max
             # compute loss
             loss_i = nn.MSELoss()(actual_q_value, target_q_value)
             tot_loss += loss_i
