@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-10 21:13:22
+LastEditTime: 2024-06-13 22:12:48
 Discription: 
 '''
 import copy
@@ -139,6 +139,7 @@ class Trainer(Moduler):
         '''
         exec_method(self.logger, 'info', 'get', f"[Trainer.run] Start {self.cfg.mode}ing!")
         s_t = time.time()
+        exec_method(self.tracker, 'pub_msg', 'get', Msg(type = MsgType.TRACKER_INCREASE_UPDATE_STEP, data = self.cfg.start_model_step))
         if not self.cfg.is_learner_async:
             while True:
                 ray.get([interactor.run.remote() for interactor in self.interactors])

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-06-13 21:21:54
+LastEditTime: 2024-06-13 22:15:05
 Discription: 
 '''
 import os,copy
@@ -160,9 +160,17 @@ class Launcher(object):
          # create agent
         data_handler_mod = importlib.import_module(f"joyrl.algos.{self.general_cfg.algo_name}.data_handler")
         policy = policy_mod.Policy(self.cfg) 
+        self.cfg.start_model_step = 0
         if self.cfg.load_checkpoint:
             policy.load_model(f"tasks/{self.cfg.load_path}/models/{self.cfg.load_model_step}")
             policy.save_model(f"{self.cfg.model_dir}/{self.cfg.load_model_step}")
+            if isinstance(self.cfg.load_model_step, int):
+                self.cfg.start_model_step = self.cfg.load_model_step
+            if str(self.cfg.load_model_step).startswith('best'):
+                try:
+                    self.cfg.start_model_step = int(self.cfg.load_model_step.split('_')[-1])
+                except:
+                    self.cfg.start_model_step = 0
         data_handler = data_handler_mod.DataHandler(self.cfg)
         return policy, data_handler
 

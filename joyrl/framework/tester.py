@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-02 10:50:36
+LastEditTime: 2024-06-13 21:55:10
 Discription: 
 '''
 import time
@@ -80,7 +80,7 @@ class OnlineTester(Moduler):
                 # self.logger.info.remote(logger_info) if self.use_ray else self.logger.info(logger_info)
                 if mean_eval_reward >= self.best_eval_reward:
                     exec_method(self.logger, 'info', 'get', f"current online_eval step obtain a better reward: {mean_eval_reward:.3f}, save the best model!")
-                    self.policy.save_model(f"{self.cfg.model_dir}/best")
+                    self.policy.save_model(f"{self.cfg.model_dir}/best_{model_step}")
                     self.best_eval_reward = mean_eval_reward
             time.sleep(1)
         
