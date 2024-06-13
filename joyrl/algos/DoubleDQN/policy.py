@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-02 10:34:38
+LastEditTime: 2024-06-13 21:23:37
 Discription: 
 '''
 import torch
@@ -57,16 +57,16 @@ class Policy(BasePolicy):
     def learn(self, **kwargs):
         ''' learn policy
         '''
-        states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
-        actor_outputs = self.model(states)['actor_outputs']
-        target_actor_outputs = self.target_model(next_states)['actor_outputs']
+        super().learn(**kwargs)
+        actor_outputs = self.model(self.states)['actor_outputs']
+        target_actor_outputs = self.target_model(self.next_states)['actor_outputs']
         tot_loss = 0
         self.summary_loss = []
         for i in range(len(self.action_size_list)):
-            actual_q_value = actor_outputs[i]['q_value'].gather(1, actions[i].long())
+            actual_q_value = actor_outputs[i]['q_value'].gather(1, self.actions[i].long())
             next_q_values = target_actor_outputs[i]['q_value']
             next_target_q_values_action = next_q_values.gather(1, torch.max(next_q_values, 1)[1].unsqueeze(1))
-            expected_q_value = rewards + self.gamma * next_target_q_values_action * (1 - dones)
+            expected_q_value = self.rewards + self.gamma * next_target_q_values_action * (1 - self.dones)
             loss_i = nn.MSELoss()(actual_q_value, expected_q_value)
             tot_loss += loss_i
             self.summary_loss.append(loss_i.item())
