@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-06-13 13:34:50
+LastEditTime: 2024-06-13 21:22:48
 Discription: 
 '''
 import os,copy
@@ -142,8 +142,8 @@ class Launcher(object):
             wrapper_name = wrapper['wrapper_name']
             wrapper_kwargs = copy.deepcopy(wrapper)
             wrapper_kwargs.pop("wrapper_name")
-            mm = importlib.import_module('joyrl.envs.gym')
-            env_wapper_cls = eval(f'mm.wrappers.{wrapper_name}')
+            wrapper_mod = importlib.import_module(f"joyrl.envs.{self.general_cfg.env_name}.wrappers")
+            env_wapper_cls = getattr(wrapper_mod, wrapper_name, None)
             try:
                 env = env_wapper_cls(env, **wrapper_kwargs)
             except Exception as e:
