@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-06-13 00:18:23
+LastEditTime: 2024-06-14 23:48:12
 Discription: 
 '''
 from enum import Enum
@@ -178,7 +178,6 @@ class ContinuousActionLayer(BaseActionLayer):
         # action shape is [batch_size, action_dim]
         mean = actor_output.get("mean", None)
         std = actor_output.get("std", None)
-        print("mean", mean.shape, "std", std.shape)
         dist = Normal(mean, std)
         log_prob = dist.log_prob(action)
         return log_prob
