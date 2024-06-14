@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-13 21:55:10
+LastEditTime: 2024-06-14 09:23:47
 Discription: 
 '''
 import time
@@ -15,7 +15,7 @@ import threading
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
 from joyrl.framework.message import Msg, MsgType
-from joyrl.framework.utils import exec_method
+from joyrl.framework.utils import exec_method, load_model_meta, save_model_meta
     
 class OnlineTester(Moduler):
     ''' Online tester
@@ -25,6 +25,7 @@ class OnlineTester(Moduler):
         self.env = copy.deepcopy(kwargs['env'])
         self.policy = copy.deepcopy(kwargs['policy'])
         self.recorder = kwargs['recorder']
+        self.policy_mgr = kwargs['policy_mgr']
         self.seed = self.cfg.seed
         self.best_eval_reward = -float('inf')
         self.curr_test_step = -1
@@ -80,7 +81,9 @@ class OnlineTester(Moduler):
                 # self.logger.info.remote(logger_info) if self.use_ray else self.logger.info(logger_info)
                 if mean_eval_reward >= self.best_eval_reward:
                     exec_method(self.logger, 'info', 'get', f"current online_eval step obtain a better reward: {mean_eval_reward:.3f}, save the best model!")
-                    self.policy.save_model(f"{self.cfg.model_dir}/best_{model_step}")
+                    self.policy.save_model(f"{self.cfg.model_dir}/best")
                     self.best_eval_reward = mean_eval_reward
+                    model_meta = {'best_eval_reward': self.best_eval_reward, 'best_model_step': model_step}
+                    exec_method(self.policy_mgr, 'pub_msg', 'remote', Msg(type = MsgType.POLICY_MGR_PUT_MODEL_META, data = (self.name, model_meta)))
             time.sleep(1)
         

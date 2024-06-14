@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-05-26 23:54:07
 LastEditor: JiangJi
-LastEditTime: 2024-06-10 21:14:49
+LastEditTime: 2024-06-14 09:31:42
 Discription: 
 '''
 import os
@@ -31,6 +31,7 @@ from threading import Lock
 from queue import Queue, Empty
 from matplotlib.font_manager import FontProperties  # 导入字体模块
 from collections import deque
+from pathlib import Path
 @ray.remote
 class DataActor:
     ''' 
@@ -115,7 +116,55 @@ class DeQueue(Queue):
         with self.mutex:
             self.queue.append(item)
             self.unfinished_tasks += 1
+class Logger(object):
+    ''' Logger for print log to console
+    '''
+    def __init__(self, log_dir, *args, **kwargs) -> None:
+        self.name = kwargs.get('log_name', '')
+        self.logger = logging.getLogger(name = f"Log_{self.name}")
+        self.logger.setLevel(logging.INFO) # default level is INFO
+        self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S')
+        # output to file by using FileHandler
+        if not self.logger.handlers: # avoid duplicate print
+            name = self.name.split('_')[0]
+            log_dir = f"{log_dir}/{name}"
+            Path(log_dir).mkdir(parents=True, exist_ok=True)
+            fh = logging.FileHandler(f"{log_dir}/Log_{self.name}.txt")
+            fh.setLevel(logging.DEBUG)
+            fh.setFormatter(self.formatter)
+            self.logger.addHandler(fh)
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.INFO)
+            ch.setFormatter(self.formatter)
+            self.logger.addHandler(ch)
+    
+    def info(self, content):
+        ''' print info
+        '''
+        self.logger.info(content)
+    
+    def warning(self, content):
+        ''' print warning
+        '''
+        self.logger.warning(content)
 
+def load_model_meta(dir):
+    ''' load model meta
+    '''
+    try:
+        with open(f"{dir}/model_meta.yaml") as f:
+            model_meta = yaml.load(f, Loader=yaml.FullLoader)
+    except Exception as e:
+        model_meta = {}
+    return model_meta
+
+def save_model_meta(dir, model_meta):
+    ''' save model meta
+    '''
+    with open(f"{dir}/model_meta.yaml", 'w') as f:
+        yaml.dump(model_meta, f, default_flow_style=False)
+        
 def chinese_font():
     ''' 设置中文字体，注意需要根据自己电脑情况更改字体路径，否则还是默认的字体
     '''
@@ -313,35 +362,7 @@ def save_traj(traj, fpath):
     with open(traj_pkl, 'wb') as f:
         pickle.dump(traj, f)
 
-class Logger(object):
-    ''' Logger for print log to console
-    '''
-    def __init__(self, log_dir, *args, **kwargs) -> None:
-        self.name = kwargs.get('log_name', '')
-        self.logger = logging.getLogger(name = f"Log_{self.name}")
-        self.logger.setLevel(logging.INFO) # default level is INFO
-        self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S')
-        # output to file by using FileHandler
-        if not self.logger.handlers: # avoid duplicate print
-            fh = logging.FileHandler(f"{log_dir}/Log_{self.name}.txt")
-            fh.setLevel(logging.DEBUG)
-            fh.setFormatter(self.formatter)
-            self.logger.addHandler(fh)
-            ch = logging.StreamHandler()
-            ch.setLevel(logging.INFO)
-            ch.setFormatter(self.formatter)
-            self.logger.addHandler(ch)
-    
-    def info(self, content):
-        ''' print info
-        '''
-        self.logger.info(content)
-    
-    def warning(self, content):
-        ''' print warning
-        '''
-        self.logger.warning(content)
+
         
 # MAPPO beginning
 

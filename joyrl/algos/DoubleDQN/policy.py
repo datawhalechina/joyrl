@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-13 21:23:37
+LastEditTime: 2024-06-14 09:26:17
 Discription: 
 '''
 import torch
@@ -30,14 +30,20 @@ class Policy(BasePolicy):
         self.model = QNetwork(self.cfg,self.state_size_list).to(self.device)
         self.target_model = QNetwork(self.cfg,self.state_size_list).to(self.device)
         self.target_model.load_state_dict(self.model.state_dict()) # or use this to copy parameters
+    
+    def load_model_meta(self, model_meta):
+        super().load_model_meta(model_meta)
+        if model_meta.get('sample_count') is not None:
+            self.sample_count = model_meta['sample_count']
 
     def sample_action(self, state, **kwargs):
         ''' sample action
         '''
-        # epsilon must decay(linear,exponential and etc.) for balancing exploration and exploitation
         self.sample_count += 1
+        # epsilon must decay(linear,exponential and etc.) for balancing exploration and exploitation
         self.epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * \
             math.exp(-1. * self.sample_count / self.epsilon_decay) 
+        self.update_model_meta({'sample_count': self.sample_count})
         if random.random() > self.epsilon:
             action = self.predict_action(state)
         else:
@@ -81,4 +87,5 @@ class Policy(BasePolicy):
             self.target_model.load_state_dict(self.model.state_dict())
         self.update_step += 1
         self.update_summary() # update summary
+        
         

@@ -5,10 +5,9 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-10 21:15:06
+LastEditTime: 2024-06-14 09:34:20
 Discription: 
 '''
-from typing import Tuple
 import numpy as np
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
@@ -29,6 +28,7 @@ class Learner(Moduler):
         self.recorder = kwargs.get('recorder', None)
         self.training_data_que = kwargs.get('training_data_que', None)
         self._init_update_steps()
+        self._load_model_meta()
         exec_method(self.logger, 'info', 'remote', f"[Learner.__init__] Start learner {self.id}!")
 
     def _init_update_steps(self):
@@ -37,6 +37,11 @@ class Learner(Moduler):
         else:
             self.n_update_steps = float('inf')
 
+    def _load_model_meta(self):
+        if self.cfg.load_checkpoint:
+            model_meta = self.cfg.model_meta.get(self.name, {})
+            self.policy.load_model_meta(model_meta)
+            
     def run(self):
         run_step = 0
         while True:
@@ -62,6 +67,8 @@ class Learner(Moduler):
                     policy_summary.update({'avg_train_lag': avg_train_lag})
                     summary_data = [(global_update_step,self.policy.get_summary())]
                     exec_method(self.recorder, 'pub_msg', 'remote', Msg(type = MsgType.RECORDER_PUT_SUMMARY, data = summary_data))
+                    model_meta = self.policy.get_model_meta()
+                    exec_method(self.policy_mgr, 'pub_msg', 'remote', Msg(type = MsgType.POLICY_MGR_PUT_MODEL_META, data = (self.name, model_meta)))
             run_step += 1
             if run_step >= self.n_update_steps:
                 break

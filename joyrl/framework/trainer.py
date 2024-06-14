@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-13 22:12:48
+LastEditTime: 2024-06-14 09:33:01
 Discription: 
 '''
 import copy
@@ -48,6 +48,12 @@ class Trainer(Moduler):
     def _create_modules(self):
         ''' create modules
         '''
+        self.policy_mgr = ray.remote(PolicyMgr).options(**{'num_cpus': 0}).remote(
+            self.cfg,
+            name = 'PolicyMgr',
+            policy = copy.deepcopy(self.policy),
+            latest_model_params_dict = self.latest_model_params_dict,
+        )
         if self.cfg.online_eval:
             recorder = ray.remote(Recorder).options(**{'num_cpus': 0}).remote(self.cfg,
                                                                             name = 'RecorderOnlineTester',
@@ -58,6 +64,7 @@ class Trainer(Moduler):
                 env = copy.deepcopy(self.env), 
                 policy = copy.deepcopy(self.policy),
                 recorder = recorder,
+                policy_mgr = self.policy_mgr,
             )
         self.tracker = ray.remote(Tracker).remote(self.cfg)
         self.collector = ray.remote(Collector).options(**{'num_cpus': 1}).remote(
@@ -67,15 +74,9 @@ class Trainer(Moduler):
             sample_data_que = self.sample_data_que,
             training_data_que = self.training_data_que,
         )
-        self.policy_mgr = ray.remote(PolicyMgr).options(**{'num_cpus': 0}).remote(
-            self.cfg,
-            name = 'PolicyMgr',
-            policy = copy.deepcopy(self.policy),
-            latest_model_params_dict = self.latest_model_params_dict,
-        )
         self.interactors = []
         recorder = ray.remote(Recorder).options(**{'num_cpus': 0}).remote(self.cfg,
-                                                                            name = 'RecorderInteractor',
+                                                                            name = 'Recorder_Interactor',
                                                                             type = 'interactor')
         for i in range(self.cfg.n_interactors):
             interactor = ray.remote(Interactor).options(**{'num_cpus': 1}).remote(
@@ -95,7 +96,7 @@ class Trainer(Moduler):
             self.interactors.append(interactor)
         self.learners = []
         recorder = ray.remote(Recorder).options(**{'num_cpus': 0}).remote(self.cfg,
-                                                                            name = 'RecorderLearner',
+                                                                            name = 'Recorder_Learner',
                                                                             type = 'learner')
         for i in range(self.cfg.n_learners):
             learner = ray.remote(Learner).remote(

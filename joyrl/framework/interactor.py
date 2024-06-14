@@ -5,18 +5,15 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-02-25 15:46:04
 LastEditor: JiangJi
-LastEditTime: 2024-06-10 21:23:21
+LastEditTime: 2024-06-14 09:34:08
 Discription: 
 '''
 import copy
-from ray.util.queue import Full
 from joyrl.algos.base.experience import Exp
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.base import Moduler
-from joyrl.framework.recorder import Recorder
 from joyrl.framework.utils import exec_method
-
 
 class Interactor(Moduler):
     def __init__(self, cfg: MergedConfig, **kwargs) -> None:
@@ -40,6 +37,7 @@ class Interactor(Moduler):
         self.curr_model_step, self.last_model_step = 0, 0
         self.need_update_policy = False
         self._init_n_sample_steps()
+        self._load_model_meta()
         exec_method(self.logger, 'info', 'remote', f"[Interactor.__init__] Start interactor {self.id}!")
 
     def _init_n_sample_steps(self):
@@ -49,7 +47,12 @@ class Interactor(Moduler):
             self.n_sample_steps = self.cfg.exps_trucation_size
         else:
             self.n_sample_steps = float('inf')
-                
+    
+    def _load_model_meta(self):
+        if self.cfg.load_checkpoint:
+            model_meta = self.cfg.model_meta.get(self.name, {})
+            self.policy.load_model_meta(model_meta)
+            
     def _put_exps(self):
         ''' put exps to collector
         '''
@@ -91,7 +94,6 @@ class Interactor(Moduler):
         model_params_dict = exec_method(self._latest_model_params_dict, 'get_value', 'get') # get model params
         model_params = model_params_dict['model_params']
         self.curr_model_step = model_params_dict['step']
-        # print(f"[Interactor._update_policy] interactor {self.id} update policy with model step {self.curr_model_step}")
         self.policy.put_model_params(model_params)
         
     def run(self):
@@ -118,6 +120,8 @@ class Interactor(Moduler):
                     self.summary.append((global_episode, interact_summary))
                     exec_method(self.recorder, 'pub_msg', 'remote', Msg(type = MsgType.RECORDER_PUT_SUMMARY, data = self.summary)) # put summary to stats recorder
                     self.summary = [] # reset summary
+                    model_meta = self.policy.get_model_meta()
+                    exec_method(self.policy_mgr, 'pub_msg', 'remote', Msg(type = MsgType.POLICY_MGR_PUT_MODEL_META, data = (self.name, model_meta)))
                 self.ep_reward, self.ep_step = 0, 0
                 self.curr_obs, self.curr_info = self.env.reset(seed = self.seed)      
             self._put_exps()

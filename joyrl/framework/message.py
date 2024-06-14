@@ -1,5 +1,5 @@
 from enum import Enum, unique
-from typing import Optional, Any
+from typing import Optional
 from dataclasses import dataclass
 
 @unique
@@ -29,7 +29,7 @@ class MsgType(Enum):
     
     # policy_mgr
     POLICY_MGR_PUT_MODEL_PARAMS = 70
-    POLICY_MGR_GET_MODEL_PARAMS = 71
+    POLICY_MGR_PUT_MODEL_META = 71
 
 @dataclass
 class Msg(object):

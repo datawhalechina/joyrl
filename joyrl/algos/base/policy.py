@@ -18,6 +18,7 @@ class BasePolicy(object):
         self.action_space = cfg.action_space
         self.policy_transition = {}
         self.data_after_train = {}
+        self.model_meta = {}
         self.get_state_size()
         self.get_action_size()
         self.create_model()
@@ -152,18 +153,29 @@ class BasePolicy(object):
 
         return self.data_after_train
     
+    def load_model_meta(self, model_meta):
+        self.model_meta = model_meta
+    
+    def update_model_meta(self, dict):
+        ''' update model meta
+        '''
+        self.model_meta.update(dict)
+
+    def get_model_meta(self):
+        return self.model_meta
+
     def save_model(self, fpath):
         ''' save model
         '''
         torch.save(self.model.state_dict(), fpath)
 
-    def load_model(self, fpath):
+    def load_model(self, model_path = ''):
         ''' load model
         '''
         try:
-            self.model.load_state_dict(torch.load(fpath, map_location=self.device))
+            self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         except:
-            print(f"[BasePolicy.load_model] load model from {fpath} failed, please check the model path!")
+            print(f"[BasePolicy.load_model] load model from {model_path} failed, please check the model path!")
 
 class ToyPolicy:
     ''' base policy for traditional RL or non DRL
