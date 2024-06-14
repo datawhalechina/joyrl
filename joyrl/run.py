@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-06-13 22:15:22
+LastEditTime: 2024-06-14 09:41:35
 Discription: 
 '''
 import os,copy
@@ -15,7 +15,7 @@ import gymnasium as gym
 from pathlib import Path
 from joyrl.framework.config import GeneralConfig, MergedConfig, DefaultConfig
 from joyrl.framework.trainer import Trainer
-from joyrl.framework.utils import merge_class_attrs, all_seed, create_module,exec_method
+from joyrl.framework.utils import merge_class_attrs, all_seed, load_model_meta
 
 class Launcher(object):
     def __init__(self, **kwargs):
@@ -162,13 +162,14 @@ class Launcher(object):
         policy = policy_mod.Policy(self.cfg) 
         self.cfg.start_model_step = 0
         if self.cfg.load_checkpoint:
-            policy.load_model(f"tasks/{self.cfg.load_path}/models/{self.cfg.load_model_step}")
+            self.cfg.model_meta = load_model_meta(f"tasks/{self.cfg.load_path}/models")
+            policy.load_model(model_path = f"tasks/{self.cfg.load_path}/models/{self.cfg.load_model_step}")
             policy.save_model(f"{self.cfg.model_dir}/{self.cfg.load_model_step}")
             if isinstance(self.cfg.load_model_step, int):
                 self.cfg.start_model_step = self.cfg.load_model_step
-            if str(self.cfg.load_model_step).startswith('best'):
+            if str(self.cfg.load_model_step).startswith('best') and self.cfg.restore_model_meta:
                 try:
-                    self.cfg.start_model_step = int(self.cfg.load_model_step.split('_')[-1])
+                    self.cfg.start_model_step = self.cfg.model_meta['OnlineTester']['best_model_step']
                 except:
                     self.cfg.start_model_step = 0
         data_handler = data_handler_mod.DataHandler(self.cfg)

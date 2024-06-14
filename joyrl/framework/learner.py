@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 09:34:20
+LastEditTime: 2024-06-14 09:40:42
 Discription: 
 '''
 import numpy as np
@@ -38,7 +38,7 @@ class Learner(Moduler):
             self.n_update_steps = float('inf')
 
     def _load_model_meta(self):
-        if self.cfg.load_checkpoint:
+        if self.cfg.load_checkpoint and self.cfg.restore_model_meta:
             model_meta = self.cfg.model_meta.get(self.name, {})
             self.policy.load_model_meta(model_meta)
             

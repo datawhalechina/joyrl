@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:30:09
 LastEditor: JiangJi
-LastEditTime: 2024-06-11 13:31:40
+LastEditTime: 2024-06-14 09:39:48
 Discription: 
 '''
 class DefaultConfig:
@@ -52,6 +52,7 @@ class GeneralConfig(object):
         self.model_save_fre = 500 # model save frequency per update step
         # load model settings
         self.load_checkpoint = False # if load checkpoint
+        self.restore_model_meta = True # if restore model meta
         self.load_path = "Train_single_CartPole-v1_DQN_20230515-211721" # path to load model
         self.load_model_step = 'best' # load model at which step
         # stats recorder settings

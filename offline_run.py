@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 09:27:40
+LastEditTime: 2024-06-14 09:40:18
 Discription: 
 '''
 import os,copy
@@ -167,7 +167,7 @@ class Launcher(object):
             policy.save_model(f"{self.cfg.model_dir}/{self.cfg.load_model_step}")
             if isinstance(self.cfg.load_model_step, int):
                 self.cfg.start_model_step = self.cfg.load_model_step
-            if str(self.cfg.load_model_step).startswith('best'):
+            if str(self.cfg.load_model_step).startswith('best') and self.cfg.restore_model_meta:
                 try:
                     self.cfg.start_model_step = self.cfg.model_meta['OnlineTester']['best_model_step']
                 except:

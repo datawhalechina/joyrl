@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-02-25 15:46:04
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 09:34:08
+LastEditTime: 2024-06-14 09:40:51
 Discription: 
 '''
 import copy
@@ -49,7 +49,7 @@ class Interactor(Moduler):
             self.n_sample_steps = float('inf')
     
     def _load_model_meta(self):
-        if self.cfg.load_checkpoint:
+        if self.cfg.load_checkpoint and self.cfg.restore_model_meta:
             model_meta = self.cfg.model_meta.get(self.name, {})
             self.policy.load_model_meta(model_meta)
             

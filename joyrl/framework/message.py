@@ -1,5 +1,5 @@
 from enum import Enum, unique
-from typing import Optional
+from typing import Optional, Any
 from dataclasses import dataclass
 
 @unique
