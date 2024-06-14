@@ -6,3 +6,5 @@ seaborn==0.13.2
 dill==0.3.8
 scipy==1.13.0
 pygame==2.5.2
+swig==4.2.1
+gymnasium[box2d]==0.29.1

@@ -52,12 +52,13 @@ class BasePolicy(object):
     def get_action_size(self):
         ''' get action size
         '''
-        # action_size must be [action_dim_1, action_dim_2, ...]
+        # action_size must be [action_dim_1, action_dim_2, ..., action_dim_n]
         if isinstance(self.action_space, Box):
-            self.action_size_list = [self.action_space.shape[0]]
-            self.action_type_list = ["CONTINUOUS"]
-            self.action_high_list = [self.action_space.high[0]]
-            self.action_low_list = [self.action_space.low[0]]  
+            n_action_head = self.action_space.shape[0]
+            self.action_size_list = [1] * n_action_head
+            self.action_type_list = ["CONTINUOUS"] * n_action_head
+            self.action_high_list = [self.action_space.high[i] for i in range(n_action_head)]
+            self.action_low_list = [self.action_space.low[i] for i in range(n_action_head)]
         elif isinstance(self.action_space, Discrete):
             self.action_size_list = [self.action_space.n]
             self.action_type_list = ["DISCRETE"]
