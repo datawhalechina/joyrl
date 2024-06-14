@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-20 23:39:18
 LastEditor: JiangJi
-LastEditTime: 2024-01-09 13:10:39
+LastEditTime: 2024-06-14 22:44:09
 Discription: 
 '''
 class AlgoConfig():
@@ -43,6 +43,6 @@ class AlgoConfig():
         #     }
         ]
         self.merge_layers = [
-            {'layer_type': 'linear', 'layer_size': [256], 'activation': 'ReLU'},
-            {'layer_type': 'linear', 'layer_size': [256], 'activation': 'ReLU'},
+            # {'layer_type': 'linear', 'layer_size': [256], 'activation': 'ReLU'},
+            # {'layer_type': 'linear', 'layer_size': [256], 'activation': 'ReLU'},
         ]

@@ -1,8 +1,9 @@
 general_cfg:
-  joyrl_version: 0.6.1.2
+  joyrl_version: 0.6.4.1
   algo_name: DoubleDQN
   env_name: gym
-  device: cpu
+  interactor_device: cpu
+  learner_device: cpu 
   seed: 1
   mode: train
   max_episode: -1 

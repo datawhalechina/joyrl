@@ -1,9 +1,9 @@
 general_cfg:
-  joyrl_version: 0.6.2.5
+  joyrl_version: 0.6.4.1
   algo_name: DQN 
   env_name: gym 
   interactor_device: cpu
-  learner_device: cuda 
+  learner_device: cpu 
   mode: train 
   is_learner_async: false
   collect_traj: false 

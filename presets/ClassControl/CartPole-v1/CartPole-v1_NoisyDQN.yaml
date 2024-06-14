@@ -1,8 +1,9 @@
 general_cfg:
-  joyrl_version: 0.6.1.4
+  joyrl_version: 0.6.4.1
   algo_name: NoisyDQN
   env_name: gym
-  device: cpu
+  interactor_device: cpu
+  learner_device: cpu 
   seed: 1
   mode: train
   collect_traj: false
@@ -14,6 +15,7 @@ general_cfg:
   online_eval: true 
   online_eval_episode: 10
   model_save_fre: 500
+  policy_summary_fre: 100
 algo_cfg:
   merge_layers:
     - layer_type: noisy_linear
