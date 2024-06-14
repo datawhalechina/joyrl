@@ -1,7 +1,4 @@
 ray[default]==2.6.3
-torch==2.2.1
-torchaudio==2.2.1
-torchvision==0.17.1
 gymnasium==0.29.1
 tensorboard==2.16.2
 matplotlib==3.8.4

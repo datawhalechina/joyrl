@@ -13,7 +13,7 @@ class BasePolicy(object):
     '''
     def __init__(self, cfg : MergedConfig) -> None:
         self.cfg = cfg
-        self.device = torch.device(cfg.device) 
+        self.device = torch.device('cpu')
         self.obs_space = cfg.obs_space
         self.action_space = cfg.action_space
         self.policy_transition = {}
@@ -25,6 +25,14 @@ class BasePolicy(object):
         self.create_optimizer()
         self.create_summary()
     
+    def to(self, device):
+        ''' set device
+        '''
+        for obj in self.__dict__.values():
+            if isinstance(obj, torch.nn.Module):
+                obj.to(device)
+        self.device = torch.device(device)
+
     def get_state_size(self):
         ''' get state size
         '''
@@ -137,12 +145,12 @@ class BasePolicy(object):
         '''
         states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
         # multi-head state
-        self.states = [ torch.tensor(states, dtype = torch.float32, device = self.cfg.device) ]
+        self.states = [ torch.tensor(states, dtype = torch.float32, device = self.device) ]
         # multi-head action
-        self.actions = [ torch.tensor(actions, dtype = torch.float32, device = self.cfg.device) ]
-        self.rewards = torch.tensor(rewards, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
-        self.next_states = torch.tensor(next_states, dtype = torch.float32, device = self.cfg.device)
-        self.dones = torch.tensor(dones, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
+        self.actions = [ torch.tensor(actions, dtype = torch.float32, device = self.device) ]
+        self.rewards = torch.tensor(rewards, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
+        self.next_states = torch.tensor(next_states, dtype = torch.float32, device = self.device)
+        self.dones = torch.tensor(dones, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
 
     def update_data_after_learn(self):
         ''' update data after training

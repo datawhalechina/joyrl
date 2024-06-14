@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-01-25 09:58:33
 LastEditor: JiangJi
-LastEditTime: 2024-06-13 11:02:38
+LastEditTime: 2024-06-14 20:56:51
 Discription: 
 '''
 import torch
@@ -16,7 +16,7 @@ from joyrl.algos.base.policy import BasePolicy
 from joyrl.algos.base.network import QNetwork
 
 class Policy(BasePolicy):
-    def __init__(self,cfg) -> None:
+    def __init__(self, cfg):
         super(Policy, self).__init__(cfg)
         self.gamma = cfg.gamma  
         # e-greedy parameters

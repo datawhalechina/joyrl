@@ -35,7 +35,8 @@ class GeneralConfig(object):
         self.env_name = "gym" # name of environment
         self.algo_name = "DQN" # name of algorithm
         self.mode = "train" # train, test
-        self.device = "cpu" # device to use
+        self.interactor_device = "cpu" # device to use for interactor
+        self.learner_device = "cpu" # device to use for learner
         self.seed = 0 # random seed
         self.is_learner_async = False # if learner is async
         self.max_episode = -1 # number of episodes for training, set -1 to keep running

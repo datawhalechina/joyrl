@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-02-25 15:46:04
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 09:40:51
+LastEditTime: 2024-06-14 21:04:30
 Discription: 
 '''
 import copy
@@ -21,6 +21,7 @@ class Interactor(Moduler):
         self.id = kwargs.get('id', 0)
         self.env = kwargs.get('env', None)
         self.policy = copy.deepcopy(kwargs['policy'])
+        self.policy.to(self.cfg.interactor_device)
         self.data_handler = kwargs['data_handler']
         self.tracker = kwargs['tracker']
         self.collector = kwargs['collector']

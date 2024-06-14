@@ -5,10 +5,11 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 09:40:18
+LastEditTime: 2024-06-14 21:24:27
 Discription: 
 '''
 import os,copy
+import torch
 import ray
 import argparse,datetime,importlib,yaml
 import gymnasium as gym
@@ -33,7 +34,7 @@ class Launcher(object):
         self._config_dirs()  # create dirs
         self._save_cfgs({'general_cfg': self.general_cfg, 'algo_cfg': self.algo_cfg, 'env_cfg': self.env_cfg})
         all_seed(seed=self.general_cfg.seed)  # set seed == 0 means no seed
-        
+    
     def _get_default_cfg(self):
         ''' get default config
         '''

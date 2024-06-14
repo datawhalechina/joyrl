@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-13 12:58:38
+LastEditTime: 2024-06-14 21:07:04
 Discription: 
 '''
 import torch
@@ -85,7 +85,7 @@ class Policy(BasePolicy):
 
     @torch.no_grad()
     def predict_action(self, state, **kwargs):
-        state = torch.tensor(np.array(state), device=self.device, dtype=torch.float32)
+        state = torch.tensor(np.array(state), device = self.device, dtype=torch.float32)
         # single state shape must be [batch_size, state_dim]
         if state.dim() == 1: state = state.unsqueeze(dim=0)
         model_outputs = self.model(state)

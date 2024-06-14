@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:01:23
 LastEditor: JiangJi
-LastEditTime: 2024-06-01 17:01:07
+LastEditTime: 2024-06-14 20:11:42
 Discription: 
 '''
 import sys,os
@@ -20,9 +20,6 @@ def get_version() -> str:
 def get_install_requires() -> str:
     return [
         "ray[default]==2.6.3",
-        "torch==2.2.1",
-        "torchaudio==2.2.1",
-        "torchvision==0.17.1",
         "gymnasium==0.29.1",
         "tensorboard==2.16.2",
         "matplotlib==3.8.4",

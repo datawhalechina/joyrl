@@ -5,12 +5,13 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 17:50:03
+LastEditTime: 2024-06-14 21:14:51
 Discription: 
 '''
 import copy
 import time
 import ray
+import torch
 from ray.util.queue import Queue as RayQueue
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
@@ -34,10 +35,33 @@ class Trainer(Moduler):
         self.env = kwargs['env']
         self.policy = kwargs['policy']
         self.data_handler = kwargs['data_handler']
+        self._check_gpu() # check gpu
         self._print_cfgs() # print parameters
         self._create_shared_data() # create data queues
         self._create_modules() # create modules
-        
+
+    def _check_gpu(self):
+        self.cfg.gpu_resources_per_interactor = 0
+        self.cfg.gpu_resources_per_learner = 0
+        if self.cfg.interactor_device == 'cuda' and self.cfg.learner_device == 'cuda':
+            if not torch.cuda.is_available():
+                exec_method(self.logger, 'warning', 'remote', "CUDA is not available, use cpu instead!")
+                self.cfg.device = 'cpu'
+        else:
+            if not torch.cuda.is_available():
+                exec_method(self.logger, 'warning', 'remote', "CUDA is not available, use cpu instead!")
+                self.cfg.device = 'cpu'
+                self.cfg.interactor_device = 'cpu'
+                self.cfg.learner_device = 'cpu'
+            else:
+                if self.cfg.interactor_device == 'cuda' and self.cfg.learner_device == 'cuda':
+                    self.cfg.gpu_resources_per_interactor = 0.4 / self.cfg.n_interactors
+                    self.cfg.gpu_resources_per_learner = 0.6 / self.cfg.n_learners
+                elif self.cfg.interactor_device == 'cpu' and self.cfg.learner_device == 'cuda':
+                    self.cfg.gpu_resources_per_learner = 1.0 / self.cfg.n_learners
+                else:
+                    self.cfg.gpu_resources_per_interactor = 1.0 / self.cfg.n_interactors
+            
     def _create_shared_data(self):
         self.latest_model_params_dict = DataActor.options(**{'num_cpus': 0}).remote({'step': 0, 'model_params': self.policy.get_model_params()})
         self.sample_data_que = QueueActor.remote(maxsize=256)
@@ -51,7 +75,7 @@ class Trainer(Moduler):
         self.policy_mgr = ray.remote(PolicyMgr).options(**{'num_cpus': 0}).remote(
             self.cfg,
             name = 'PolicyMgr',
-            policy = copy.deepcopy(self.policy),
+            policy = self.policy,
             latest_model_params_dict = self.latest_model_params_dict,
         )
         self.tracker = ray.remote(Tracker).remote(self.cfg)
@@ -81,12 +105,12 @@ class Trainer(Moduler):
                                                                             name = 'Recorder_Interactor',
                                                                             type = 'interactor')
         for i in range(self.cfg.n_interactors):
-            interactor = ray.remote(Interactor).options(**{'num_cpus': 1}).remote(
+            interactor = ray.remote(Interactor).options(**{'num_cpus': 1, 'num_gpus': self.cfg.gpu_resources_per_interactor}).remote(
                 self.cfg,
                 id = i,
                 name = f"Interactor_{i}",
                 env = copy.deepcopy(self.env),
-                policy = copy.deepcopy(self.policy),
+                policy = self.policy,
                 data_handler = copy.deepcopy(self.data_handler),  # only use the static method handle_exps_after_interact
                 tracker = self.tracker,
                 collector = self.collector,
@@ -101,11 +125,11 @@ class Trainer(Moduler):
                                                                             name = 'Recorder_Learner',
                                                                             type = 'learner')
         for i in range(self.cfg.n_learners):
-            learner = ray.remote(Learner).remote(
+            learner = ray.remote(Learner).options(**{'num_cpus': 1, 'num_gpus': self.cfg.gpu_resources_per_learner}).remote(
                 self.cfg,
                 id = i,
                 name = f"Learner_{i}",
-                policy = copy.deepcopy(self.policy),
+                policy = self.policy,
                 policy_mgr = self.policy_mgr,
                 collector = self.collector,
                 data_handler = self.data_handler,
