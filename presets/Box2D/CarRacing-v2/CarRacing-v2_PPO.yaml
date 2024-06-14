@@ -1,0 +1,69 @@
+general_cfg:
+  joyrl_version: 0.6.1.4
+  algo_name: PPO
+  env_name: gym 
+  device: cpu 
+  mode: train 
+  exps_trucation_size: 200
+  is_learner_async: false
+  load_checkpoint: false 
+  load_path: Train_CartPole-v1_PPO_20231225-124842 # if load checkpoint, then config path in 'tasks' dir
+  load_model_step: best 
+  n_interactors: 10
+  max_episode: -1
+  max_step: 200 
+  seed: 1 
+  online_eval: true 
+  online_eval_episode: 10 
+  model_save_fre: 10 
+  policy_summary_fre: 5
+  interact_summary_fre: 100
+algo_cfg:
+  branch_layers:
+    - name: feature_1
+      layers:
+      - layer_type: conv2d
+        in_channel: 3
+        out_channel: 32
+        kernel_size: 8
+        stride: 4
+        activation: relu
+      - layer_type: pooling
+        pooling_type: max2d
+        kernel_size: 2
+        stride: 2
+        padding: 0
+      - layer_type: conv2d
+        in_channel: 32
+        out_channel: 64 
+        kernel_size: 4
+        stride: 2
+        activation: relu
+      - layer_type: pooling
+        pooling_type: avg2d
+        kernel_size: 2
+        stride: 2
+        padding: 0
+      - layer_type: flatten
+      - layer_type: norm
+        norm_type: LayerNorm
+        normalized_shape: 512
+      - layer_type: linear
+        layer_size: [128]
+        activation: relu
+  buffer_type: ONPOLICY_QUE
+  lr: 0.0003
+  actor_lr: 0.003
+  critic_lr: 0.01
+  entropy_coef: 0.001
+  critic_loss_coef: 0.5
+  eps_clip: 0.2
+  gamma: 0.95
+  gae_lambda: 0.95
+  k_epochs: 4
+  batch_size: 2000
+  sgd_batch_size: 50
+env_cfg:
+  id: CarRacing-v2
+  render_mode: null
+  

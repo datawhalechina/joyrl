@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-12 00:06:25
+LastEditTime: 2024-06-14 23:51:13
 Discription: 
 '''
 import copy
@@ -92,7 +92,7 @@ class ActionLayers(nn.Module):
         self.input_size = input_size
         self.action_size_list = self.cfg.action_size_list
         self.action_type_list = self.cfg.action_type_list
-        assert len(self.action_type_list) == 1 and len(self.action_type_list) == len(self.action_size_list), "action_type_list and action_size_list must have the same length, and only one output"
+        assert len(self.action_type_list) == len(self.action_size_list), "action_type_list and action_size_list must have the same length, and only one output"
         self.actor_outputs = []
         self.create_graph()
 
