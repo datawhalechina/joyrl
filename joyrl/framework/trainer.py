@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 09:33:01
+LastEditTime: 2024-06-14 17:50:03
 Discription: 
 '''
 import copy
@@ -54,6 +54,7 @@ class Trainer(Moduler):
             policy = copy.deepcopy(self.policy),
             latest_model_params_dict = self.latest_model_params_dict,
         )
+        self.tracker = ray.remote(Tracker).remote(self.cfg)
         if self.cfg.online_eval:
             recorder = ray.remote(Recorder).options(**{'num_cpus': 0}).remote(self.cfg,
                                                                             name = 'RecorderOnlineTester',
@@ -65,8 +66,9 @@ class Trainer(Moduler):
                 policy = copy.deepcopy(self.policy),
                 recorder = recorder,
                 policy_mgr = self.policy_mgr,
+                tracker = self.tracker,
             )
-        self.tracker = ray.remote(Tracker).remote(self.cfg)
+        
         self.collector = ray.remote(Collector).options(**{'num_cpus': 1}).remote(
             self.cfg,
             name = 'Collector',

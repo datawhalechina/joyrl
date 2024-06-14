@@ -10,6 +10,7 @@ general_cfg:
   load_checkpoint: false
   load_path: Train_single_CartPole-v1_DQN_20230515-211721
   load_model_step: best 
+  reward_threshold: 200
   max_episode: -1 
   max_step: 200 
   seed: 1 

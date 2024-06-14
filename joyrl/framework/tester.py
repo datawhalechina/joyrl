@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 09:23:47
+LastEditTime: 2024-06-14 17:50:26
 Discription: 
 '''
 import time
@@ -26,10 +26,12 @@ class OnlineTester(Moduler):
         self.policy = copy.deepcopy(kwargs['policy'])
         self.recorder = kwargs['recorder']
         self.policy_mgr = kwargs['policy_mgr']
+        self.tracker = kwargs['tracker']
         self.seed = self.cfg.seed
         self.best_eval_reward = -float('inf')
         self.curr_test_step = -1
         self.curr_obs, self.curr_info = self.env.reset(seed = self.seed) # reset env
+        self.reward_threshold_cnt = 0
         self._t_start()
 
     def _t_start(self):
@@ -85,5 +87,10 @@ class OnlineTester(Moduler):
                     self.best_eval_reward = mean_eval_reward
                     model_meta = {'best_eval_reward': self.best_eval_reward, 'best_model_step': model_step}
                     exec_method(self.policy_mgr, 'pub_msg', 'remote', Msg(type = MsgType.POLICY_MGR_PUT_MODEL_META, data = (self.name, model_meta)))
+                if mean_eval_reward >= self.cfg.reward_threshold:
+                    self.reward_threshold_cnt += 1
+                    if self.reward_threshold_cnt >= self.cfg.reward_threshold_limit:
+                        exec_method(self.logger, 'info', 'remote', f"[OnlineTester._eval_policy] policy has reached the reward threshold: {self.cfg.reward_threshold}, over {self.cfg.reward_threshold_limit} episodes, will stop training!")
+                        exec_method(self.tracker, 'pub_msg', 'remote', Msg(type = MsgType.TRACKER_FORCE_TASK_END))
             time.sleep(1)
         

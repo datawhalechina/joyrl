@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:30:09
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 09:39:48
+LastEditTime: 2024-06-14 17:44:54
 Discription: 
 '''
 class DefaultConfig:
@@ -40,6 +40,8 @@ class GeneralConfig(object):
         self.is_learner_async = False # if learner is async
         self.max_episode = -1 # number of episodes for training, set -1 to keep running
         self.max_step = -1 # number of episodes for testing, set -1 means unlimited steps
+        self.reward_threshold = float('inf') # reward threshold to stop training
+        self.reward_threshold_limit = 10 # number of episodes to check reward threshold
         self.collect_traj = False # if collect trajectory or not
         # multiprocessing settings
         self.n_interactors = 1 # number of workers

@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# coding=utf-8
+'''
+Author: JiangJi
+Email: johnjim0816@gmail.com
+Date: 2024-02-25 15:46:04
+LastEditor: JiangJi
+LastEditTime: 2024-06-14 17:49:49
+Discription: 
+'''
 from enum import Enum, unique
 from typing import Optional, Any
 from dataclasses import dataclass
@@ -10,6 +20,7 @@ class MsgType(Enum):
     TRACKER_INCREASE_UPDATE_STEP = 2
     TRACKER_GET_UPDATE_STEP = 3
     TRACKER_CHECK_TASK_END = 4
+    TRACKER_FORCE_TASK_END = 5
 
     # interactor
     INTERACTOR_SAMPLE = 10

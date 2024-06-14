@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-04-28 16:16:04
 LastEditor: JiangJi
-LastEditTime: 2023-12-02 23:29:10
+LastEditTime: 2024-06-14 17:49:11
 Discription: 
 '''
 from joyrl.framework.message import Msg, MsgType
@@ -20,6 +20,7 @@ class Tracker(Moduler):
         self.global_episode = 0 # current global episode
         self.global_sample_count = 0 # global sample count
         self.global_update_step = 0 # global update step
+        self.force_task_end = False # force task end
         self.max_episode = cfg.max_episode # max episode
 
     def pub_msg(self, msg: Msg):
@@ -36,6 +37,8 @@ class Tracker(Moduler):
             self._increase_update_step(i = update_step_delta)
         elif msg_type == MsgType.TRACKER_CHECK_TASK_END:
             return self._check_task_end()
+        elif msg_type == MsgType.TRACKER_FORCE_TASK_END:
+            self.force_task_end = True
         else:
             raise NotImplementedError
         
@@ -52,6 +55,8 @@ class Tracker(Moduler):
     def _check_task_end(self):
         ''' check if episode reaches the max episode
         '''
+        if self.force_task_end:
+            return True
         if self.max_episode < 0:
             return False
         return self.global_episode >= self.max_episode
