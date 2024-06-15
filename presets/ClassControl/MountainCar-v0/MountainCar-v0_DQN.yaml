@@ -1,0 +1,40 @@
+general_cfg:
+  joyrl_version: 0.6.2.5
+  algo_name: DQN
+  env_name: gym
+  interactor_device: cpu
+  learner_device: cpu 
+  mode: train
+  is_learner_async: false
+  collect_traj: false
+  n_interactors: 1
+  load_checkpoint: false
+  load_path: "Train_MountainCar-v0_DQN"
+  load_model_step: "best"
+  max_episode: -1
+  max_step: 200
+  seed: 1
+  online_eval: true
+  online_eval_episode: 10
+algo_cfg:
+  learn_frequency: 1
+  value_layers:
+    - layer_type: linear
+      layer_size: [256]
+      activation: relu
+    - layer_type: linear
+      layer_dim: [128]
+      activation: none
+  batch_size: 64
+  max_buffer_size: 10000
+  epsilon_decay: 1500
+  epsilon_end: 0.01
+  epsilon_start: 0.98
+  gamma: 0.98
+  lr: 0.001
+  target_update: 10
+env_cfg:
+  id: MountainCar-v0
+  render_mode: null
+  wrappers:
+    - wrapper_name: GymDiscreteActionWrapper

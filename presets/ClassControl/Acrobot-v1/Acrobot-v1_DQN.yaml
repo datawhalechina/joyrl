@@ -1,0 +1,47 @@
+general_cfg:
+  joyrl_version: 0.6.2.5
+  algo_name: DQN
+  env_name: gym
+  interactor_device: cpu
+  learner_device: cpu 
+  mode: train
+  is_learner_async: false
+  collect_traj: false
+  n_interactors: 1
+  load_checkpoint: true
+  load_path: Train_Acrobot-v1_DQN_2024613
+  load_model_step: best
+  max_episode: -1
+  max_step: 200
+  seed: 1
+  online_eval: true
+  online_eval_episode: 10
+  model_save_fre: 500
+  policy_summary_fre: 100
+
+algo_cfg:
+  learn_frequency: 1
+  value_layers:
+    - layer_type: linear
+      layer_dim: [6,256]
+      activation: relu
+    - layer_type: linear
+      layer_dim: [256,256]
+      activation: relu
+    - layer_type: linear
+      layer_dim: [256,3]
+      activation: none
+  batch_size: 64
+  max_buffer_size: 100000
+  epsilon_decay: 500
+  epsilon_end: 0.01
+  epsilon_start: 0.95
+  gamma: 0.99
+  lr: 0.0001
+  target_update: 4
+
+env_cfg:
+  id: Acrobot-v1
+  render_mode: null
+  wrappers:
+    - wrapper_name: GymDiscreteActionWrapper
