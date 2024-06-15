@@ -1,0 +1,43 @@
+general_cfg:
+  algo_name: DoubleDQN 
+  env_name: gym 
+  mode: train 
+  is_learner_async: false
+  collect_traj: false
+  n_interactors: 1
+  load_checkpoint: false
+  load_path: Train_ALE/Acrobot-v1_DoubleDQN_20240114-101724
+  load_model_step: best 
+  max_episode: -1
+  max_step: 200
+  seed: 1
+  online_eval: true 
+  online_eval_episode: 10
+  model_save_fre: 500
+  policy_summary_fre: 100
+
+algo_cfg:
+  merege_layers: []
+  branch_layers:
+    - name: feature1
+      layers:
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+  buffer_type: REPLAY_QUE
+  batch_size: 64
+  max_buffer_size: 100000
+  epsilon_decay: 500
+  epsilon_end: 0.01
+  epsilon_start: 0.95
+  gamma: 0.99
+  lr: 0.0001
+  target_update: 4
+env_cfg:
+  id: Acrobot-v1
+  render_mode: null
+  wrappers:
+    - wrapper_name: GymDiscreteActionWrapper
