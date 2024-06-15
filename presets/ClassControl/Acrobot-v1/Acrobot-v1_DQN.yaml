@@ -21,16 +21,13 @@ general_cfg:
 
 algo_cfg:
   learn_frequency: 1
-  value_layers:
+  merge_layers:
     - layer_type: linear
-      layer_dim: [6,256]
+      layer_size: [256]
       activation: relu
     - layer_type: linear
-      layer_dim: [256,256]
+      layer_dim: [256]
       activation: relu
-    - layer_type: linear
-      layer_dim: [256,3]
-      activation: none
   batch_size: 64
   max_buffer_size: 100000
   epsilon_decay: 500

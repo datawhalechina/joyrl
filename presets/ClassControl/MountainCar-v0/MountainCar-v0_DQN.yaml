@@ -18,13 +18,13 @@ general_cfg:
   online_eval_episode: 10
 algo_cfg:
   learn_frequency: 1
-  value_layers:
+  merge_layers:
     - layer_type: linear
       layer_size: [256]
       activation: relu
     - layer_type: linear
-      layer_dim: [128]
-      activation: none
+      layer_dim: [256]
+      activation: relu
   batch_size: 64
   max_buffer_size: 10000
   epsilon_decay: 1500
