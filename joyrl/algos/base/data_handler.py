@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-11 20:12:47
+LastEditTime: 2024-06-17 01:25:53
 Discription: 
 '''
 import torch
@@ -70,10 +70,12 @@ class BaseDataHandler:
         ''' convert exps to training data
         '''
         model_steps = np.array([exp.model_step for exp in exps]) # [batch_size]
-        states = np.array([exp.state for exp in exps]) # [batch_size, state_dim]
-        actions = np.array([exp.action for exp in exps]) # [batch_size, action_dim]
+        # multi-head state, [[batch_size, state_dim_head_0], [batch_size, state_dim_head_1], ...]
+        states = [ np.array([exp.state[i] for exp in exps]) for i in range(len(exps[0].state))]
+        next_states = [ np.array([exp.next_state[i] for exp in exps]) for i in range(len(exps[0].next_state))]
+        # multi-head action, [[batch_size, action_dim_head_0], [batch_size, action_dim_head_1], ...]
+        actions = [ np.array([exp.action[i] for exp in exps]) for i in range(len(exps[0].action))]
         rewards = np.array([exp.reward for exp in exps]) # [batch_size]
-        next_states = np.array([exp.next_state for exp in exps]) # [batch_size, state_dim]
         dones = np.array([exp.done for exp in exps]) # [batch_size] 
         self.data_after_train = {'model_steps': model_steps, 'states': states, 'actions': actions, 'rewards': rewards, 'next_states': next_states, 'dones': dones}
 

@@ -1,4 +1,5 @@
 general_cfg:
+  joyrl_version: 0.6.5
   algo_name: DoubleDQN 
   env_name: gym 
   mode: train 
@@ -40,4 +41,5 @@ env_cfg:
   id: Acrobot-v1
   render_mode: null
   wrappers:
-    - wrapper_name: GymDiscreteActionWrapper
+    - wrapper_name: MultiHeadObsWrapper
+    - wrapper_name: MultiHeadActionWrapper

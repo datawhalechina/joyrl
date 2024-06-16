@@ -5,13 +5,14 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 21:14:51
+LastEditTime: 2024-06-16 19:43:24
 Discription: 
 '''
 import copy
 import time
 import ray
 import torch
+
 from ray.util.queue import Queue as RayQueue
 from joyrl.framework.message import Msg, MsgType
 from joyrl.framework.config import MergedConfig
@@ -23,9 +24,8 @@ from joyrl.framework.learner import Learner
 from joyrl.framework.tester import OnlineTester
 from joyrl.framework.policy_mgr import PolicyMgr
 from joyrl.framework.recorder import Recorder
-from joyrl.framework.utils import exec_method, create_module
-from joyrl.framework.utils import Logger
-from joyrl.framework.utils import DataActor, QueueActor
+from joyrl.framework.utils import exec_method, DataActor, QueueActor
+
 
 class Trainer(Moduler):
     ''' Collector for collecting training data
@@ -39,7 +39,7 @@ class Trainer(Moduler):
         self._print_cfgs() # print parameters
         self._create_shared_data() # create data queues
         self._create_modules() # create modules
-
+            
     def _check_gpu(self):
         self.cfg.gpu_resources_per_interactor = 0
         self.cfg.gpu_resources_per_learner = 0
@@ -149,7 +149,8 @@ class Trainer(Moduler):
             tplt = "{:^20}\t{:^20}\t{:^20}"
             exec_method(self.logger, 'info', 'get', tplt.format("Name", "Value", "Type"))
             for k, v in cfg_dict.items():
-                if v.__class__.__name__ == 'list': # convert list to str
+                print(v.__class__.__name__ )
+                if v.__class__.__name__ == 'list' or 'dict':
                     v = str(v)
                 if v is None: # avoid NoneType
                     v = 'None'

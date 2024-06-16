@@ -5,15 +5,17 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 21:24:27
+LastEditTime: 2024-06-16 19:49:01
 Discription: 
 '''
 import os,copy
 import torch
 import ray
+from gymnasium.spaces import Box, Discrete
 import argparse,datetime,importlib,yaml
 import gymnasium as gym
 from pathlib import Path
+from joyrl.framework.core_types import ActionType, ActionSpaceInfo, ObsType, ObsSpaceInfo
 from joyrl.framework.config import GeneralConfig, MergedConfig, DefaultConfig
 from joyrl.framework.trainer import Trainer
 from joyrl.framework.utils import merge_class_attrs, all_seed, load_model_meta
@@ -175,10 +177,42 @@ class Launcher(object):
                     self.cfg.start_model_step = 0
         data_handler = data_handler_mod.DataHandler(self.cfg)
         return policy, data_handler
+    
+    def _check_obs_action_space_info(self, env):
+        obs_space = env.observation_space
+        if isinstance(obs_space, Box):
+            if len(obs_space.shape) == 3:
+                state_type_list = [ObsType.IMAGE]
+                state_size_list = [[obs_space.shape[0], obs_space.shape[1], obs_space.shape[2]]]
+            else:
+                state_type_list = [ObsType.VECTOR]
+                state_size_list = [[obs_space.shape[0]]]
+        elif isinstance(self.obs_space, Discrete):
+            state_type_list = [ObsType.VECTOR]
+            state_size_list = [[obs_space.n]]
+        else:
+            raise ValueError('obs_space type error')
+        self.cfg.obs_space = {'type': state_type_list, 'size': state_size_list}
+        self.cfg.obs_space_info = ObsSpaceInfo(size = state_size_list, type = state_type_list)
+        action_space = env.action_space
+        if isinstance(action_space, Box):
+            n_action_head = action_space.shape[0]
+            action_type_list = [ActionType.CONTINUOUS] * n_action_head
+            action_size_list = [[action_space.low[i], action_space.high[i]] for i in range(n_action_head)]
+            
+        elif isinstance(action_space, Discrete):
+            action_type_list = [ActionType.DISCRETE]
+            action_size_list = [[int(action_space.n)]]
+
+        else:
+            raise ValueError('action_space type error')
+        self.cfg.action_space = {'type': action_type_list, 'size': action_size_list}
+        self.cfg.action_space_info = ActionSpaceInfo(size = action_size_list, type = action_type_list)
 
     def run(self) -> None:
         ray.init()     
         env = self.env_config() # create single env
+        self._check_obs_action_space_info(env)
         policy, data_handler = self.policy_config() # configure policy and data_handler                         
         trainer = Trainer(self.cfg, name = "Trainer", env = env, policy = policy, data_handler = data_handler) # create trainer
         trainer.run()

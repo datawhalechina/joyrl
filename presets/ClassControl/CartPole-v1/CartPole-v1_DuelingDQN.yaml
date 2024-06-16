@@ -1,5 +1,5 @@
 general_cfg:
-  joyrl_version: 0.6.4.1
+  joyrl_version: 0.6.5
   algo_name: DuelingDQN
   env_name: gym
   interactor_device: cpu
@@ -37,4 +37,5 @@ env_cfg:
   id: CartPole-v1
   render_mode: null
   wrappers:
-    - wrapper_name: GymDiscreteActionWrapper
+    - wrapper_name: MultiHeadObsWrapper
+    - wrapper_name: MultiHeadActionWrapper

@@ -1,5 +1,5 @@
 general_cfg:
-  joyrl_version: 0.6.2.2
+  joyrl_version: 0.6.5
   algo_name: PPO
   env_name: gym 
   device: cpu 
@@ -65,5 +65,6 @@ env_cfg:
   id: CartPole-v1
   render_mode: null
   wrappers:
-    - wrapper_name: GymDiscreteActionWrapper
+    - wrapper_name: MultiHeadObsWrapper
+    - wrapper_name: MultiHeadActionWrapper
   

@@ -37,4 +37,4 @@ env_cfg:
   id: MountainCar-v0
   render_mode: null
   wrappers:
-    - wrapper_name: GymDiscreteActionWrapper
+    - wrapper_name: MultiHeadActionWrapper

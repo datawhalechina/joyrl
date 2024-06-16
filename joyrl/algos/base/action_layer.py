@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 23:48:12
+LastEditTime: 2024-06-17 01:16:34
 Discription: 
 '''
 from enum import Enum
@@ -16,6 +16,7 @@ from torch.distributions import Categorical,Normal
 from joyrl.algos.base.base_layer import LayerConfig
 from joyrl.algos.base.base_layer import create_layer
 
+
 class ActionLayerType(Enum):
     ''' Action layer type
     '''
@@ -25,7 +26,7 @@ class ActionLayerType(Enum):
     DQNACTION = 4
     
 class BaseActionLayer(nn.Module):
-    def __init__(self,cfg, input_size, action_dim, id = 0, **kwargs):
+    def __init__(self,cfg, input_size, action_dim = 1, id = 0, **kwargs):
         super(BaseActionLayer, self).__init__()
         self.cfg = cfg
         self.id = id
@@ -37,22 +38,24 @@ class BaseActionLayer(nn.Module):
             return self.sample_action(**actor_output)
         elif mode == "predict":
             return self.predict_action(**actor_output)
+        elif mode == "random":
+            return self.random_action(**actor_output)
         else:
             raise NotImplementedError
         
 class DQNActionLayer(BaseActionLayer):
-    def __init__(self, cfg, input_size, action_dim, id = 0, **kwargs):
-        super(DQNActionLayer, self).__init__(cfg=cfg, input_size=input_size, action_dim=action_dim, id=id)
-        self.action_dim = action_dim
+    def __init__(self, cfg, input_size, action_size, id = 0, **kwargs):
+        super(DQNActionLayer, self).__init__(cfg=cfg, input_size=input_size, action_dim=action_size, id=id)
+        self.action_dim = action_size[0]
         output_size = input_size
         self.dueling = hasattr(cfg, 'dueling') and cfg.dueling
         if self.dueling:
             state_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
             self.state_value_layer, _ = create_layer(output_size, state_value_layer_cfg)
-            action_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[action_dim], activation='none')
+            action_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_dim], activation='none')
             self.action_value_layer, _ = create_layer(output_size, action_value_layer_cfg)
         else:
-            action_layer_cfg = LayerConfig(layer_type='linear', layer_size=[action_dim], activation='none')
+            action_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_dim], activation='none')
             self.action_value_layer, _ = create_layer(output_size, action_layer_cfg)
 
     def forward(self, x, **kwargs):
@@ -72,12 +75,15 @@ class DQNActionLayer(BaseActionLayer):
     def predict_action(self, **kwargs):
         q_value = kwargs.get("q_value", None)
         return {"action": torch.argmax(q_value).detach().cpu().numpy().item()}
+    
+    def random_action(self, **kwargs):
+        return {"action": torch.randint(0, self.action_dim, (1,)).item()}
 
 class DiscreteActionLayer(BaseActionLayer):
-    def __init__(self, cfg, input_size, action_dim, id = 0, **kwargs):
-        super(DiscreteActionLayer, self).__init__(cfg=cfg, input_size=input_size, action_dim=action_dim, id=id)
+    def __init__(self, cfg, input_size, action_size, id = 0, **kwargs):
+        super(DiscreteActionLayer, self).__init__(cfg=cfg, input_size=input_size, action_dim=action_size, id=id, **kwargs)
         self.min_policy = cfg.min_policy
-        self.action_dim = action_dim
+        self.action_dim = action_size[0]
         output_size = input_size
         action_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_dim], activation='leakyrelu')
         self.logits_p_layer, _ = create_layer(output_size, action_layer_cfg)
@@ -132,18 +138,17 @@ class DiscreteActionLayer(BaseActionLayer):
         return entropy_mean
  
 class ContinuousActionLayer(BaseActionLayer):
-    def __init__(self, cfg, input_size, action_dim, id = 0, **kwargs):
-        super(ContinuousActionLayer, self).__init__(cfg=cfg, input_size=input_size, action_dim=action_dim, id=id)
-        self.action_high = self.cfg.action_high_list[self.id]
-        self.action_low = self.cfg.action_low_list[self.id]
+    def __init__(self, cfg, input_size, action_dim = 1, id = 0, **kwargs):
+        super(ContinuousActionLayer, self).__init__(cfg=cfg, input_size=input_size, action_dim=action_dim, id = id, **kwargs)
+        self.action_low = self.cfg.action_space_info.size[self.id][0]
+        self.action_high = self.cfg.action_space_info.size[self.id][1]
         self.action_scale = (self.action_high - self.action_low)/2
         self.action_bias = (self.action_high + self.action_low)/2
         self.min_policy = cfg.min_policy
-        self.action_dim = action_dim
         output_size = input_size
-        mu_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_dim], activation='tanh')
+        mu_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='tanh')
         self.mu_layer, _ = create_layer(output_size, mu_layer_cfg)
-        self.log_std = nn.Parameter(torch.zeros(1, self.action_dim))
+        self.log_std = nn.Parameter(torch.zeros(1, 1))
 
     def forward(self,x, **kwargs):
         mu = self.mu_layer(x) # [batch_size, 1]
@@ -217,16 +222,6 @@ class DPGActionLayer(BaseActionLayer):
         ''' get mu
         '''
         return self.mu
-    
-    def get_action(self, **kwargs):
-        mode = kwargs.get("mode", "sample")
-        actor_output = kwargs.get("actor_output", None)
-        if mode == "sample":
-            return self.sample_action(actor_output)
-        elif mode == "predict":
-            return self.predict_action(actor_output)
-        else:
-            raise NotImplementedError
         
     def sample_action(self, actor_outputs):
         ''' get action
@@ -243,4 +238,4 @@ class DPGActionLayer(BaseActionLayer):
         action = torch.FloatTensor(self.action_scale).to(device_) * self.mu + torch.FloatTensor(self.action_bias).to(device_)
         action = action.detach().cpu().numpy()[0]
         return action
-        
+    

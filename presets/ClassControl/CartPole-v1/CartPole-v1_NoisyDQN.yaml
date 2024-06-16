@@ -39,4 +39,5 @@ env_cfg:
   id: CartPole-v1
   render_mode: null
   wrappers:
-    - wrapper_name: GymDiscreteActionWrapper
+    - wrapper_name: MultiHeadObsWrapper
+    - wrapper_name: MultiHeadActionWrapper

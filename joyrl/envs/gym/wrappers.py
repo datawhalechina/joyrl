@@ -1,6 +1,6 @@
 
 import turtle
-import gymnasium as gym_wrapper
+import gymnasium as gym
 import torch
 import numpy as np
 from torchvision import transforms
@@ -9,7 +9,7 @@ from gymnasium.wrappers import FrameStack
 from typing import List
 
 
-class BaseSkipFrame(gym_wrapper.Wrapper):
+class BaseSkipFrame(gym.Wrapper):
     def __init__(
             self, 
             env, 
@@ -70,22 +70,55 @@ class BaseSkipFrame(gym_wrapper.Wrapper):
         obs = self._cut_slice(obs)  if self.pic_cut_slices is not None else obs
         return obs, info
 
-
-class GymDiscreteActionWrapper(gym_wrapper.Wrapper):
+class MultiHeadActionWrapper(gym.ActionWrapper):
+    ''' convert multi-head action to single action
+    '''
     def __init__(self, env):
-        gym_wrapper.Wrapper.__init__(self, env)
-        # self.action_space = Box(low=-1.0, high=1.0, shape=(1, ), dtype=np.float32)
+        gym.ActionWrapper.__init__(self, env)
 
-    def step(self, action):
-        action = action[0]
-        return self.env.step(action)
+    def action(self, action):
+        return action[0]
 
-    def reset(self, seed=0, options=None):
-        return self.env.reset(seed=seed, options=options)
-    
-class CliffWalkingWapper(gym_wrapper.Wrapper):
+# class MultiHeadActionWrapper(gym.Wrapper):
+#     def __init__(self, env):
+#         gym.Wrapper.__init__(self, env)
+#         # self.action_space = Box(low=-1.0, high=1.0, shape=(1, ), dtype=np.float32)
+
+#     def step(self, action):
+#         action = action[0]
+#         return self.env.step(action)
+
+#     def reset(self, seed=0, options=None):
+#         return self.env.reset(seed=seed, options=options)
+
+class ReshapeImageObsWrapper(gym.ObservationWrapper):
     def __init__(self, env):
-        gym_wrapper.Wrapper.__init__(self, env)
+        ''' reshape image observation [H, W, C] to [C, H, W] and normalize to [0, 1]
+        '''
+        super(ReshapeImageObsWrapper, self).__init__(env)
+        obs_shape = self.observation_space.shape
+        # [H, W, C] to [C, H, W]
+        self.observation_space = gym.spaces.Box(low=0, high=1, shape=(obs_shape[2], obs_shape[0], obs_shape[1]), dtype=np.float32)
+
+    def observation(self, observation):
+        # normalize to [0, 1]
+        observation = observation / 255.0
+        # reshape [H, W, C] to [C, H, W]
+        observation = np.transpose(observation, (2, 0, 1))
+        return observation
+
+class MultiHeadObsWrapper(gym.ObservationWrapper):
+    def __init__(self, env):
+        ''' convert single observation to multi-head observation
+        '''
+        super(MultiHeadObsWrapper, self).__init__(env)
+
+    def observation(self, observation):
+        return [observation]
+     
+class CliffWalkingWapper(gym.Wrapper):
+    def __init__(self, env):
+        gym.Wrapper.__init__(self, env)
         self.t = None
         self.unit = 50
         self.max_x = 12
@@ -163,7 +196,7 @@ class CliffWalkingWapper(gym_wrapper.Wrapper):
 
 
 
-class CarV2SkipFrame(gym_wrapper.Wrapper):
+class CarV2SkipFrame(gym.Wrapper):
     def __init__(self, env, skip: int = 5, continue_flag: bool=False):
         """skip frame
         Args:
@@ -208,7 +241,7 @@ class CarV2SkipFrame(gym_wrapper.Wrapper):
         return obs[:84, 6:90, :], info
 
 
-class GrayScaleObservation(gym_wrapper.ObservationWrapper):
+class GrayScaleObservation(gym.ObservationWrapper):
     def __init__(self, env):
         """RGP -> Gray
         (high, width, channel) -> (1, high, width) 
@@ -224,7 +257,7 @@ class GrayScaleObservation(gym_wrapper.ObservationWrapper):
         return tf(torch.tensor(np.transpose(observation, (2, 0, 1)).copy(), dtype=torch.float))
 
 
-class ResizeObservation(gym_wrapper.ObservationWrapper):
+class ResizeObservation(gym.ObservationWrapper):
     def __init__(self, env, shape: int = 84):
         """reshape observe
         Args:
@@ -242,7 +275,7 @@ class ResizeObservation(gym_wrapper.ObservationWrapper):
         return tf(observation).squeeze(0)
 
 # 跳帧
-class SkipFrame(gym_wrapper.Wrapper):
+class SkipFrame(gym.Wrapper):
     def __init__(self, env, skip: int = 5, skip_start: int = 0):
         """skip frame
         Args:
@@ -277,7 +310,7 @@ class SkipFrame(gym_wrapper.Wrapper):
         return obs, info
 
 # 裁剪
-class CropFrame(gym_wrapper.ObservationWrapper):
+class CropFrame(gym.ObservationWrapper):
     def __init__(self, env, x1=0, x2=0, y1=0, y2=0):
         """crop frame
         Args:
@@ -301,7 +334,7 @@ class CropFrame(gym_wrapper.ObservationWrapper):
             obs = obs[self.y1:self.y2, :, :]
         return obs
 
-class InfoRewardFrame(gym_wrapper.Wrapper):
+class InfoRewardFrame(gym.Wrapper):
     def __init__(self, env, goods=[], bads=[]):
         """skip frame
         Args:

@@ -14,13 +14,11 @@ class BasePolicy(object):
     def __init__(self, cfg : MergedConfig) -> None:
         self.cfg = cfg
         self.device = torch.device('cpu')
-        self.obs_space = cfg.obs_space
-        self.action_space = cfg.action_space
         self.policy_transition = {}
         self.data_after_train = {}
         self.model_meta = {}
-        self.get_state_size()
-        self.get_action_size()
+        self.state_size_list = self.cfg.obs_space_info.size
+        self.action_size_list = self.cfg.action_space_info.size
         self.create_model()
         self.create_optimizer()
         self.create_summary()
@@ -33,44 +31,14 @@ class BasePolicy(object):
                 obj.to(device)
         self.device = torch.device(device)
 
-    def get_state_size(self):
-        ''' get state size
+    def process_sample_state(self, state: list):
+        ''' process sample state
         '''
-        # state_size must be [[None, state_dim_1], [None, state_dim_2], ...]
-        if isinstance(self.obs_space, Box):
-            if len(self.obs_space.shape) == 3:
-                self.state_size_list = [[None, self.obs_space.shape[0], self.obs_space.shape[1], self.obs_space.shape[2]]]
-            else:
-                self.state_size_list = [[None, self.obs_space.shape[0]]]
-        elif isinstance(self.obs_space, Discrete):
-            self.state_size_list = [[None, self.obs_space.n]]
-        else:
-            raise ValueError('obs_space type error')
-        setattr(self.cfg, 'state_size_list', self.state_size_list)
-        return self.state_size_list
-    
-    def get_action_size(self):
-        ''' get action size
-        '''
-        # action_size must be [action_dim_1, action_dim_2, ..., action_dim_n]
-        if isinstance(self.action_space, Box):
-            n_action_head = self.action_space.shape[0]
-            self.action_size_list = [1] * n_action_head
-            self.action_type_list = ["CONTINUOUS"] * n_action_head
-            self.action_high_list = [self.action_space.high[i] for i in range(n_action_head)]
-            self.action_low_list = [self.action_space.low[i] for i in range(n_action_head)]
-        elif isinstance(self.action_space, Discrete):
-            self.action_size_list = [self.action_space.n]
-            self.action_type_list = ["DISCRETE"]
-            self.action_high_list = [self.action_space.n]
-            self.action_low_list = [0]
-        else:
-            raise ValueError('action_space type error')
-        setattr(self.cfg, 'action_size_list', self.action_size_list)
-        setattr(self.cfg, 'action_type_list', self.action_type_list)
-        setattr(self.cfg, 'action_high_list', self.action_high_list)
-        setattr(self.cfg, 'action_low_list', self.action_low_list)
-    
+        state_ = [None] * len(state)
+        for i in range(len(state)):
+            state_[i] = torch.tensor(state[i], dtype=torch.float32, device=self.device).unsqueeze(0)
+        return state_
+     
     def create_model(self):
         ''' create model
         '''
@@ -146,11 +114,11 @@ class BasePolicy(object):
         '''
         states, actions, next_states, rewards, dones = kwargs.get('states'), kwargs.get('actions'), kwargs.get('next_states'), kwargs.get('rewards'), kwargs.get('dones')
         # multi-head state
-        self.states = [ torch.tensor(states, dtype = torch.float32, device = self.device) ]
+        self.states = [ torch.tensor(states[i], dtype = torch.float32, device = self.device) for i in range(len(states)) ]
+        self.next_states = [ torch.tensor(next_states[i], dtype = torch.float32, device = self.device) for i in range(len(next_states)) ]
         # multi-head action
-        self.actions = [ torch.tensor(actions, dtype = torch.float32, device = self.device) ]
+        self.actions = [ torch.tensor(actions[i], dtype = torch.float32, device = self.device).unsqueeze(dim=1) for i in range(len(actions)) ]
         self.rewards = torch.tensor(rewards, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
-        self.next_states = torch.tensor(next_states, dtype = torch.float32, device = self.device)
         self.dones = torch.tensor(dones, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
 
     def update_data_after_learn(self):

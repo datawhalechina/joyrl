@@ -12,7 +12,7 @@ pooling_dict = {
     'avg2d': nn.AvgPool2d,
     'max2d': nn.MaxPool2d
 }
-norm_dict = {
+NORMLAYER_DICT = {
     'layernorm': nn.LayerNorm
 }
 
@@ -161,11 +161,6 @@ def conv2d_layer(input_size, layer_cfg: LayerConfig):
 def flatten_layer(input_size, layer_cfg: LayerConfig):
     ''' flatten layer
     '''
-    # class FlattenLayer(nn.Module):
-    #     def __init__(self):
-    #         super(FlattenLayer,self).__init__()
-    #     def forward(self,x):
-    #         return x.view(x.size(0),-1)
     layer = nn.Sequential(nn.Flatten())
     output_size = get_output_size_with_batch(layer, input_size)
     return layer, output_size
@@ -183,10 +178,11 @@ def pooling_layer(input_size, layer_cfg: LayerConfig):
 
 def norm_layer(input_size, layer_cfg: LayerConfig):
     norm_type = layer_cfg.norm_type.lower()
-    normalized_shape = layer_cfg.normalized_shape
-    if norm_type not in norm_dict:
+    normalized_shape = input_size[1:]
+    if norm_type not in NORMLAYER_DICT:
         raise KeyError("norm_type Error! you can add the norm_type in joyrl/algos/base/base_layer.py")
-    layer = norm_dict[norm_type](normalized_shape=normalized_shape)
+
+    layer = NORMLAYER_DICT[norm_type](normalized_shape=normalized_shape)
     output_size = get_output_size_with_batch(layer, input_size)
     return layer, output_size
 

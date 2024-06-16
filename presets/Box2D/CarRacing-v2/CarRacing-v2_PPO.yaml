@@ -16,7 +16,7 @@ general_cfg:
   online_eval: true 
   online_eval_episode: 10 
   model_save_fre: 10 
-  policy_summary_fre: 5
+  policy_summary_fre: 2
   interact_summary_fre: 100
 algo_cfg:
   branch_layers:
@@ -28,26 +28,36 @@ algo_cfg:
         kernel_size: 8
         stride: 4
         activation: relu
-      - layer_type: pooling
-        pooling_type: max2d
-        kernel_size: 2
-        stride: 2
-        padding: 0
+      # - layer_type: pooling
+      #   pooling_type: max2d
+      #   kernel_size: 2
+      #   stride: 2
+      #   padding: 0
       - layer_type: conv2d
         in_channel: 32
         out_channel: 64 
         kernel_size: 4
         stride: 2
         activation: relu
-      - layer_type: pooling
-        pooling_type: avg2d
-        kernel_size: 2
-        stride: 2
-        padding: 0
-      - layer_type: flatten
+      - layer_type: conv2d
+        in_channel: 64
+        out_channel: 64 
+        kernel_size: 3
+        stride: 1
+        activation: relu
       - layer_type: norm
         norm_type: LayerNorm
-        normalized_shape: 512
+      # - layer_type: pooling
+      #   pooling_type: avg2d
+      #   kernel_size: 2
+      #   stride: 2
+      #   padding: 0
+      - layer_type: flatten
+      - layer_type: linear
+        layer_size: [512]
+        activation: relu
+      - layer_type: norm
+        norm_type: LayerNorm
       - layer_type: linear
         layer_size: [128]
         activation: relu
@@ -66,4 +76,7 @@ algo_cfg:
 env_cfg:
   id: CarRacing-v2
   render_mode: null
+  wrappers:
+    - wrapper_name: ReshapeImageObsWrapper
+    - wrapper_name: MultiHeadObsWrapper
   

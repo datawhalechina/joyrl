@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 21:07:04
+LastEditTime: 2024-06-16 19:58:31
 Discription: 
 '''
 import torch
@@ -60,7 +60,7 @@ class Policy(BasePolicy):
         self.summary['scalar']['critic_loss'] = np.mean(self.critic_losses_epoch)
 
     def create_model(self):
-        self.model = ActorCriticNetwork(self.cfg, self.state_size_list).to(self.device)
+        self.model = ActorCriticNetwork(self.cfg, self.cfg.state_size_list).to(self.device)
 
     def create_optimizer(self):
         if getattr(self.cfg, 'independ_actor', False):
@@ -73,9 +73,7 @@ class Policy(BasePolicy):
         self.policy_transition = {'value': self.value.detach().cpu().numpy().item(), 'log_prob': self.log_prob}
 
     def sample_action(self, state, **kwargs):
-        state = torch.tensor(np.array(state), device=self.device, dtype=torch.float32)
-        # single state shape must be [batch_size, state_dim]
-        if state.dim() == 1: state = state.unsqueeze(dim=0)
+        state = self.process_sample_state(state)
         model_outputs = self.model(state)
         self.value = model_outputs['value']
         actor_outputs = model_outputs['actor_outputs']
@@ -85,9 +83,7 @@ class Policy(BasePolicy):
 
     @torch.no_grad()
     def predict_action(self, state, **kwargs):
-        state = torch.tensor(np.array(state), device = self.device, dtype=torch.float32)
-        # single state shape must be [batch_size, state_dim]
-        if state.dim() == 1: state = state.unsqueeze(dim=0)
+        state = self.process_sample_state(state)
         model_outputs = self.model(state)
         actor_outputs = model_outputs['actor_outputs']
         actions = self.model.get_actions(mode = 'predict', actor_outputs = actor_outputs)

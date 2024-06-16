@@ -1,5 +1,5 @@
 general_cfg:
-  joyrl_version: 0.6.1.4
+  joyrl_version: 0.6.5
   algo_name: PPO
   env_name: gym 
   device: cpu 
@@ -58,4 +58,6 @@ algo_cfg:
 env_cfg:
   id: Pendulum-v1
   render_mode: null
+  wrappers:
+    - wrapper_name: MultiHeadObsWrapper
   

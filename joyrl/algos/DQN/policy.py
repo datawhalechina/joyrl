@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-01-25 09:58:33
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 22:45:50
+LastEditTime: 2024-06-17 01:29:34
 Discription: 
 '''
 import torch
@@ -49,14 +49,14 @@ class Policy(BasePolicy):
             # before update, the network inference time may be longer
             action = self.predict_action(state) 
         else:
-            action = [self.action_space.sample()]
+            action = self.model.action_layers.get_actions(mode = 'random', actor_outputs = [{}] * len(self.action_size_list))
         return action
     
     @torch.no_grad()
     def predict_action(self,state, **kwargs):
         ''' predict action
         '''
-        state = [torch.tensor(np.array(state), device=self.device, dtype=torch.float32).unsqueeze(dim=0)]
+        state = self.process_sample_state(state)
         model_outputs = self.model(state)
         actor_outputs = model_outputs['actor_outputs']
         actions = self.model.action_layers.get_actions(mode = 'predict', actor_outputs = actor_outputs)

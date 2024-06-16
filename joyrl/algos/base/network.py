@@ -5,15 +5,16 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 23:51:13
+LastEditTime: 2024-06-16 20:01:36
 Discription: 
 '''
 import copy
 import torch
 import torch.nn as nn
 from joyrl.algos.base.base_layer import create_layer, LayerConfig
-from joyrl.algos.base.action_layer import ActionLayerType, DiscreteActionLayer, ContinuousActionLayer, DPGActionLayer, DQNActionLayer
+from joyrl.algos.base.action_layer import DiscreteActionLayer, ContinuousActionLayer, DPGActionLayer, DQNActionLayer
 from joyrl.framework.config import MergedConfig
+from joyrl.framework.core_types import ActionType
 
 class BranchLayers(nn.Module):
     def __init__(self, branch_layers_cfg : list, input_size_list, **kwargs) -> None:
@@ -90,8 +91,8 @@ class ActionLayers(nn.Module):
         super(ActionLayers, self).__init__()
         self.cfg = cfg
         self.input_size = input_size
-        self.action_size_list = self.cfg.action_size_list
-        self.action_type_list = self.cfg.action_type_list
+        self.action_size_list = self.cfg.action_space_info.size
+        self.action_type_list = self.cfg.action_space_info.type
         assert len(self.action_type_list) == len(self.action_size_list), "action_type_list and action_size_list must have the same length, and only one output"
         self.actor_outputs = []
         self.create_graph()
@@ -99,15 +100,15 @@ class ActionLayers(nn.Module):
     def create_graph(self):
         self.action_layers = nn.ModuleList()
         for i in range(len(self.action_type_list)):
-            action_type = ActionLayerType[self.action_type_list[i].upper()]
+            action_type = self.action_type_list[i]
             action_size = self.action_size_list[i]
-            if action_type == ActionLayerType.CONTINUOUS:
-                action_layer = ContinuousActionLayer(self.cfg, self.input_size, action_size, id = i)
-            elif action_type == ActionLayerType.DISCRETE:
+            if action_type == ActionType.CONTINUOUS:
+                action_layer = ContinuousActionLayer(self.cfg, self.input_size, id = i)
+            elif action_type == ActionType.DISCRETE:
                 action_layer = DiscreteActionLayer(self.cfg, self.input_size, action_size,id = i)
-            elif action_type == ActionLayerType.DPG:
+            elif action_type == ActionType.DPG:
                 action_layer = DPGActionLayer(self.cfg, self.input_size, action_size, id = i)
-            elif action_type == ActionLayerType.DQNACTION:
+            elif action_type == ActionType.DQNACTION:
                 action_layer = DQNActionLayer(self.cfg, self.input_size, action_size, id = i)
             else:
                 raise ValueError("action_type must be specified in discrete, continuous or dpg")
@@ -186,24 +187,14 @@ class QNetwork(BaseNework):
     ''' Q network, for value-based methods like DQN
     '''
     def __init__(self, cfg: MergedConfig, input_size_list: list) -> None:
-        '''_summary_
-        Args:
-            cfg (_type_): _description_
-            state_size (_type_): [[None, state_dim_1], [None, None, state_dim_2], ...]
-            action_size (_type_): [action_dim_1, action_dim_2, ...]
-        Raises:
-            ValueError: _description_
-        '''
         super(QNetwork, self).__init__(cfg, input_size_list)
-        self.action_size_list = self.cfg.action_size_list
         self.dueling = hasattr(cfg, 'dueling') and cfg.dueling
         self.create_graph()
 
     def create_graph(self):
         self.branch_layers = BranchLayers(self.cfg.branch_layers, self.input_size_list)
         self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
-        action_type_list = ['dqnaction'] * len(self.cfg.action_type_list) 
-        setattr(self.cfg, 'action_type_list', action_type_list)
+        self.cfg.action_space_info.type = [ActionType.DQNACTION] * len(self.cfg.action_space_info.type) 
         self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size)
 
     def forward(self, x):
@@ -222,7 +213,6 @@ class QNetwork(BaseNework):
 class ActorNetwork(BaseNework):
     def __init__(self, cfg: MergedConfig, input_size_list) -> None:
         super(ActorNetwork, self).__init__(cfg, input_size_list)
-        self.action_type_list = self.cfg.action_type_list
         self.create_graph()
     
     def create_graph(self):
@@ -256,9 +246,8 @@ class CriticNetwork(BaseNework):
 class ActorCriticNetwork(BaseNework):
     ''' Value network, for policy-based methods,  in which the branch_layers and critic share the same network
     '''
-    def __init__(self, cfg: MergedConfig, input_size_list: list) -> None:
+    def __init__(self, cfg: MergedConfig, input_size_list) -> None:
         super(ActorCriticNetwork, self).__init__(cfg, input_size_list)
-        self.action_type_list = self.cfg.action_type_list
         self.create_graph()
         
     def create_graph(self):
@@ -269,7 +258,7 @@ class ActorCriticNetwork(BaseNework):
             self.branch_layers = BranchLayers(self.cfg.branch_layers, self.input_size_list)
             self.merge_layer = MergeLayer(self.cfg.merge_layers, self.branch_layers.output_size_list)
             self.value_layer, _ = create_layer(self.merge_layer.output_size, LayerConfig(layer_type='linear', layer_size=[1], activation='none'))
-            self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size,)
+            self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size)
         
     def forward(self, x, pre_legal_actions=None):
         if getattr(self.cfg, 'independ_actor', False):
