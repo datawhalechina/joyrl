@@ -60,7 +60,7 @@ class Policy(BasePolicy):
         self.summary['scalar']['critic_loss'] = np.mean(self.critic_losses_epoch)
 
     def create_model(self):
-        self.model = ActorCriticNetwork(self.cfg, self.cfg.state_size_list).to(self.device)
+        self.model = ActorCriticNetwork(self.cfg, self.state_size_list).to(self.device)
 
     def create_optimizer(self):
         if getattr(self.cfg, 'independ_actor', False):
