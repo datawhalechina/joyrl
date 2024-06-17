@@ -1,14 +1,15 @@
 general_cfg:
-  joyrl_version: 0.6.3.2
+  joyrl_version: 0.6.5
   algo_name: PPO
   env_name: gym
   device: cpu
   mode: test
   exps_trucation_size: 200
   is_learner_async: false
-  load_checkpoint: false
+  load_checkpoint: true
   load_path: Train_LunarLander-v2_PPO_20240617-175014
-  n_interactors: 2
+  load_model_step: best 
+  n_interactors: 1
   max_episode: -1
   max_step: 1000
   seed: 1
@@ -19,6 +20,8 @@ general_cfg:
   policy_summary_fre: 5
   interact_summary_fre: 100
 algo_cfg:
+  independ_actor: false
+  return_form: td
   actor_branch_layers:
     - name: state
       layers:
@@ -53,4 +56,5 @@ env_cfg:
   id: LunarLander-v2
   render_mode: human
   wrappers:
-    - wrapper_name: GymDiscreteActionWrapper
+    - wrapper_name: MultiHeadObsWrapper
+    - wrapper_name: MultiHeadActionWrapper
