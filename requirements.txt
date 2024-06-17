@@ -8,3 +8,11 @@ scipy==1.13.0
 pygame==2.5.2
 swig==4.2.1
 gymnasium[box2d]==0.29.1
+numpy==1.26.4
+pandas==2.2.2
+six==1.16.0
+setuptools==69.5.1
+scipy==1.13.0
+PyYAML==6.0.1
+pydantic==1.10.15
+psutil==0.3.14

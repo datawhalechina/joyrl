@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:01:23
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 20:11:42
+LastEditTime: 2024-06-17 14:43:29
 Discription: 
 '''
 import sys,os
@@ -21,12 +21,23 @@ def get_install_requires() -> str:
     return [
         "ray[default]==2.6.3",
         "gymnasium==0.29.1",
+        "gymnasium[box2d]==0.29.1",
         "tensorboard==2.16.2",
         "matplotlib==3.8.4",
         "seaborn==0.13.2",
         "dill==0.3.8",
         "scipy==1.13.0",
         "pygame==2.5.2",
+        "swig==4.2.1",
+        "numpy==1.26.4",
+        "pandas==2.2.2",
+        "six==1.16.0",
+        "setuptools==69.5.1",
+        "scipy==1.13.0",
+        "PyYAML==6.0.1",
+        "pydantic==1.10.15",
+        "psutil==0.3.14",
+        ""
     ]
 
 def get_extras_require() -> str:
