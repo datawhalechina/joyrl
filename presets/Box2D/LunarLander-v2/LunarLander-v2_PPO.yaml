@@ -3,7 +3,7 @@ general_cfg:
   algo_name: PPO
   env_name: gym
   device: cpu
-  mode: test
+  mode: train
   exps_trucation_size: 200
   is_learner_async: false
   load_checkpoint: true
