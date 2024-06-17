@@ -54,7 +54,7 @@ algo_cfg:
   sgd_batch_size: 32
 env_cfg:
   id: LunarLander-v2
-  render_mode: human
+  render_mode: null
   wrappers:
     - wrapper_name: MultiHeadObsWrapper
     - wrapper_name: MultiHeadActionWrapper
