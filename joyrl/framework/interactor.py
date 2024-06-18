@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-02-25 15:46:04
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 21:04:30
+LastEditTime: 2024-06-18 23:09:28
 Discription: 
 '''
 import copy
@@ -125,7 +125,7 @@ class Interactor(Moduler):
                     exec_method(self.policy_mgr, 'pub_msg', 'remote', Msg(type = MsgType.POLICY_MGR_PUT_MODEL_META, data = (self.name, model_meta)))
                 self.ep_reward, self.ep_step = 0, 0
                 self.curr_obs, self.curr_info = self.env.reset(seed = self.seed)      
-            self._put_exps()
+            if self.cfg.mode.lower() == "train": self._put_exps()
             run_step += 1
             if run_step >= self.n_sample_steps:
                 break

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 09:34:14
+LastEditTime: 2024-06-18 08:56:04
 Discription: 
 '''
 import time
@@ -35,6 +35,8 @@ class Collector(Moduler):
     def run(self):
         sample_data_len = 0
         while True:
+            if not (self.cfg.mode.lower() == 'train'): 
+                break
             exps = exec_method(self.sample_data_que, 'pop', 'get')
             if exps:
                 sample_data_len += len(exps)
