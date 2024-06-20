@@ -1,0 +1,65 @@
+general_cfg:
+  joyrl_version: 0.6.2.2
+  algo_name: PPO
+  env_name: gym 
+  device: cuda
+  interactor_device: cpu
+  learner_device: cuda 
+  mode:  train 
+  exps_trucation_size: 1024
+  is_learner_async: false
+  load_checkpoint: false 
+  load_path: Train_BipedalWalker-v3_PPO_20240619-222052 # if load checkpoint, then config path in 'tasks' dir
+  load_model_step: best 
+  n_interactors: 10
+  max_episode: 50000
+  max_step: 500 
+  seed: 202406
+  online_eval: true 
+  online_eval_episode: 15 
+  model_save_fre: 10 
+  policy_summary_fre: 10
+  interact_summary_fre: 100
+algo_cfg:
+  independ_actor: true
+  return_form: td
+  actor_branch_layers:
+    - name: feature_1
+      layers:
+      - layer_type: linear
+        layer_size: [200]
+        activation: tanh
+      - layer_type: linear
+        layer_size: [200]
+        activation: tanh
+  critic_branch_layers:
+    - name: feature_1
+      layers:
+      - layer_type: linear
+        layer_size: [200]
+        activation: tanh
+      - layer_type: linear
+        layer_size: [200]
+        activation: tanh
+  buffer_type: ONPOLICY_QUE
+  lr: 2.5e-4
+  actor_lr: 2.5e-4 # 1
+  critic_lr: 3.0e-4 # 3
+  entropy_coef: 0.001
+  critic_loss_coef: 0.001
+  eps_clip: 0.25
+  gamma: 0.99
+  gae_lambda: 0.95
+  k_epochs: 2
+  batch_size: 512
+  sgd_batch_size: 256
+env_cfg:
+  id: BipedalWalker-v3
+  render_mode: null
+  wrappers:
+    - wrapper_name: ClipAction
+    - wrapper_name: MultiHeadObsWrapper
+    - wrapper_name: BipedalWalkerV3TFReward
+
+
+

@@ -5,8 +5,12 @@ import torch
 import numpy as np
 from torchvision import transforms
 from gymnasium.spaces import Box
-from gymnasium.wrappers import FrameStack
+from gymnasium.wrappers import FrameStack, ClipAction, TransformReward
+from functools import partial
 from typing import List
+
+
+BipedalWalkerV3TFReward = partial(TransformReward, f=lambda r: -1.0 if r <= -100 else r)
 
 
 class BaseSkipFrame(gym.Wrapper):

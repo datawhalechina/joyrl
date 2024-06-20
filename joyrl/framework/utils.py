@@ -26,6 +26,7 @@ import pandas as pd
 from functools import wraps
 from time import time
 import logging
+import colorlog
 import ray
 from threading import Lock
 from queue import Queue, Empty
@@ -123,8 +124,21 @@ class Logger(object):
         self.name = kwargs.get('log_name', '')
         self.logger = logging.getLogger(name = f"Log_{self.name}")
         self.logger.setLevel(logging.INFO) # default level is INFO
-        self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S')
+        c = "yellow" if any(j in self.name for j in  ["OnlineTester", "Interactor_"]) else "white"
+        self.formatter = colorlog.ColoredFormatter(
+            f"%(asctime)s - %(log_color)s%(name)s - %(levelname)-8s%(reset)s: - %({c})s%(message)s",
+            datefmt='%Y-%m-%d %H:%M:%S',
+            reset=True,
+            log_colors={
+                'DEBUG':    'cyan',
+                'INFO':     'green',
+                'WARNING':  'yellow',
+                'ERROR':    'red',
+                'CRITICAL': 'red,bg_white',
+            },
+            style='%'
+        )
+        # logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
         # output to file by using FileHandler
         if not self.logger.handlers: # avoid duplicate print
             name = self.name.split('_')[0]
