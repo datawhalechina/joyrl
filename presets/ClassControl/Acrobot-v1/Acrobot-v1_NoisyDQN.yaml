@@ -1,0 +1,46 @@
+general_cfg:
+  joyrl_version: 0.6.5
+  algo_name: NoisyDQN 
+  env_name: gym 
+  interactor_device: cuda
+  learner_device: cuda
+  mode: train 
+  is_learner_async: false
+  collect_traj: false
+  n_interactors: 1
+  load_checkpoint: false
+  load_path: Train_CartPole-v1_NoisyDQN_20231225-000846
+  load_model_step: best 
+  max_episode: -1
+  max_step: 200
+  seed: 1
+  online_eval: true 
+  online_eval_episode: 10
+  model_save_fre: 500
+  policy_summary_fre: 100
+
+algo_cfg:
+  merge_layers:
+    - layer_type: noisy_linear
+      layer_size: [256]
+      activation: relu
+      std_init: 0.4
+    - layer_type: noisy_linear
+      layer_size: [256]
+      activation: relu
+      std_init: 0.4
+  buffer_type: REPLAY_QUE
+  batch_size: 64
+  max_buffer_size: 100000
+  epsilon_decay: 500
+  epsilon_end: 0.01
+  epsilon_start: 0.95
+  gamma: 0.99
+  lr: 0.0001
+  target_update: 4
+env_cfg:
+  id: Acrobot-v1
+  render_mode: null
+  wrappers:
+    - wrapper_name: MultiHeadObsWrapper
+    - wrapper_name: MultiHeadActionWrapper
