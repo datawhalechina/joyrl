@@ -1,0 +1,60 @@
+general_cfg:
+  joyrl_version: 0.6.5
+  algo_name: PPO
+  env_name: gym
+  device: cpu
+  mode: train
+  exps_trucation_size: 200
+  is_learner_async: false
+  load_checkpoint: true
+  load_path: Train_LunarLander-v2_PPO_20240617-175014
+  load_model_step: best 
+  n_interactors: 1
+  max_episode: -1
+  max_step: 1000
+  seed: 1
+  online_eval: true
+  online_eval_episode: 10
+  reward_threshold: 210
+  model_save_fre: 10
+  policy_summary_fre: 5
+  interact_summary_fre: 100
+algo_cfg:
+  independ_actor: false
+  return_form: td
+  actor_branch_layers:
+    - name: state
+      layers:
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+  critic_branch_layers:
+    - name: state
+      layers:
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+  branch_layers:
+    - name: state
+      layers:
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+  buffer_type: ONPOLICY_QUE
+  eps_clip: 0.2
+  entropy_coef: 0.002
+  lr: 0.0003
+  actor_lr: 0.003
+  critic_lr: 0.01
+  critic_loss_coef: 0.5
+  gamma: 0.99
+  gae_lambda: 0.95
+  k_epochs: 4
+  batch_size: 2000
+  sgd_batch_size: 32
+env_cfg:
+  id: LunarLander-v2
+  render_mode: null
+  wrappers:
+    - wrapper_name: MultiHeadObsWrapper
+    - wrapper_name: MultiHeadActionWrapper
