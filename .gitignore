@@ -10,3 +10,5 @@ tasks
 test
 test.py
 *.log
+presets/*/*/*.ipynb
+presets/*/*/*/*.ckpt
