@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-04-28 16:18:44
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 09:34:29
+LastEditTime: 2024-06-23 17:32:36
 Discription: 
 '''
 from ray.util.queue import Queue as RayQueue
@@ -69,14 +69,13 @@ class Recorder(Moduler):
 
     def _write_dataframe(self, step: int, summary: dict):
         df_file = f"{self.cfg.res_dir}/{self.type}.csv"
-        if Path(df_file).exists():
-            df = pd.read_csv(df_file)
-        else:
-            df = pd.DataFrame()
         saved_dict = {f"{self.type}_step": step}
         saved_dict.update(summary)
-        df = pd.concat([df, pd.DataFrame(saved_dict, index=[0])], ignore_index = True)
-        df.to_csv(df_file, index = False)
+        df = pd.DataFrame(saved_dict, index=[0])
+        if Path(df_file).exists():
+            df.to_csv(df_file, mode='a', header=False, index = False)
+        else:
+            df.to_csv(df_file, index = False)
 
     def _save_summary(self):
         while True:
