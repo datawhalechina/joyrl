@@ -1,0 +1,65 @@
+  general_cfg:
+    joyrl_version: 0.6.2.2
+    algo_name: PPO
+    env_name: gym 
+    device: cuda
+    interactor_device: cpu
+    learner_device: cuda 
+    mode: train 
+    exps_trucation_size: 512
+    is_learner_async: false
+    load_checkpoint:  false
+    load_path: Train_Reacher-v4_PPO_20240702-005711
+    load_model_step: best 
+    n_interactors: 10 
+    max_episode: 42000
+    max_step: 100 
+    seed: 202406
+    online_eval: true 
+    online_eval_episode: 15 
+    model_save_fre: 10 
+    policy_summary_fre: 10
+    interact_summary_fre: 100
+  algo_cfg:
+    independ_actor: true
+    return_form: td
+    actor_branch_layers:
+      - name: feature_1
+        layers:
+        - layer_type: linear
+          layer_size: [240]
+          activation: tanh
+        - layer_type: linear
+          layer_size: [240]
+          activation: tanh
+    critic_branch_layers:
+      - name: feature_1
+        layers:
+        - layer_type: linear
+          layer_size: [240]
+          activation: tanh
+        - layer_type: linear
+          layer_size: [240]
+          activation: tanh
+    buffer_type: ONPOLICY_QUE
+    lr: 2.5e-4
+    actor_lr: 5.5e-4
+    critic_lr: 7.5e-4
+    entropy_coef: 0.001
+    critic_loss_coef: 0.001
+    eps_clip: 0.185
+    gamma: 0.99
+    gae_lambda: 0.985
+    k_epochs: 2
+    batch_size: 256
+    sgd_batch_size: 128
+  env_cfg:
+    id: Reacher-v4
+    render_mode:  null  
+    max_episode_steps: 100
+    wrappers:
+      - wrapper_name: ClipAction
+      - wrapper_name: MultiHeadObsWrapper
+      - wrapper_name: ReacherDistReward
+        dis_weight: 0.4
+
