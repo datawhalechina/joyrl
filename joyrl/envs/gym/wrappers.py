@@ -12,6 +12,21 @@ from typing import List
 
 BipedalWalkerV3TFReward = partial(TransformReward, f=lambda r: -1.0 if r <= -100 else r)
 
+class ReacherDistReward(gym.Wrapper):
+    def __init__(self, env, dis_weight=0.5):
+        """_summary_
+        Args:
+            env (_type_): _description_
+        """
+        super().__init__(env)
+        self.dis_weight = dis_weight
+
+    def step(self, action):
+        reward_dist = np.log1p(1 / np.linalg.norm(self.env.unwrapped.get_body_com("fingertip") - self.env.unwrapped.get_body_com("target")))
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        reward += self.dis_weight * reward_dist
+        return obs, reward, terminated, truncated, info
+
 
 class BaseSkipFrame(gym.Wrapper):
     def __init__(
