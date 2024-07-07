@@ -61,6 +61,7 @@ More tutorials and API documentation are hosted on [JoyRL docs](https://datawhal
 | NoisyDQN | [NoisyDQN Paper](https://arxiv.org/pdf/1706.10295.pdf) | [johnjim0816](https://github.com/johnjim0816) | |
 | DDPG | [DDPG Paper](https://arxiv.org/abs/1509.02971) | [johnjim0816](https://github.com/johnjim0816) | |
 | TD3 | [TD3 Paper](https://arxiv.org/pdf/1802.09477) | [johnjim0816](https://github.com/johnjim0816) | |
+| A2C/A3C | [A3C Paper](https://arxiv.org/abs/1602.01783) | [johnjim0816](https://github.com/johnjim0816) | |
 | PPO | [PPO Paper](https://arxiv.org/abs/1707.06347) | [johnjim0816](https://github.com/johnjim0816) | |
 
 ## Why JoyRL?

@@ -5,11 +5,10 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-05-17 01:08:36
 LastEditor: JiangJi
-LastEditTime: 2024-06-10 23:51:36
+LastEditTime: 2024-06-23 18:20:59
 Discription: 
 '''
 import numpy as np
-import torch
 from joyrl.algos.base.data_handler import BaseDataHandler
 class DataHandler(BaseDataHandler):
     def __init__(self, cfg):
@@ -61,8 +60,9 @@ class DataHandler(BaseDataHandler):
         ''' convert exps to training data
         '''
         super()._handle_exps_before_train(exps)
-        log_probs = [exp.log_prob for exp in exps] 
+        log_probs = [exp.log_prob for exp in exps]  # cannot detach
         returns = np.array([exp.normed_return_td for exp in exps]) # [batch_size]
-        self.data_after_train.update({'log_probs': log_probs, 'returns': returns})
+        values = [exp.value for exp in exps] # [batch_size]
+        self.data_after_train.update({'log_probs': log_probs, 'returns': returns, 'values': values})
 
         

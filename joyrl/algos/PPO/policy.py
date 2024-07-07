@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-16 19:58:31
+LastEditTime: 2024-06-23 17:50:31
 Discription: 
 '''
 import torch
@@ -27,10 +27,6 @@ class Policy(BasePolicy):
             self.kl_beta = cfg.kl_beta
             self.kl_alpha = cfg.kl_alpha
         self.gamma = cfg.gamma
-        # self.action_type_list = cfg.action_type
-        # if self.action_type_list.lower() == 'continuous': # continuous action space
-        #     self.action_scale = torch.tensor((self.action_space.high - self.action_space.low)/2, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
-        #     self.action_bias = torch.tensor((self.action_space.high + self.action_space.low)/2, device=self.device, dtype=torch.float32).unsqueeze(dim=0)
         self.critic_loss_coef = cfg.critic_loss_coef
         self.k_epochs = cfg.k_epochs # update policy for K epochs
         self.eps_clip = cfg.eps_clip # clip parameter for PPO
@@ -51,6 +47,7 @@ class Policy(BasePolicy):
                 'critic_loss': 0.0,
             },
         }
+        
     def update_summary(self):
         ''' 更新 tensorboard 数据
         '''

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:30:09
 LastEditor: JiangJi
-LastEditTime: 2024-06-16 19:44:51
+LastEditTime: 2024-07-08 01:10:21
 Discription: 
 '''
 class DefaultConfig:
@@ -37,6 +37,7 @@ class GeneralConfig(object):
         self.action_space = {'type': ['Discrete'], 'shape': [2]} # action space
         self.algo_name = "DQN" # name of algorithm
         self.mode = "train" # train, test
+        self.device = "custom" # set all device to cpu, cuda, custom
         self.interactor_device = "cpu" # device to use for interactor
         self.learner_device = "cpu" # device to use for learner
         self.seed = 0 # random seed

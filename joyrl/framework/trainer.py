@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:02:30
 LastEditor: JiangJi
-LastEditTime: 2024-06-16 19:43:24
+LastEditTime: 2024-07-08 01:10:59
 Discription: 
 '''
 import copy
@@ -43,24 +43,24 @@ class Trainer(Moduler):
     def _check_gpu(self):
         self.cfg.gpu_resources_per_interactor = 0
         self.cfg.gpu_resources_per_learner = 0
+        if not torch.cuda.is_available():
+            exec_method(self.logger, 'warning', 'remote', "CUDA is not available, use cpu instead!")
+            self.cfg.device = 'cpu'
+            self.cfg.interactor_device = 'cpu'
+            self.cfg.learner_device = 'cpu'
+            return 
+        if self.cfg.device == 'cpu' or self.cfg.device == 'cuda':
+            self.cfg.interactor_device = self.cfg.device
+            self.cfg.learner_device = self.cfg.device
+            return 
         if self.cfg.interactor_device == 'cuda' and self.cfg.learner_device == 'cuda':
-            if not torch.cuda.is_available():
-                exec_method(self.logger, 'warning', 'remote', "CUDA is not available, use cpu instead!")
-                self.cfg.device = 'cpu'
+            self.cfg.gpu_resources_per_interactor = 0.4 / self.cfg.n_interactors
+            self.cfg.gpu_resources_per_learner = 0.6 / self.cfg.n_learners
+        elif self.cfg.interactor_device == 'cpu' and self.cfg.learner_device == 'cuda':
+            self.cfg.gpu_resources_per_learner = 1.0 / self.cfg.n_learners
         else:
-            if not torch.cuda.is_available():
-                exec_method(self.logger, 'warning', 'remote', "CUDA is not available, use cpu instead!")
-                self.cfg.device = 'cpu'
-                self.cfg.interactor_device = 'cpu'
-                self.cfg.learner_device = 'cpu'
-            else:
-                if self.cfg.interactor_device == 'cuda' and self.cfg.learner_device == 'cuda':
-                    self.cfg.gpu_resources_per_interactor = 0.4 / self.cfg.n_interactors
-                    self.cfg.gpu_resources_per_learner = 0.6 / self.cfg.n_learners
-                elif self.cfg.interactor_device == 'cpu' and self.cfg.learner_device == 'cuda':
-                    self.cfg.gpu_resources_per_learner = 1.0 / self.cfg.n_learners
-                else:
-                    self.cfg.gpu_resources_per_interactor = 1.0 / self.cfg.n_interactors
+            self.cfg.gpu_resources_per_interactor = 1.0 / self.cfg.n_interactors
+                
             
     def _create_shared_data(self):
         self.latest_model_params_dict = DataActor.options(**{'num_cpus': 0}).remote({'step': 0, 'model_params': self.policy.get_model_params()})

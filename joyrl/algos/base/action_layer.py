@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-06-17 01:16:34
+LastEditTime: 2024-07-08 01:00:29
 Discription: 
 '''
 from enum import Enum
@@ -111,7 +111,7 @@ class DiscreteActionLayer(BaseActionLayer):
         dist = Categorical(probs)
         action = dist.sample() # [batch_size]
         log_prob = dist.log_prob(action) # [batch_size]
-        return {"action": action.detach().cpu().numpy().item(), "log_prob": log_prob}
+        return {"action": action.detach().cpu().numpy().item(), "log_prob": log_prob.detach().cpu().numpy().item()}
     
     def predict_action(self,**kwargs):
         ''' get action

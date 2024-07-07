@@ -1,29 +1,67 @@
 general_cfg:
+  joyrl_version: 0.6.6
   algo_name: A3C
-  device: cpu
-  env_name: CartPole-v1
-  wrapper: null
-  n_workers: 10 # number of workers for parallel training
-  train_eps: 400
-  test_eps: 10
-  eval_eps: 10
-  eval_per_episode: 5
-  load_checkpoint: false
-  load_path: Train_CartPole-v1_DQN_20221026-054757
-  max_steps: 200
-  mode: train
-  new_step_api: true
-  render: false
-  save_fig: true
-  seed: 1
-  show_fig: false
-
+  env_name: gym 
+  device: cpu 
+  mode: train 
+  exps_trucation_size: 20
+  is_learner_async: false
+  load_checkpoint: false 
+  load_path: Train_CartPole-v1_PPO_20231225-124842 # if load checkpoint, then config path in 'tasks' dir
+  load_model_step: best 
+  n_interactors: 10
+  max_episode: -1
+  max_step: 200 
+  seed: 1 
+  online_eval: true 
+  online_eval_episode: 15 
+  model_save_fre: 10 
+  policy_summary_fre: 10
+  interact_summary_fre: 100
 algo_cfg:
-  actor_hidden_dim: 256
+  independ_actor: false
+  return_form: td
+  actor_branch_layers:
+    - name: feature_1
+      layers:
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+  critic_branch_layers:
+    - name: feature_1
+      layers:
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+  branch_layers:
+    - name: state
+      layers:
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+  buffer_type: ONPOLICY_QUE
+  lr: 0.0003
   actor_lr: 0.0003
-  continuous: false
-  critic_hidden_dim: 256
   critic_lr: 0.001
   entropy_coef: 0.001
-  gamma: 0.99
-  update_freq: 20
+  critic_loss_coef: 0.5
+  gamma: 0.95
+  gae_lambda: 0.95
+  batch_size: 200
+  # min_policy: 0.001
+env_cfg:
+  id: CartPole-v1
+  render_mode: null
+  wrappers:
+    - wrapper_name: MultiHeadObsWrapper
+    - wrapper_name: MultiHeadActionWrapper
+  

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-02-25 15:46:04
 LastEditor: JiangJi
-LastEditTime: 2024-06-18 23:09:28
+LastEditTime: 2024-06-23 22:29:56
 Discription: 
 '''
 import copy
@@ -69,7 +69,7 @@ class Interactor(Moduler):
                 #     # exec_method(self.logger, 'info', 'remote', f"Interactor {self.id} put exps to sample_data_que failed")
                 #     pass
             else:
-                exec_method(self.collector, 'pub_msg', 'remote', Msg(type = MsgType.COLLECTOR_PUT_EXPS, data = self.exps))
+                exec_method(self.collector, 'pub_msg', 'get', Msg(type = MsgType.COLLECTOR_PUT_EXPS, data = self.exps))
             self.exps = []
             self.need_update_policy = True
         else:

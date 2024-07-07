@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-05-26 23:54:07
 LastEditor: JiangJi
-LastEditTime: 2024-06-14 09:31:42
+LastEditTime: 2024-07-08 01:14:49
 Discription: 
 '''
 import os
@@ -125,7 +125,7 @@ class Logger(object):
         self.logger = logging.getLogger(name = f"Log_{self.name}")
         self.logger.setLevel(logging.INFO) # default level is INFO
         c = "yellow" if any(j in self.name for j in  ["OnlineTester", "Interactor_"]) else "white"
-        self.formatter = colorlog.ColoredFormatter(
+        self.ch_formatter = colorlog.ColoredFormatter(
             f"%(asctime)s - %(log_color)s%(name)s - %(levelname)-8s%(reset)s: - %({c})s%(message)s",
             datefmt='%Y-%m-%d %H:%M:%S',
             reset=True,
@@ -138,7 +138,7 @@ class Logger(object):
             },
             style='%'
         )
-        # logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+        self.fh_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
         # output to file by using FileHandler
         if not self.logger.handlers: # avoid duplicate print
             name = self.name.split('_')[0]
@@ -146,11 +146,11 @@ class Logger(object):
             Path(log_dir).mkdir(parents=True, exist_ok=True)
             fh = logging.FileHandler(f"{log_dir}/Log_{self.name}.txt")
             fh.setLevel(logging.DEBUG)
-            fh.setFormatter(self.formatter)
+            fh.setFormatter(self.fh_formatter)
             self.logger.addHandler(fh)
             ch = logging.StreamHandler()
             ch.setLevel(logging.INFO)
-            ch.setFormatter(self.formatter)
+            ch.setFormatter(self.ch_formatter)
             self.logger.addHandler(ch)
     
     def info(self, content):

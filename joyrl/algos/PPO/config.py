@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-02-20 21:53:39
 LastEditor: JiangJi
-LastEditTime: 2024-06-11 23:34:11
+LastEditTime: 2024-06-23 17:50:12
 Discription: 
 '''
 class AlgoConfig(object):
@@ -31,8 +31,6 @@ class AlgoConfig(object):
         self.entropy_coef = 0.01 # entropy coefficient
         self.batch_size = 256 # ppo train batch size
         self.sgd_batch_size = 32 # sgd batch size
-        self.actor_hidden_dim = 256 # hidden dimension for actor
-        self.critic_hidden_dim = 256 # hidden dimension for critic
         self.min_policy = 0 # min value for policy (for discrete action space)
         self.buffer_type = 'REPLAY_QUE'
         self.branch_layers = []
