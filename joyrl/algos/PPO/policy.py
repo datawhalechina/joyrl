@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-23 17:50:31
+LastEditTime: 2024-07-09 10:32:35
 Discription: 
 '''
 import torch
@@ -47,7 +47,7 @@ class Policy(BasePolicy):
                 'critic_loss': 0.0,
             },
         }
-        
+
     def update_summary(self):
         ''' 更新 tensorboard 数据
         '''
@@ -89,7 +89,7 @@ class Policy(BasePolicy):
     def prepare_data_before_learn(self, **kwargs):
         super().prepare_data_before_learn(**kwargs)
         log_probs, returns = kwargs.get('log_probs'), kwargs.get('returns')
-        self.log_probs = torch.tensor(log_probs, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
+        self.log_probs = torch.tensor(log_probs, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
         # self.log_probs = torch.cat(log_probs, dim=0).detach() # [batch_size,1]
         self.returns = torch.tensor(returns, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
 
