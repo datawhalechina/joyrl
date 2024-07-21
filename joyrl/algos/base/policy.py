@@ -11,9 +11,9 @@ from joyrl.algos.base.network import BaseNework
 class BasePolicy(object):
     ''' base policy for DRL
     '''
-    def __init__(self, cfg : MergedConfig) -> None:
+    def __init__(self, cfg : MergedConfig, **kwargs) -> None:
         self.cfg = cfg
-        self.device = torch.device('cpu')
+        self.device = torch.device(cfg.device)
         self.policy_transition = {}
         self.data_after_train = {}
         self.model_meta = {}

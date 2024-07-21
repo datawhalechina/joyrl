@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-01-25 09:58:33
 LastEditor: JiangJi
-LastEditTime: 2024-06-17 01:29:34
+LastEditTime: 2024-07-21 15:17:11
 Discription: 
 '''
 import torch
@@ -13,11 +13,12 @@ import torch.nn as nn
 import math,random
 import numpy as np
 from joyrl.algos.base.policy import BasePolicy
-from joyrl.algos.base.network import QNetwork
+from joyrl.algos.base.noise import OUNoise
+from joyrl.algos.base.network import *
 
 class Policy(BasePolicy):
-    def __init__(self, cfg):
-        super(Policy, self).__init__(cfg)
+    def __init__(self, cfg, **kwargs):
+        super(Policy, self).__init__(cfg, **kwargs)
         self.gamma = cfg.gamma  
         # e-greedy parameters
         self.epsilon_start = cfg.epsilon_start
@@ -26,6 +27,7 @@ class Policy(BasePolicy):
         self.target_update = cfg.target_update
         self.sample_count = 0
         self.update_step = 0
+        self.ou_noise = OUNoise(self.action_size_list)
         
     def create_model(self):
         self.model = QNetwork(self.cfg, self.state_size_list).to(self.device)
@@ -49,7 +51,8 @@ class Policy(BasePolicy):
             # before update, the network inference time may be longer
             action = self.predict_action(state) 
         else:
-            action = self.model.action_layers.get_actions(mode = 'random', actor_outputs = [{}] * len(self.action_size_list))
+            action = get_model_actions(self.model, mode = 'random', actor_outputs = [{}] * len(self.action_size_list))
+        action = self.ou_noise.get_action(action, self.sample_count)
         return action
     
     @torch.no_grad()
@@ -59,7 +62,7 @@ class Policy(BasePolicy):
         state = self.process_sample_state(state)
         model_outputs = self.model(state)
         actor_outputs = model_outputs['actor_outputs']
-        actions = self.model.action_layers.get_actions(mode = 'predict', actor_outputs = actor_outputs)
+        actions = get_model_actions(self.model, mode = 'predict', actor_outputs = actor_outputs)
         return actions
     
     def learn(self, **kwargs):

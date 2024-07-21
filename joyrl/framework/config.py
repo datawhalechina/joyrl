@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-02 15:30:09
 LastEditor: JiangJi
-LastEditTime: 2024-07-08 01:10:21
+LastEditTime: 2024-07-20 13:03:03
 Discription: 
 '''
 class DefaultConfig:
@@ -33,8 +33,6 @@ class GeneralConfig(object):
         # basic settings
         self.joyrl_version = "0.5.0"
         self.env_name = "gym" # name of environment
-        self.obs_space = {'type': ['Box'], 'shape': [4]} # observation space
-        self.action_space = {'type': ['Discrete'], 'shape': [2]} # action space
         self.algo_name = "DQN" # name of algorithm
         self.mode = "train" # train, test
         self.device = "custom" # set all device to cpu, cuda, custom

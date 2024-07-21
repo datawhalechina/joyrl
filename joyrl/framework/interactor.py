@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-02-25 15:46:04
 LastEditor: JiangJi
-LastEditTime: 2024-06-23 22:29:56
+LastEditTime: 2024-07-21 14:30:09
 Discription: 
 '''
 import copy
@@ -106,6 +106,7 @@ class Interactor(Moduler):
             action = self.policy.get_action(self.curr_obs)
             obs, reward, self.terminated, self.truncated, info = self.env.step(action)
             interact_transition = {'interactor_id': self.id, 'model_step': self.curr_model_step, 'state': self.curr_obs, 'action': action,'reward': reward, 'next_state': obs, 'done': self.terminated or self.truncated, 'info': info}
+            self.policy.update_policy_transition()
             policy_transition = self.policy.get_policy_transition()
             self.exps.append(Exp(**interact_transition, **policy_transition))
             self.curr_obs, self.curr_info = obs, info

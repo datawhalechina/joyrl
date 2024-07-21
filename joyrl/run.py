@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-06-17 01:30:28
+LastEditTime: 2024-07-21 15:57:49
 Discription: 
 '''
 import os,copy
@@ -137,10 +137,7 @@ class Launcher(object):
             env_cfg_dic = self.env_cfg.__dict__
             kwargs = {k: v for k, v in env_cfg_dic.items() if k not in env_cfg_dic['ignore_params']}
             env = gym.make(**kwargs)
-        setattr(self.cfg, 'obs_space', env.observation_space)
-        setattr(self.cfg, 'action_space', env.action_space)
-        if self.env_cfg.wrappers is None:
-            return env
+        if self.env_cfg.wrappers is None: return env
         for wrapper in self.env_cfg.wrappers: 
             wrapper_name = wrapper['wrapper_name']
             wrapper_kwargs = copy.deepcopy(wrapper)
@@ -151,9 +148,6 @@ class Launcher(object):
                 env = env_wapper_cls(env, **wrapper_kwargs)
             except Exception as e:
                 env = env_wapper_cls(env)
-        
-        setattr(self.cfg, 'obs_space', env.observation_space)
-        setattr(self.cfg, 'action_space', env.action_space)
         return env
     
     def policy_config(self):
@@ -192,21 +186,29 @@ class Launcher(object):
             state_size_list = [[obs_space.n]]
         else:
             raise ValueError('obs_space type error')
-        self.cfg.obs_space = {'type': state_type_list, 'size': state_size_list}
+        if hasattr(self.cfg, 'obs_space'):
+            if len(self.cfg.obs_space.get('type',[])) != 0:
+                state_type_list = self.cfg.obs_space['type']
+                state_type_list = [ObsType[type.upper()] for type in state_type_list]
+            if len(self.cfg.obs_space.get('size',[])) != 0:
+                state_size_list = self.cfg.obs_space['size']
         self.cfg.obs_space_info = ObsSpaceInfo(size = state_size_list, type = state_type_list)
         action_space = env.action_space
         if isinstance(action_space, Box):
             n_action_head = action_space.shape[0]
             action_type_list = [ActionType.CONTINUOUS] * n_action_head
             action_size_list = [[action_space.low[i], action_space.high[i]] for i in range(n_action_head)]
-            
         elif isinstance(action_space, Discrete):
             action_type_list = [ActionType.DISCRETE]
             action_size_list = [[int(action_space.n)]]
-
         else:
             raise ValueError('action_space type error')
-        self.cfg.action_space = {'type': action_type_list, 'size': action_size_list}
+        if hasattr(self.cfg, 'action_space'):
+            if len(self.cfg.action_space.get('type',[])) != 0:
+                action_type_list = self.cfg.action_space['type']
+                action_type_list = [ActionType[type.upper()] for type in action_type_list]
+            if len(self.cfg.action_space.get('size',[])) != 0:
+                action_size_list = self.cfg.action_space['size']
         self.cfg.action_space_info = ActionSpaceInfo(size = action_size_list, type = action_type_list)
 
     def run(self) -> None:

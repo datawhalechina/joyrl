@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-07-08 01:05:54
+LastEditTime: 2024-07-20 15:55:32
 Discription: 
 '''
 import torch
@@ -13,7 +13,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as Data
 import numpy as np
-from joyrl.algos.base.network import ActorCriticNetwork, CriticNetwork, ActorNetwork
+from joyrl.algos.base.network import *
 from joyrl.algos.base.policy import BasePolicy
 from joyrl.framework.config import MergedConfig
 
@@ -65,7 +65,7 @@ class Policy(BasePolicy):
         model_outputs = self.model(state)
         self.value = model_outputs['value']
         actor_outputs = model_outputs['actor_outputs']
-        actions, self.log_prob = self.model.get_actions_and_log_probs(mode = 'sample', actor_outputs = actor_outputs)
+        actions, self.log_prob = get_model_actions_and_log_probs(self.model, mode = 'sample', actor_outputs = actor_outputs)
         self.update_policy_transition()
         return actions
 
@@ -74,7 +74,7 @@ class Policy(BasePolicy):
         state = self.process_sample_state(state)
         model_outputs = self.model(state)
         actor_outputs = model_outputs['actor_outputs']
-        actions = self.model.get_actions(mode = 'predict', actor_outputs = actor_outputs)
+        actions = get_model_actions(self.model, mode = 'predict', actor_outputs = actor_outputs)
         return actions
     
     def prepare_data_before_learn(self, **kwargs):
@@ -89,10 +89,10 @@ class Policy(BasePolicy):
         advantages = self.returns - values.detach() # shape:[batch_size,1]
         values = model_outputs['value']
         actor_outputs = model_outputs['actor_outputs']
-        log_probs = self.model.get_log_probs_action(actor_outputs, self.actions)
+        log_probs = get_model_log_probs_action(self.model, actor_outputs, self.actions)
         self.actor_loss = - torch.mean(log_probs * advantages.detach())
         self.critic_loss = self.critic_loss_coef * nn.MSELoss()(self.returns, values) # shape: [batch_size, 1]
-        self.tot_loss = self.actor_loss + self.critic_loss + self.entropy_coef * self.model.get_mean_entropy(model_outputs['actor_outputs'])
+        self.tot_loss = self.actor_loss + self.critic_loss + self.entropy_coef * get_model_mean_entropy(self.model, model_outputs['actor_outputs'])
         self.optimizer.zero_grad()
         self.tot_loss.backward()
         for param in self.model.parameters():

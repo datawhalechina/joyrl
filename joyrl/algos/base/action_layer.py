@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-07-08 01:00:29
+LastEditTime: 2024-07-21 14:08:19
 Discription: 
 '''
 from enum import Enum
@@ -198,12 +198,10 @@ class ContinuousActionLayer(BaseActionLayer):
         return entropy_mean
     
 class DPGActionLayer(BaseActionLayer):
-    def __init__(self, cfg, input_size, action_dim, id = 0, **kwargs):
+    def __init__(self, cfg, input_size, action_dim = 1, id = 0, **kwargs):
         super(DPGActionLayer, self).__init__(cfg=cfg, input_size=input_size, action_dim=action_dim, id=id)
-        # self.action_high = self.cfg.action_high_list[self.id]
-        # self.action_low = self.cfg.action_low_list[self.id]
-        self.action_high = self.cfg.action_space.high
-        self.action_low = self.cfg.action_space.low
+        self.action_low = self.cfg.action_space_info.size[self.id][0]
+        self.action_high = self.cfg.action_space_info.size[self.id][1]
         self.action_scale = (self.action_high - self.action_low)/2
         self.action_bias = (self.action_high + self.action_low)/2
         self.action_dim = action_dim
@@ -214,28 +212,18 @@ class DPGActionLayer(BaseActionLayer):
         
     def forward(self,x, **kwargs):
         mu = self.action_layer(x)
-        self.mu = mu
-        output = {"mu": mu}
-        return output
-    
-    def get_mu(self):
-        ''' get mu
-        '''
-        return self.mu
+        mean = mu * self.action_scale + self.action_bias
+        return {"mu": mu, "mean": mean}
         
-    def sample_action(self, actor_outputs):
+    def sample_action(self, **kwargs):
         ''' get action
         '''
-        device_ = self.mu.device 
-        action = torch.FloatTensor(self.action_scale).to(device_) * self.mu + torch.FloatTensor(self.action_bias).to(device_)
-        action = action.detach().cpu().numpy()[0]
-        return action
+        return self.predict_action(**kwargs)
     
-    def predict_action(self, actor_outputs):
+    def predict_action(self, **kwargs):
         ''' get action
         '''
-        device_ = self.mu.device 
-        action = torch.FloatTensor(self.action_scale).to(device_) * self.mu + torch.FloatTensor(self.action_bias).to(device_)
-        action = action.detach().cpu().numpy()[0]
-        return action
+        mu = kwargs.get("mu", None)
+        action = mu * self.action_scale + self.action_bias
+        return {"action": action.detach().cpu().numpy().item()}
     

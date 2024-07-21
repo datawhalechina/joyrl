@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-06-16 20:01:36
+LastEditTime: 2024-07-21 15:10:22
 Discription: 
 '''
 import copy
@@ -42,10 +42,11 @@ class BranchLayers(nn.Module):
     def forward(self, x):
         if isinstance(x, torch.Tensor): # if x is a tensor, convert it to a list
             x = [x]
+        x_ = [x[i] for i in range(len(x))]
         for i, branch_layer in enumerate(self.branch_layers):
             for layer in branch_layer:
-                x[i] = layer(x[i])
-        return x
+                x_[i] = layer(x_[i])
+        return x_
     
     def reset_noise(self):
         ''' reset noise for noisy layers
@@ -54,11 +55,10 @@ class BranchLayers(nn.Module):
             for layer in branch_layer:
                 if hasattr(layer, "reset_noise"):
                     layer.reset_noise()
-    
 class MergeLayer(nn.Module):
     def __init__(self, merge_layers_cfg: list, input_size_list: list, **kwargs) -> None:
         super(MergeLayer, self).__init__(**kwargs)
-        input_dim = sum([input_size[1] for input_size in input_size_list])
+        input_dim = sum([input_size[-1] for input_size in input_size_list])
         self.input_size = [None, input_dim]
         self.output_size = copy.deepcopy(self.input_size)
         self.merge_layers = nn.ModuleList()
@@ -75,10 +75,10 @@ class MergeLayer(nn.Module):
             self.output_size = layer_output_size
 
     def forward(self, x):
-        x = torch.cat(x, dim=1)
+        x_ = torch.cat(x, dim=1)
         for layer in self.merge_layers:
-            x = layer(x)
-        return x
+            x_ = layer(x_)
+        return x_
     def reset_noise(self):
         ''' reset noise for noisy layers
         '''
@@ -105,9 +105,9 @@ class ActionLayers(nn.Module):
             if action_type == ActionType.CONTINUOUS:
                 action_layer = ContinuousActionLayer(self.cfg, self.input_size, id = i)
             elif action_type == ActionType.DISCRETE:
-                action_layer = DiscreteActionLayer(self.cfg, self.input_size, action_size,id = i)
+                action_layer = DiscreteActionLayer(self.cfg, self.input_size, action_size, id = i)
             elif action_type == ActionType.DPG:
-                action_layer = DPGActionLayer(self.cfg, self.input_size, action_size, id = i)
+                action_layer = DPGActionLayer(self.cfg, self.input_size, id = i)
             elif action_type == ActionType.DQNACTION:
                 action_layer = DQNActionLayer(self.cfg, self.input_size, action_size, id = i)
             else:
@@ -209,7 +209,6 @@ class QNetwork(BaseNework):
         self.branch_layers.reset_noise()
         self.merge_layer.reset_noise()
 
-
 class ActorNetwork(BaseNework):
     def __init__(self, cfg: MergedConfig, input_size_list) -> None:
         super(ActorNetwork, self).__init__(cfg, input_size_list)
@@ -260,7 +259,7 @@ class ActorCriticNetwork(BaseNework):
             self.value_layer, _ = create_layer(self.merge_layer.output_size, LayerConfig(layer_type='linear', layer_size=[1], activation='none'))
             self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size)
         
-    def forward(self, x, pre_legal_actions=None):
+    def forward(self, x, pre_legal_actions = None):
         if getattr(self.cfg, 'independ_actor', False):
             # since input x is a list, need to deepcopy it to avoid changing the original x
             actor_outputs = self.actor(copy.deepcopy(x), pre_legal_actions)
@@ -273,27 +272,23 @@ class ActorCriticNetwork(BaseNework):
             actor_outputs = self.action_layers(x, pre_legal_actions = pre_legal_actions)
             return {'value': value, 'actor_outputs': actor_outputs}
         
-    def get_actions_and_log_probs(self, **kwargs):
-        if getattr(self.cfg, 'independ_actor', False):
-            return self.actor.action_layers.get_actions_and_log_probs(**kwargs)
-        else:
-            return self.action_layers.get_actions_and_log_probs(**kwargs)
+def get_model_actions_and_log_probs(model, **kwargs):
+    if hasattr(model, 'actor'):
+        return model.actor.action_layers.get_actions_and_log_probs(**kwargs)
+    return model.action_layers.get_actions_and_log_probs(**kwargs)
         
-    def get_log_probs_action(self, actor_outputs, actions):
-        if getattr(self.cfg, 'independ_actor', False):
-            return self.actor.action_layers.get_log_probs_action(actor_outputs, actions)
-        else:
-            return self.action_layers.get_log_probs_action(actor_outputs, actions)
-        
-    def get_mean_entropy(self, actor_outputs):
-        if getattr(self.cfg, 'independ_actor', False):
-            return self.actor.action_layers.get_mean_entropy(actor_outputs)
-        else:
-            return self.action_layers.get_mean_entropy(actor_outputs)
+def get_model_log_probs_action(model, actor_outputs, actions):
+    if hasattr(model, 'actor'):
+        return model.actor.action_layers.get_log_probs_action(actor_outputs, actions)
+    return model.action_layers.get_log_probs_action(actor_outputs, actions)
+
+def get_model_mean_entropy(model, actor_outputs):
+    if hasattr(model, 'actor'):
+        return model.actor.action_layers.get_mean_entropy(actor_outputs)
+    return model.action_layers.get_mean_entropy(actor_outputs)
+
+def get_model_actions(model, **kwargs):
+    if hasattr(model, 'actor'):
+        return model.actor.action_layers.get_actions(**kwargs)
+    return model.action_layers.get_actions(**kwargs)
     
-    def get_actions(self, **kwargs):
-        if getattr(self.cfg, 'independ_actor', False):
-            return self.actor.action_layers.get_actions(**kwargs)
-        else:
-            return self.action_layers.get_actions(**kwargs)
-        

@@ -1,5 +1,5 @@
 general_cfg:
-  joyrl_version: 0.5.2
+  joyrl_version: 0.6.7
   algo_name: DDPG
   env_name: gym 
   device: cpu 
@@ -12,8 +12,10 @@ general_cfg:
   seed: 1
   online_eval: true 
   online_eval_episode: 20 
-  model_save_fre: 2000 
+  model_save_fre: 500 
 algo_cfg:
+  action_space:
+    type: [dpg]
   actor_branch_layers:
     - name: state
       layers:
@@ -37,14 +39,16 @@ algo_cfg:
     - layer_type: linear
       layer_size: [256]
       activation: relu
-  batch_size: 128
+  batch_size: 256
   buffer_type: REPLAY_QUE
   max_buffer_size: 8000
   actor_lr: 0.0001
   critic_lr: 0.001
   policy_loss_weight: 0.002
   gamma: 0.99
-  tau: 0.001
+  tau: 0.01
 env_cfg:
   id: Pendulum-v1
   render_mode: null # null, rgb_array, human
+  wrappers:
+    - wrapper_name: MultiHeadObsWrapper

@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-06-16 08:53:47
 LastEditor: JiangJi
-LastEditTime: 2024-06-16 09:33:34
+LastEditTime: 2024-07-20 13:08:16
 Discription: 
 '''
 from enum import Enum
@@ -49,6 +49,11 @@ class ActionSpaceInfo:
                     assert self.size[i][0] < self.size[i][1], f"action head {i} size error, low must be less than high, but got {self.size[i]}"
                 else:
                     raise ValueError(f"action head {i} size error, expected to be a list like [low,high], but got {self.size[i]}")
+            elif self.type[i] == ActionType.DPG:
+                if isinstance(self.size[i], list):
+                    assert len(self.size[i]) == 2, f"action head {i} size expected to be 2, but got {len(self.size[i])}"
+                    self.size[i] = [float(x) for x in self.size[i]]
+                    assert self.size[i][0] < self.size[i][1], f"action head {i} size error, low must be less than high, but got {self.size[i]}"
             else:
                 raise ValueError('action type error')
 

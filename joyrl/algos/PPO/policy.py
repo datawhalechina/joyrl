@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-07-09 10:32:35
+LastEditTime: 2024-07-21 15:16:46
 Discription: 
 '''
 import torch
@@ -13,7 +13,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as Data
 import numpy as np
-from joyrl.algos.base.network import ActorCriticNetwork, CriticNetwork, ActorNetwork
+from joyrl.algos.base.network import *
 from joyrl.algos.base.policy import BasePolicy
 from joyrl.framework.config import MergedConfig
 
@@ -74,8 +74,7 @@ class Policy(BasePolicy):
         model_outputs = self.model(state)
         self.value = model_outputs['value']
         actor_outputs = model_outputs['actor_outputs']
-        actions, self.log_prob = self.model.get_actions_and_log_probs(mode = 'sample', actor_outputs = actor_outputs)
-        self.update_policy_transition()
+        actions, self.log_prob = get_model_actions_and_log_probs(self.model, mode = 'sample', actor_outputs = actor_outputs)
         return actions
 
     @torch.no_grad()
@@ -83,7 +82,7 @@ class Policy(BasePolicy):
         state = self.process_sample_state(state)
         model_outputs = self.model(state)
         actor_outputs = model_outputs['actor_outputs']
-        actions = self.model.get_actions(mode = 'predict', actor_outputs = actor_outputs)
+        actions = get_model_actions(self.model, mode = 'predict', actor_outputs = actor_outputs)
         return actions
     
     def prepare_data_before_learn(self, **kwargs):
@@ -115,9 +114,9 @@ class Policy(BasePolicy):
                 model_outputs = self.model(old_states)
                 values = model_outputs['value']
                 actor_outputs = model_outputs['actor_outputs']
-                new_log_probs = self.model.get_log_probs_action(actor_outputs, old_actions)
+                new_log_probs = get_model_log_probs_action(self.model, actor_outputs, old_actions)
                 # new_log_probs = self.model.action_layers.get_log_probs_action(old_actions)
-                entropy_mean = self.model.get_mean_entropy(actor_outputs)
+                entropy_mean = get_model_mean_entropy(self.model, actor_outputs)
                 advantages = returns - values.detach() # shape:[batch_size,1]
                 # get action probabilities
                 # compute ratio (pi_theta / pi_theta__old):

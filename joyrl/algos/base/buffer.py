@@ -24,7 +24,7 @@ class BufferCreator:
     '''
     def __init__(self, algo_cfg):
         self.cfg = algo_cfg
-        self.buffer_type = BufferType[algo_cfg.buffer_type]
+        self.buffer_type = BufferType[algo_cfg.buffer_type.upper()]
     def __call__(self):
         if self.buffer_type == BufferType.REPLAY:
             return ReplayBuffer(self.cfg)
