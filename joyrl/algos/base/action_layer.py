@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-07-21 14:08:19
+LastEditTime: 2024-07-21 15:59:56
 Discription: 
 '''
 from enum import Enum
@@ -148,6 +148,8 @@ class ContinuousActionLayer(BaseActionLayer):
         output_size = input_size
         mu_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='tanh')
         self.mu_layer, _ = create_layer(output_size, mu_layer_cfg)
+        self.action_std_scale = getattr(cfg, 'action_std_scale', 1.0)
+        self.action_std_bias = getattr(cfg, 'action_std_bias', 0.0)
         self.log_std = nn.Parameter(torch.zeros(1, 1))
 
     def forward(self,x, **kwargs):
@@ -157,7 +159,7 @@ class ContinuousActionLayer(BaseActionLayer):
         # sigma = F.softplus(self.fc4(x)) + 0.001 # std of normal distribution, add a small value to avoid 0
         # sigma = torch.clamp(sigma, min=-0.25, max=0.25) # clamp the std between 0.001 and 1
         mean = mu * self.action_scale + self.action_bias
-        std = sigma
+        std = sigma * self.action_std_scale + self.action_std_bias
         output = {"mu": mu, "sigma": sigma, "mean": mean, "std": std}
         return output
     
