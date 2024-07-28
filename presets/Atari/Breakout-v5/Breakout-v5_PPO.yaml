@@ -1,0 +1,87 @@
+general_cfg:
+  joyrl_version: 0.6.2.2
+  algo_name: PPO
+  env_name: gym 
+  interactor_device: cpu
+  learner_device: cuda 
+  mode: train # test # test
+  exps_trucation_size: 1024
+  exps_trucation_size_input_only: true
+  is_learner_async: false
+  load_checkpoint: false # true # false # true # test
+  # load_path: Train_ALE/Breakout-v5_PPO_20240721-190921 # td 58
+  # load_path: Train_ALE/Breakout-v5_PPO_20240722-001214 #         td 67  258
+  # load_path: Train_ALE/Breakout-v5_PPO_20240724-001646 #         continue-train td 87  369
+  # load_path: Train_ALE/Breakout-v5_PPO_20240724-223629  # 5.5e-5  continue-train td 99  408
+  # load_path: Train_ALE/Breakout-v5_PPO_20240725-145732  # 2.5e-4  98
+  load_path: Train_ALE/Breakout-v5_PPO_20240725-225306  # 2.5e-4  103 419
+  load_model_step: best 
+  n_interactors: 10 #  1 # test
+  max_episode: 55000 # 60000 # 3 # test
+  max_step: 800 
+  seed: 202407
+  online_eval: true 
+  online_eval_episode: 15  # 1  # test
+  model_save_fre: 10   # 1  # test
+  policy_summary_fre: 10  # 1  # test
+  interact_summary_fre: 100  # 1  # test
+algo_cfg:
+  independ_actor: false
+  return_form: gae # td 
+  branch_layers:
+    - name: feature_1
+      layers:
+      - layer_type: conv2d
+        in_channel: 4
+        out_channel: 32 
+        kernel_size: 8
+        stride: 4
+        activation: relu
+      - layer_type: conv2d
+        in_channel: 32
+        out_channel: 64 
+        kernel_size: 4
+        stride: 2
+        activation: relu
+      - layer_type: conv2d
+        in_channel: 64
+        out_channel: 64 
+        kernel_size: 3
+        stride: 1
+        activation: relu
+      - layer_type: flatten
+      - layer_type: linear
+        layer_size: [512]
+        activation: relu
+  buffer_type: ONPOLICY_QUE
+  lr: 2.5e-4 # 2.5e-4
+  actor_lr: 3.0e-4  
+  critic_lr: 5.5e-4  
+  entropy_coef: 0.001
+  critic_loss_coef: 0.5
+  eps_clip: 0.105
+  gamma: 0.99
+  gae_lambda: 0.95
+  k_epochs: 3
+  batch_size: 256
+  sgd_batch_size: 128
+  clip_vloss: True
+  max_norm: 0.5
+env_cfg:
+  id: ALE/Breakout-v5
+  render_mode:  null
+  wrappers:
+    - wrapper_name: BaseSkipFrame
+      start_skip: 30
+      skip: 4
+    - wrapper_name: GrayScaleObservation
+    - wrapper_name: ResizeObservation
+      shape: 84
+    - wrapper_name: ClipRewardEnv
+    - wrapper_name: EpisodicLifeEnv
+    - wrapper_name: FrameStack
+      num_stack: 4
+    - wrapper_name: MultiHeadObsWrapper
+    - wrapper_name: MultiHeadActionWrapper
+    - wrapper_name: FrameStack2Numpy
+

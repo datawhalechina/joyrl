@@ -60,6 +60,7 @@ class OnlineTester(Moduler):
                 self.curr_test_step = model_step
                 self.policy.load_model(f"{self.cfg.model_dir}/{self.curr_test_step}")
                 sum_eval_reward = 0
+                sum_eval_steps = 0
                 for _ in range(self.cfg.online_eval_episode):
                     ep_reward, ep_step = 0, 0
                     while True:
@@ -68,8 +69,16 @@ class OnlineTester(Moduler):
                         self.curr_obs, self.curr_info = obs, info
                         ep_reward += reward
                         ep_step += 1
-                        if terminated or truncated or (0 <= self.cfg.max_step <= ep_step):
+                        lives = None 
+                        try:
+                            lives = self.env.unwrapped.ale.lives()
+                        except Exception as e:
+                            pass 
+                        stop_ = ((lives == 0) and (terminated or truncated) ) if lives is not None else (terminated or truncated)
+                        # stop_ =  terminated or truncated 
+                        if stop_ or (0 <= self.cfg.max_step <= ep_step):
                             sum_eval_reward += ep_reward
+                            sum_eval_steps += ep_step
                             self.curr_obs, self.curr_info = self.env.reset(seed = self.seed)
                             break
                 try:
@@ -77,7 +86,8 @@ class OnlineTester(Moduler):
                 except:
                     pass
                 mean_eval_reward = sum_eval_reward / self.cfg.online_eval_episode
-                exec_method(self.logger, 'info', 'get', f"online_eval step: {self.curr_test_step}, online_eval_reward: {mean_eval_reward:.3f}")
+                mean_eval_steps = sum_eval_steps / self.cfg.online_eval_episode
+                exec_method(self.logger, 'info', 'get', f"online_eval step: {self.curr_test_step}, online_eval_steps:{mean_eval_steps:.1f} online_eval_reward: {mean_eval_reward:.3f}")
                 exec_method(self.recorder, 'pub_msg', 'remote', Msg(type = MsgType.RECORDER_PUT_SUMMARY, data = [(model_step, {'online_eval_reward': mean_eval_reward})])) # put summary to stats recorder
                 # logger_info = f"test_step: {self.curr_test_step}, online_eval_reward: {mean_eval_reward:.3f}"
                 # self.logger.info.remote(logger_info) if self.use_ray else self.logger.info(logger_info)

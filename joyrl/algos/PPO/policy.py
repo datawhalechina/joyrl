@@ -67,8 +67,11 @@ class Policy(BasePolicy):
             self.optimizer = optim.Adam(self.model.parameters(), lr = self.cfg.lr)  
 
     def update_policy_transition(self):
-        self.policy_transition = {'value': self.value.detach().cpu().numpy().item(), 'log_prob': self.log_prob.detach().cpu().numpy().item()}
-
+        try:
+            self.policy_transition = {'value': self.value.detach().cpu().numpy().item(), 'log_prob': self.log_prob.detach().cpu().numpy().item()}
+        except AttributeError as e:
+            self.policy_transition = {'value': self.value.detach().cpu().numpy().item(), 'log_prob': self.log_prob}
+    
     def sample_action(self, state, **kwargs):
         state = self.process_sample_state(state)
         model_outputs = self.model(state)
@@ -87,14 +90,18 @@ class Policy(BasePolicy):
     
     def prepare_data_before_learn(self, **kwargs):
         super().prepare_data_before_learn(**kwargs)
-        log_probs, returns = kwargs.get('log_probs'), kwargs.get('returns')
+        before_v = kwargs.get('before_v')
+        log_probs, returns, adv, return_gae = kwargs.get('log_probs'), kwargs.get('returns'), kwargs.get('adv'), kwargs.get('return_gae')
         self.log_probs = torch.tensor(log_probs, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
         # self.log_probs = torch.cat(log_probs, dim=0).detach() # [batch_size,1]
         self.returns = torch.tensor(returns, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
+        self.adv = torch.tensor(adv, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
+        self.return_gae = torch.tensor(return_gae, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
+        self.before_v = torch.tensor(before_v, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
 
     def learn(self, **kwargs):
         super().learn(**kwargs)
-        torch_dataset = Data.TensorDataset(*self.states, *self.actions, self.log_probs, self.returns)
+        torch_dataset = Data.TensorDataset(*self.states, *self.actions, self.log_probs, self.returns, self.adv, self.return_gae, self.before_v)
         train_loader = Data.DataLoader(dataset = torch_dataset, batch_size = self.sgd_batch_size, shuffle = True)
         self.actor_losses_epoch, self.critic_losses_epoch, self.tot_losses_epoch = [], [], []
         for _ in range(self.k_epochs):
@@ -111,13 +118,16 @@ class Policy(BasePolicy):
                 idx += len(self.actions)
                 old_log_probs = data[idx]
                 returns = data[idx+1]
+                adv = data[idx+2]
+                td_v = data[idx+3]
+                before_v = data[idx+4]
                 model_outputs = self.model(old_states)
                 values = model_outputs['value']
                 actor_outputs = model_outputs['actor_outputs']
                 new_log_probs = get_model_log_probs_action(self.model, actor_outputs, old_actions)
                 # new_log_probs = self.model.action_layers.get_log_probs_action(old_actions)
                 entropy_mean = get_model_mean_entropy(self.model, actor_outputs)
-                advantages = returns - values.detach() # shape:[batch_size,1]
+                advantages = adv # returns - values.detach() # shape:[batch_size,1]
                 # get action probabilities
                 # compute ratio (pi_theta / pi_theta__old):
                 ratio = torch.exp(new_log_probs - old_log_probs) # shape: [batch_size, 1]
@@ -127,7 +137,15 @@ class Policy(BasePolicy):
                 # compute actor loss
                 self.actor_loss = - (torch.mean(torch.min(surr1, surr2)) )
                 # compute critic loss
-                self.critic_loss = self.cfg.critic_loss_coef * nn.MSELoss()(returns, values) # shape: [batch_size, 1]
+                if hasattr(self.cfg, 'clip_vloss'):
+                    # # ref: https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/
+                    v = torch.clamp(values, before_v - self.eps_clip, before_v + self.eps_clip)
+                    # print(f'v={v.shape} td_v={td_v.shape} new_v={new_v.shape}')
+                    self.critic_loss = self.cfg.critic_loss_coef * torch.mean(
+                        torch.max((v - td_v).pow(2), (values - td_v).pow(2))
+                    )
+                else:
+                    self.critic_loss = self.cfg.critic_loss_coef * nn.MSELoss()(td_v, values) # shape: [batch_size, 1]
                 self.actor_losses_epoch.append(self.actor_loss.item())
                 self.critic_losses_epoch.append(self.critic_loss.item())
                 self.tot_loss = self.actor_loss + self.critic_loss + self.entropy_coef * entropy_mean
@@ -135,8 +153,11 @@ class Policy(BasePolicy):
                 self.optimizer.zero_grad()
                 self.tot_losses_epoch.append(self.tot_loss.item())
                 self.tot_loss.backward()
-                for param in self.model.parameters():
-                    param.grad.data.clamp_(-1, 1)   
+                if hasattr(self.cfg, "max_norm"):
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.cfg.max_norm) 
+                else: 
+                    for param in self.model.parameters():
+                        param.grad.data.clamp_(-1, 1)   
                 self.optimizer.step()
         self.update_summary()
     

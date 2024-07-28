@@ -12,6 +12,59 @@ from typing import List
 
 BipedalWalkerV3TFReward = partial(TransformReward, f=lambda r: -1.0 if r <= -100 else r)
 
+
+class ClipRewardEnv(gym.RewardWrapper):
+    def __init__(self, env):
+        """
+        clips the reward to {+1, 0, -1} by its sign.
+        :param env: (Gym Environment) the environment
+        """
+        gym.RewardWrapper.__init__(self, env)
+
+    def reward(self, reward):
+        """
+        Bin reward to {+1, 0, -1} by its sign.
+        :param reward: (float)
+        """
+        return np.sign(reward)
+    
+class EpisodicLifeEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
+    """
+    Make end-of-life == end-of-episode, but only reset on true game over.
+    Done by DeepMind for the DQN and co. since it helps value estimation.
+
+    :param env: Environment to wrap
+    """
+
+    def __init__(self, env: gym.Env):
+        super().__init__(env)
+        self.lives = 0
+        self.was_real_done = True
+
+    def step(self, action: int):
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        self.was_real_done = terminated or truncated
+        # check current lives, make loss of life terminal,
+        # then update lives to handle bonus lives
+        lives = self.env.unwrapped.ale.lives()  # type: ignore[attr-defined]
+        if 0 < lives < self.lives:
+            # for Qbert sometimes we stay in lives == 0 condition for a few frames
+            # so its important to keep lives > 0, so that we only reset once
+            # the environment advertises done.
+            terminated = True
+        self.lives = lives
+        return obs, reward, terminated, truncated, info
+
+
+class FrameStack2Numpy(gym.ObservationWrapper):
+    def __init__(self, env):
+        ''' reshape image observation [H, W, C] to [C, H, W] and normalize to [0, 1]
+        '''
+        super(FrameStack2Numpy, self).__init__(env)
+
+    def observation(self, observation):
+        return np.array(observation)
+
 class ReacherDistReward(gym.Wrapper):
     def __init__(self, env, dis_weight=0.5):
         """_summary_
@@ -61,7 +114,6 @@ class BaseSkipFrame(gym.Wrapper):
 
     def step(self, action):
         tt_reward_list = []
-        done = False
         total_reward = 0
         if self.int_action_flag:
             action = action[0]
@@ -70,11 +122,11 @@ class BaseSkipFrame(gym.Wrapper):
             done_f = terminated or truncated
             total_reward += reward
             tt_reward_list.append(reward)
-            if done:
+            if done_f:
                 break
 
         obs = self._cut_slice(obs)  if self.pic_cut_slices is not None else obs
-        return obs, total_reward, done_f, truncated, info
+        return obs, total_reward, terminated, truncated, info
 
     def _start_skip(self):
         a = np.array([0.0, 0.0, 0.0]) if hasattr(self.env.action_space, 'low') else np.array(0) 

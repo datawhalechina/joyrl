@@ -70,6 +70,13 @@ class DataHandler(BaseDataHandler):
         else:
             raise NotImplementedError("return_form not implemented")
         # returns = torch.tensor(returns, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
-        self.data_after_train.update({'log_probs': log_probs, 'returns': returns})
+        adv_gae_np = np.array([exp.adv_gae for exp in exps])
+        self.data_after_train.update({
+            'log_probs': log_probs, 
+            'returns': returns,
+            'return_gae': np.array([exp.return_gae for exp in exps]),
+            'adv': (adv_gae_np - np.mean(adv_gae_np)) / (np.std(adv_gae_np) + 1e-8),
+            'before_v': np.array([exp.value for exp in exps]),
+        })
 
         
