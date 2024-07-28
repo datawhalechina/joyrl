@@ -5,14 +5,15 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-07-21 15:59:56
+LastEditTime: 2024-07-21 16:46:03
 Discription: 
 '''
-from enum import Enum
+import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical,Normal
+from enum import Enum
 from joyrl.algos.base.base_layer import LayerConfig
 from joyrl.algos.base.base_layer import create_layer
 
@@ -179,6 +180,9 @@ class ContinuousActionLayer(BaseActionLayer):
         mean = kwargs.get("mean", None)
         return {"action": mean.detach().cpu().numpy().item(), "log_prob": None}
     
+    def random_action(self, **kwargs):
+        return {"action": random.uniform(self.action_low, self.action_high)}
+    
     def get_log_prob_action(self, actor_output, action):
         ''' get log_probs
         '''
@@ -228,4 +232,7 @@ class DPGActionLayer(BaseActionLayer):
         mu = kwargs.get("mu", None)
         action = mu * self.action_scale + self.action_bias
         return {"action": action.detach().cpu().numpy().item()}
+    
+    def random_action(self, **kwargs):
+        return {"action": random.uniform(self.action_low, self.action_high)}
     

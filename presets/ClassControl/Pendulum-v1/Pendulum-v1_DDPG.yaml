@@ -1,5 +1,5 @@
 general_cfg:
-  joyrl_version: 0.6.7
+  joyrl_version: 0.6.7.2
   algo_name: DDPG
   env_name: gym 
   device: cpu 

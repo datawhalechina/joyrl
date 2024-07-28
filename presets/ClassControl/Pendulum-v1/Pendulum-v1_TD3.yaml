@@ -1,7 +1,6 @@
 general_cfg:
-  joyrl_version: 0.5.2
+  joyrl_version: 0.6.7.2
   algo_name: TD3
-  env_name: gym 
   device: cpu 
   mode: train 
   load_checkpoint: false
@@ -12,9 +11,10 @@ general_cfg:
   seed: 1
   online_eval: true 
   online_eval_episode: 20 
-  model_save_fre: 2000 
+  model_save_fre: 500 
 algo_cfg:
-  learn_frequency: 1
+  action_space:
+    type: [dpg]
   actor_branch_layers:
     - name: state
       layers:
@@ -48,4 +48,6 @@ algo_cfg:
   tau: 0.005
 env_cfg:
   id: Pendulum-v1
-  render_mode: null 
+  render_mode: null # null, rgb_array, human
+  wrappers:
+    - wrapper_name: MultiHeadObsWrapper

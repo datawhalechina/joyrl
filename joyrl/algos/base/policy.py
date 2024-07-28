@@ -13,15 +13,16 @@ class BasePolicy(object):
     '''
     def __init__(self, cfg : MergedConfig, **kwargs) -> None:
         self.cfg = cfg
-        self.device = torch.device(cfg.device)
         self.policy_transition = {}
         self.data_after_train = {}
         self.model_meta = {}
         self.state_size_list = self.cfg.obs_space_info.size
         self.action_size_list = self.cfg.action_space_info.size
+        self.to("cpu")
         self.create_model()
         self.create_optimizer()
         self.create_summary()
+        # default device is cpu
     
     def to(self, device):
         ''' set device

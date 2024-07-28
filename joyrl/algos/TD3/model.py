@@ -3,9 +3,9 @@
 '''
 Author: JiangJi
 Email: johnjim0816@gmail.com
-Date: 2024-07-20 14:15:24
+Date: 2024-07-21 16:37:59
 LastEditor: JiangJi
-LastEditTime: 2024-07-21 16:38:14
+LastEditTime: 2024-07-21 16:38:00
 Discription: 
 '''
 import torch.nn as nn
@@ -18,4 +18,5 @@ class Model(nn.Module):
         action_size_list = cfg.action_space_info.size
         critic_input_size_list = state_size_list+ [[None, len(action_size_list)]]
         self.actor = ActorNetwork(cfg, input_size_list = state_size_list)
-        self.critic = CriticNetwork(cfg, input_size_list = critic_input_size_list)
+        self.critic_1 = CriticNetwork(cfg, input_size_list = critic_input_size_list)
+        self.critic_2 = CriticNetwork(cfg, input_size_list = critic_input_size_list)

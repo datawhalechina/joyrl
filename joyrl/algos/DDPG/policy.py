@@ -5,21 +5,21 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-02-25 15:46:04
 LastEditor: JiangJi
-LastEditTime: 2024-07-21 15:11:52
+LastEditTime: 2024-07-28 11:08:50
 Discription: 
 '''
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from joyrl.algos.base.policy import BasePolicy
-from joyrl.algos.base.noise import OUNoise
+from joyrl.algos.base.noise import MultiHeadActionNoise
 from joyrl.algos.base.network import *
 from .model import Model
 
 class Policy(BasePolicy):
     def __init__(self,cfg, **kwargs) -> None:
         super(Policy, self).__init__(cfg, **kwargs)
-        self.ou_noise = OUNoise(self.action_size_list)  
+        self.action_noise = MultiHeadActionNoise('ou',self.action_size_list)
         self.gamma = cfg.gamma
         self.tau = cfg.tau
         self.sample_count = 0 # sample count
@@ -40,9 +40,6 @@ class Policy(BasePolicy):
         self.critic_optimizer = optim.Adam(self.model.critic.parameters(), lr=self.cfg.critic_lr)
 
     def create_summary(self):
-        '''
-        创建 tensorboard 数据
-        '''
         self.summary = {
             'scalar': {
                 'tot_loss': 0.0,
@@ -52,8 +49,6 @@ class Policy(BasePolicy):
         }
 
     def update_summary(self):
-        ''' 更新 tensorboard 数据
-        '''
         if hasattr(self, 'tot_loss'):
             self.summary['scalar']['tot_loss'] = self.tot_loss.item()
         self.summary['scalar']['policy_loss'] = self.policy_loss.item()
@@ -67,7 +62,7 @@ class Policy(BasePolicy):
         actor_outputs = self.model.actor(state)
         self.mu = torch.cat([actor_outputs[i]['mu'] for i in range(len(self.action_size_list))], dim=1)
         actions = get_model_actions(self.model, mode = 'sample', actor_outputs = actor_outputs)
-        actions = self.ou_noise.get_action(actions, self.sample_count) # add noise to action
+        actions = self.action_noise.get_action(actions, t = self.sample_count) # add noise to action
         return actions
     
     def update_policy_transition(self):
