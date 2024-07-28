@@ -69,14 +69,7 @@ class OnlineTester(Moduler):
                         self.curr_obs, self.curr_info = obs, info
                         ep_reward += reward
                         ep_step += 1
-                        lives = None 
-                        try:
-                            lives = self.env.unwrapped.ale.lives()
-                        except Exception as e:
-                            pass 
-                        stop_ = ((lives == 0) and (terminated or truncated) ) if lives is not None else (terminated or truncated)
-                        # stop_ =  terminated or truncated 
-                        if stop_ or (0 <= self.cfg.max_step <= ep_step):
+                        if truncated or (0 <= self.cfg.max_step <= ep_step):
                             sum_eval_reward += ep_reward
                             sum_eval_steps += ep_step
                             self.curr_obs, self.curr_info = self.env.reset(seed = self.seed)

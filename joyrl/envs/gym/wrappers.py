@@ -51,7 +51,7 @@ class EpisodicLifeEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
             # for Qbert sometimes we stay in lives == 0 condition for a few frames
             # so its important to keep lives > 0, so that we only reset once
             # the environment advertises done.
-            terminated = True
+            truncated = True
         self.lives = lives
         return obs, reward, terminated, truncated, info
 

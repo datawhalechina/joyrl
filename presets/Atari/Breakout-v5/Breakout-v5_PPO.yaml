@@ -65,7 +65,6 @@ algo_cfg:
   k_epochs: 3
   batch_size: 256
   sgd_batch_size: 128
-  clip_vloss: True
   max_norm: 0.5
 env_cfg:
   id: ALE/Breakout-v5

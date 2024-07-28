@@ -34,7 +34,7 @@ class Interactor(Moduler):
         self.summary = [] # reset summary
         self.ep_reward, self.ep_step = 0, 0 # reset params per episode
         self.curr_obs, self.curr_info = self.env.reset(seed = self.seed) # reset env
-        self.stop_, self.truncated, self.terminated = False, False, False
+        self.truncated, self.terminated = False, False
         self.curr_model_step, self.last_model_step = 0, 0
         self.need_update_policy = False
         self._init_n_sample_steps()
@@ -57,7 +57,7 @@ class Interactor(Moduler):
     def _put_exps(self):
         ''' put exps to collector
         '''
-        input_bool = len(self.exps) >= self.cfg.exps_trucation_size or self.stop_
+        input_bool = len(self.exps) >= self.cfg.exps_trucation_size or self.terminated
         if hasattr(self.cfg, "exps_trucation_size_input_only") and self.cfg.exps_trucation_size_input_only:
             input_bool = len(self.exps) >= self.cfg.exps_trucation_size 
 
@@ -116,14 +116,7 @@ class Interactor(Moduler):
             self.curr_obs, self.curr_info = obs, info
             self.ep_reward += reward
             self.ep_step += 1
-            lives = None 
-            try:
-                lives = self.env.unwrapped.ale.lives()
-            except Exception as e:
-                pass 
-            self.stop_ = ((lives == 0) and (self.terminated or self.truncated) ) if lives is not None else (self.terminated or self.truncated)
-            # self.stop_ =  self.terminated or self.truncated 
-            if self.stop_ or self.ep_step >= self.cfg.max_step > 0:
+            if self.terminated or self.ep_step >= self.cfg.max_step > 0:
                 exec_method(self.tracker, 'pub_msg', 'remote', Msg(MsgType.TRACKER_INCREASE_EPISODE))
                 global_episode = exec_method(self.tracker, 'pub_msg', 'get', Msg(type = MsgType.TRACKER_GET_EPISODE))
                 if global_episode % self.cfg.interact_summary_fre == 0: 

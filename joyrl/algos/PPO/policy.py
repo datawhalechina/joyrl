@@ -90,18 +90,16 @@ class Policy(BasePolicy):
     
     def prepare_data_before_learn(self, **kwargs):
         super().prepare_data_before_learn(**kwargs)
-        before_v = kwargs.get('before_v')
-        log_probs, returns, adv, return_gae = kwargs.get('log_probs'), kwargs.get('returns'), kwargs.get('adv'), kwargs.get('return_gae')
+        log_probs, returns, values = kwargs.get('log_probs'), kwargs.get('returns'), kwargs.get('values')
         self.log_probs = torch.tensor(log_probs, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
         # self.log_probs = torch.cat(log_probs, dim=0).detach() # [batch_size,1]
         self.returns = torch.tensor(returns, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
-        self.adv = torch.tensor(adv, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
-        self.return_gae = torch.tensor(return_gae, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
-        self.before_v = torch.tensor(before_v, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
+        self.values = torch.tensor(values, dtype = torch.float32, device = self.device).unsqueeze(dim=1)
 
     def learn(self, **kwargs):
         super().learn(**kwargs)
-        torch_dataset = Data.TensorDataset(*self.states, *self.actions, self.log_probs, self.returns, self.adv, self.return_gae, self.before_v)
+        adv = self.returns - self.values
+        torch_dataset = Data.TensorDataset(*self.states, *self.actions, self.log_probs, self.returns, adv)
         train_loader = Data.DataLoader(dataset = torch_dataset, batch_size = self.sgd_batch_size, shuffle = True)
         self.actor_losses_epoch, self.critic_losses_epoch, self.tot_losses_epoch = [], [], []
         for _ in range(self.k_epochs):
@@ -119,8 +117,6 @@ class Policy(BasePolicy):
                 old_log_probs = data[idx]
                 returns = data[idx+1]
                 adv = data[idx+2]
-                td_v = data[idx+3]
-                before_v = data[idx+4]
                 model_outputs = self.model(old_states)
                 values = model_outputs['value']
                 actor_outputs = model_outputs['actor_outputs']
@@ -137,15 +133,7 @@ class Policy(BasePolicy):
                 # compute actor loss
                 self.actor_loss = - (torch.mean(torch.min(surr1, surr2)) )
                 # compute critic loss
-                if hasattr(self.cfg, 'clip_vloss'):
-                    # # ref: https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/
-                    v = torch.clamp(values, before_v - self.eps_clip, before_v + self.eps_clip)
-                    # print(f'v={v.shape} td_v={td_v.shape} new_v={new_v.shape}')
-                    self.critic_loss = self.cfg.critic_loss_coef * torch.mean(
-                        torch.max((v - td_v).pow(2), (values - td_v).pow(2))
-                    )
-                else:
-                    self.critic_loss = self.cfg.critic_loss_coef * nn.MSELoss()(td_v, values) # shape: [batch_size, 1]
+                self.critic_loss = self.cfg.critic_loss_coef * nn.MSELoss()(returns, values) # shape: [batch_size, 1]
                 self.actor_losses_epoch.append(self.actor_loss.item())
                 self.critic_losses_epoch.append(self.critic_loss.item())
                 self.tot_loss = self.actor_loss + self.critic_loss + self.entropy_coef * entropy_mean
