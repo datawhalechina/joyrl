@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 23:02:13
 LastEditor: JiangJi
-LastEditTime: 2024-07-21 15:16:46
+LastEditTime: 2024-07-28 13:08:11
 Discription: 
 '''
 import torch
@@ -67,7 +67,7 @@ class Policy(BasePolicy):
             self.optimizer = optim.Adam(self.model.parameters(), lr = self.cfg.lr)  
 
     def update_policy_transition(self):
-        self.policy_transition = {'value': self.value.detach().cpu().numpy().item(), 'log_prob': self.log_prob}
+        self.policy_transition = {'value': self.value.detach().cpu().numpy().item(), 'log_prob': self.log_prob.detach().cpu().numpy().item()}
 
     def sample_action(self, state, **kwargs):
         state = self.process_sample_state(state)
