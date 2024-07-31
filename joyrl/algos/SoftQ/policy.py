@@ -5,13 +5,13 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2024-01-25 09:58:33
 LastEditor: JiangJi
-LastEditTime: 2024-07-31 10:15:12
+LastEditTime: 2024-07-31 10:19:50
 Discription: 
 '''
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import math,random
-import numpy as np
 from joyrl.algos.base.policy import BasePolicy
 from joyrl.algos.base.noise import OUNoise
 from joyrl.algos.base.network import *
@@ -20,6 +20,7 @@ class Policy(BasePolicy):
     def __init__(self, cfg, **kwargs):
         super(Policy, self).__init__(cfg, **kwargs)
         self.gamma = cfg.gamma  
+        self.alpha = cfg.alpha
         # e-greedy parameters
         self.epsilon_start = cfg.epsilon_start
         self.epsilon_end = cfg.epsilon_end
@@ -60,7 +61,11 @@ class Policy(BasePolicy):
         state = self.process_sample_state(state)
         model_outputs = self.model(state)
         actor_outputs = model_outputs['actor_outputs']
-        actions = get_model_actions(self.model, mode = 'predict', actor_outputs = actor_outputs)
+        q_values = [actor_outputs[i]['q_value'] for i in range(len(self.action_size_list))]
+        values_soft = [ self.alpha * torch.logsumexp(q_value / self.alpha, dim=1, keepdim=True) for q_value in q_values]
+        probs = [F.softmax((q_value - value_soft), dim=1) for q_value, value_soft in zip(q_values, values_soft)]
+        dists = [torch.distributions.Categorical(probs = prob) for prob in probs]
+        actions = [dist.sample().cpu().numpy().item() for dist in dists]
         return actions
     
     def learn(self, **kwargs):
@@ -75,9 +80,10 @@ class Policy(BasePolicy):
         for i in range(len(self.action_size_list)):
             actual_q_value = actor_outputs[i]['q_value'].gather(1, self.actions[i].long())
             # compute next max q value
-            next_q_value_max = target_actor_outputs[i]['q_value'].max(1)[0].unsqueeze(dim=1)
+            next_q_value = target_actor_outputs[i]['q_value']
+            next_v_soft = self.alpha * torch.logsumexp(next_q_value / self.alpha, dim=1, keepdim=True)
             # compute target Q values
-            target_q_value = self.rewards + (1 - self.dones) * self.gamma * next_q_value_max
+            target_q_value = self.rewards + (1 - self.dones) * self.gamma * next_v_soft
             # compute loss
             loss_i = nn.MSELoss()(actual_q_value, target_q_value)
             tot_loss += loss_i

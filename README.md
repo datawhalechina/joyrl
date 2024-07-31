@@ -65,6 +65,7 @@ More tutorials and API documentation are hosted on [JoyRL docs](https://datawhal
 | TD3 | [TD3 Paper](https://arxiv.org/pdf/1802.09477) | [johnjim0816](https://github.com/johnjim0816) | |
 | A2C/A3C | [A3C Paper](https://arxiv.org/abs/1602.01783) | [johnjim0816](https://github.com/johnjim0816) | |
 | PPO | [PPO Paper](https://arxiv.org/abs/1707.06347) | [johnjim0816](https://github.com/johnjim0816) | |
+| SoftQ | [SoftQ Paper](https://arxiv.org/abs/1702.08165) | [johnjim0816](https://github.com/johnjim0816) | |
 
 ## Why JoyRL?
 
@@ -82,7 +83,7 @@ More tutorials and API documentation are hosted on [JoyRL docs](https://datawhal
 | [rlpyt](https://github.com/astooke/rlpyt)                    | [![GitHub stars](https://img.shields.io/github/stars/astooke/rlpyt)](https://github.com/astooke/rlpyt/stargazers) | 11                       | :x:                            | :x:                | :heavy_check_mark: | :heavy_check_mark:     | PyTorch                                           |
 | [ChainerRL](https://github.com/chainer/chainerrl)            | [![GitHub stars](https://img.shields.io/github/stars/chainer/chainerrl)](https://github.com/chainer/chainerrl/stargazers) | 18                       | :heavy_check_mark: (gym)       | :x:                | :heavy_check_mark: | :x:                    | Chainer                                           |
 | [Tianshou](https://github.com/thu-ml/tianshou)               | [![GitHub stars](https://img.shields.io/github/stars/thu-ml/tianshou)](https://github.com/thu-ml/tianshou/stargazers) | 20                       | :heavy_check_mark: (Gymnasium) | :x:                | :heavy_check_mark: | :heavy_check_mark:     | PyTorch                                           |
-| [JoyRL](https://github.com/datawhalechina/joyrl)             | ![GitHub stars](https://img.shields.io/github/stars/datawhalechina/joyrl) | 10                      | :heavy_check_mark: (Gymnasium) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:     | PyTorch                                           |
+| [JoyRL](https://github.com/datawhalechina/joyrl)             | ![GitHub stars](https://img.shields.io/github/stars/datawhalechina/joyrl) | 11                     | :heavy_check_mark: (Gymnasium) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:     | PyTorch                                           |
 
 Here are some other highlghts of JoyRL:
 
