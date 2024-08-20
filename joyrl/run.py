@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-07-21 15:57:49
+LastEditTime: 2024-08-20 13:18:31
 Discription: 
 '''
 import os,copy
@@ -172,20 +172,41 @@ class Launcher(object):
         data_handler = data_handler_mod.DataHandler(self.cfg)
         return policy, data_handler
     
-    def _check_obs_action_space_info(self, env):
-        obs_space = env.observation_space
-        if isinstance(obs_space, Box):
-            if len(obs_space.shape) == 3:
-                state_type_list = [ObsType.IMAGE]
-                state_size_list = [[obs_space.shape[0], obs_space.shape[1], obs_space.shape[2]]]
-            else:
+    def _get_obs_space_from_env(self, env):
+        state_type_list, state_size_list = [], []
+        try:
+            obs_space = env.observation_space
+            if isinstance(obs_space, Box):
+                if len(obs_space.shape) == 3:
+                    state_type_list = [ObsType.IMAGE]
+                    state_size_list = [[obs_space.shape[0], obs_space.shape[1], obs_space.shape[2]]]
+                else:
+                    state_type_list = [ObsType.VECTOR]
+                    state_size_list = [[obs_space.shape[0]]]
+            elif isinstance(self.obs_space, Discrete):
                 state_type_list = [ObsType.VECTOR]
-                state_size_list = [[obs_space.shape[0]]]
-        elif isinstance(self.obs_space, Discrete):
-            state_type_list = [ObsType.VECTOR]
-            state_size_list = [[obs_space.n]]
-        else:
-            raise ValueError('obs_space type error')
+                state_size_list = [[obs_space.n]]
+        except:
+            pass
+        return state_type_list, state_size_list
+
+    def _check_obs_action_space_info(self, env):
+        action_type_list, action_size_list = [], []
+        try:
+            action_space = env.action_space
+            if isinstance(action_space, Box):
+                n_action_head = action_space.shape[0]
+                action_type_list = [ActionType.CONTINUOUS] * n_action_head
+                action_size_list = [[action_space.low[i], action_space.high[i]] for i in range(n_action_head)]
+            elif isinstance(action_space, Discrete):
+                action_type_list = [ActionType.DISCRETE]
+                action_size_list = [[int(action_space.n)]]
+        except:
+            pass
+        return action_type_list, action_size_list
+    
+    def _check_obs_action_space_info(self, env):
+        state_type_list, state_size_list = self._get_obs_space_from_env(env)
         if hasattr(self.cfg, 'obs_space'):
             if len(self.cfg.obs_space.get('type',[])) != 0:
                 state_type_list = self.cfg.obs_space['type']
@@ -193,16 +214,7 @@ class Launcher(object):
             if len(self.cfg.obs_space.get('size',[])) != 0:
                 state_size_list = self.cfg.obs_space['size']
         self.cfg.obs_space_info = ObsSpaceInfo(size = state_size_list, type = state_type_list)
-        action_space = env.action_space
-        if isinstance(action_space, Box):
-            n_action_head = action_space.shape[0]
-            action_type_list = [ActionType.CONTINUOUS] * n_action_head
-            action_size_list = [[action_space.low[i], action_space.high[i]] for i in range(n_action_head)]
-        elif isinstance(action_space, Discrete):
-            action_type_list = [ActionType.DISCRETE]
-            action_size_list = [[int(action_space.n)]]
-        else:
-            raise ValueError('action_space type error')
+        action_type_list, action_size_list = self._check_obs_action_space_info(env)
         if hasattr(self.cfg, 'action_space'):
             if len(self.cfg.action_space.get('type',[])) != 0:
                 action_type_list = self.cfg.action_space['type']
