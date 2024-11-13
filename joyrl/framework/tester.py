@@ -69,7 +69,7 @@ class OnlineTester(Moduler):
                         self.curr_obs, self.curr_info = obs, info
                         ep_reward += reward
                         ep_step += 1
-                        if truncated or (0 <= self.cfg.max_step <= ep_step):
+                        if terminated or (0 <= self.cfg.max_step <= ep_step):
                             sum_eval_reward += ep_reward
                             sum_eval_steps += ep_step
                             self.curr_obs, self.curr_info = self.env.reset(seed = self.seed)

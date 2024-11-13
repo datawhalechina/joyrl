@@ -271,19 +271,19 @@ class ActorCriticNetwork(BaseNework):
         
         for layer in [self.merge_layer, self.branch_layers]:
             for name, p in layer.named_parameters():
-                if 'weight' in name:
+                if 'weight' in name and len(p.shape) >= 2: 
                     torch.nn.init.orthogonal_(p, math.sqrt(2))
                 if 'bias' in name: 
                     torch.nn.init.constant_(p, 0)
 
         for name, p in self.value_layer.named_parameters():
-            if 'weight' in name:
+            if 'weight' in name and len(p.shape) >= 2: 
                 torch.nn.init.orthogonal_(p, 1.0)
             if 'bias' in name: 
                 torch.nn.init.constant_(p, 0)
 
         for name, p in self.action_layers.named_parameters():
-            if 'weight' in name:
+            if 'weight' in name and len(p.shape) >= 2: 
                 torch.nn.init.orthogonal_(p, 0.01)
             if 'bias' in name: 
                 torch.nn.init.constant_(p, 0)
@@ -293,7 +293,7 @@ class ActorCriticNetwork(BaseNework):
             std_ = math.sqrt(2)
             if "action_layers" in name:
                 std_ = 0.01
-            if 'weight' in name:
+            if 'weight' in name and len(p.shape) >= 2: 
                 torch.nn.init.orthogonal_(p, std_)
             if 'bias' in name: 
                 torch.nn.init.constant_(p, 0)
@@ -302,7 +302,7 @@ class ActorCriticNetwork(BaseNework):
             std_ = math.sqrt(2)
             if "value_layer" in name:
                 std_ = 1.0
-            if 'weight' in name:
+            if 'weight' in name and len(p.shape) >= 2: 
                 torch.nn.init.orthogonal_(p, std_)
             if 'bias' in name: 
                 torch.nn.init.constant_(p, 0)

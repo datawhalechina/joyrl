@@ -66,7 +66,7 @@ class DataHandler(BaseDataHandler):
         elif self.cfg.return_form.lower() == 'td':
             returns = np.array([exp.normed_return_td for exp in exps])
         elif self.cfg.return_form.lower() == 'gae':
-            returns = np.array([exp.normed_return_gae for exp in exps])
+            returns = np.array([exp.return_gae for exp in exps]) # np.array([exp.normed_return_gae for exp in exps])
         else:
             raise NotImplementedError("return_form not implemented")
         # returns = torch.tensor(returns, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)

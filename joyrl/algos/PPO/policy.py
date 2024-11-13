@@ -32,6 +32,7 @@ class Policy(BasePolicy):
         self.eps_clip = cfg.eps_clip # clip parameter for PPO
         self.entropy_coef = cfg.entropy_coef # entropy coefficient
         self.sgd_batch_size = cfg.sgd_batch_size
+        self.mini_batch_normalize = cfg.mini_batch_normalize
         self.create_model()
         self.create_optimizer()
         self.create_summary()
@@ -84,6 +85,7 @@ class Policy(BasePolicy):
     def predict_action(self, state, **kwargs):
         state = self.process_sample_state(state)
         model_outputs = self.model(state)
+        self.value, self.log_prob = model_outputs['value'], None
         actor_outputs = model_outputs['actor_outputs']
         actions = get_model_actions(self.model, mode = 'predict', actor_outputs = actor_outputs)
         return actions
@@ -99,6 +101,22 @@ class Policy(BasePolicy):
     def learn(self, **kwargs):
         super().learn(**kwargs)
         adv = self.returns - self.values
+        if not self.mini_batch_normalize:
+            adv = (adv - adv.mean())/(adv.std() + 1e-8)
+        # collect it 
+        rd_idx = np.random.randint(0, len(adv.cpu().detach().numpy()))
+        self.summary['scalar']['returns_mean'] = np.mean(self.returns.cpu().detach().numpy())
+        self.summary['scalar']['returns_std'] = np.std(self.returns.cpu().detach().numpy())
+        self.summary['scalar']['returns_sample'] = self.returns.cpu().detach().numpy()[rd_idx]
+
+        self.summary['scalar']['adv_mean'] = np.mean(adv.cpu().detach().numpy())
+        self.summary['scalar']['adv_std'] = np.std(adv.cpu().detach().numpy())
+        self.summary['scalar']['adv_sample'] = adv.cpu().detach().numpy()[rd_idx]
+
+        self.summary['scalar']['values_mean'] = np.mean(self.values.cpu().detach().numpy())
+        self.summary['scalar']['values_std'] = np.std(self.values.cpu().detach().numpy())
+        self.summary['scalar']['values_sample'] = self.values.cpu().detach().numpy()[rd_idx]
+        
         torch_dataset = Data.TensorDataset(*self.states, *self.actions, self.log_probs, self.returns, adv)
         train_loader = Data.DataLoader(dataset = torch_dataset, batch_size = self.sgd_batch_size, shuffle = True)
         self.actor_losses_epoch, self.critic_losses_epoch, self.tot_losses_epoch = [], [], []
@@ -117,6 +135,8 @@ class Policy(BasePolicy):
                 old_log_probs = data[idx]
                 returns = data[idx+1]
                 adv = data[idx+2]
+                if self.mini_batch_normalize:
+                    adv = (adv - adv.mean())/(adv.std() + 1e-8)
                 model_outputs = self.model(old_states)
                 values = model_outputs['value']
                 actor_outputs = model_outputs['actor_outputs']
