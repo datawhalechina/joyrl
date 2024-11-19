@@ -58,7 +58,7 @@ class DataHandler(BaseDataHandler):
         ''' convert exps to training data
         '''
         super()._handle_exps_before_train(exps)
-        log_probs = [exp.log_prob for exp in exps] 
+        log_probs = np.array([exp.log_prob for exp in exps])
         # log_probs = torch.cat(log_probs, dim=0).detach() # [batch_size,1]
         # log_probs = torch.tensor(log_probs, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
         if self.cfg.return_form.lower() == 'mc':
@@ -66,10 +66,12 @@ class DataHandler(BaseDataHandler):
         elif self.cfg.return_form.lower() == 'td':
             returns = np.array([exp.normed_return_td for exp in exps])
         elif self.cfg.return_form.lower() == 'gae':
-            returns = np.array([exp.normed_return_gae for exp in exps])
+            returns = np.array([exp.return_gae for exp in exps]) # np.array([exp.normed_return_gae for exp in exps])
         else:
             raise NotImplementedError("return_form not implemented")
         # returns = torch.tensor(returns, dtype = torch.float32, device = self.cfg.device).unsqueeze(dim=1)
-        self.data_after_train.update({'log_probs': log_probs, 'returns': returns})
-
-        
+        self.data_after_train.update({
+            'log_probs': log_probs,
+            'returns': returns,
+            'values': np.array([exp.value for exp in exps]),
+        })

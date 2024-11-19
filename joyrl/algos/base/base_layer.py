@@ -147,13 +147,14 @@ def conv2d_layer(input_size, layer_cfg: LayerConfig):
     kernel_size = layer_cfg.kernel_size if hasattr(layer_cfg,'kernel_size') else 4
     stride = layer_cfg.stride if hasattr(layer_cfg,'stride') else 4
     padding = 'same' if stride == 1 else 'valid'
+    dilation = layer_cfg.dilation if hasattr(layer_cfg,'dilation') else 1
     class Conv2dLayer(nn.Module):
-        def __init__(self,in_channel,out_channel,kernel_size,stride,padding):
+        def __init__(self, in_channel, out_channel, kernel_size, stride, padding, dilation):
             super(Conv2dLayer,self).__init__()
-            self.conv = nn.Conv2d(in_channel,out_channel,kernel_size,stride,padding)
+            self.conv = nn.Conv2d(in_channel, out_channel, kernel_size, stride, padding, dilation=dilation)
         def forward(self,x):
             return self.conv(x)
-    cnn_layer = Conv2dLayer(in_channel, out_channel, kernel_size, stride, padding)
+    cnn_layer = Conv2dLayer(in_channel, out_channel, kernel_size, stride, padding, dilation)
     layer = nn.Sequential(cnn_layer, activation_dics[act_name]())
     output_size = get_output_size_with_batch(layer, input_size)
     return layer, output_size

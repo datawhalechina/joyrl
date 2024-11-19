@@ -7,10 +7,80 @@ from torchvision import transforms
 from gymnasium.spaces import Box
 from gymnasium.wrappers import FrameStack, ClipAction, TransformReward
 from functools import partial
-from typing import List
+from typing import List, Optional
 
 
 BipedalWalkerV3TFReward = partial(TransformReward, f=lambda r: -1.0 if r <= -100 else r)
+
+
+class ClipRewardEnv(gym.RewardWrapper):
+    def __init__(self, env):
+        """
+        clips the reward to {+1, 0, -1} by its sign.
+        :param env: (Gym Environment) the environment
+        """
+        gym.RewardWrapper.__init__(self, env)
+
+    def reward(self, reward):
+        """
+        Bin reward to {+1, 0, -1} by its sign.
+        :param reward: (float)
+        """
+        return np.sign(reward)
+    
+class EpisodicLifeEnv(gym.Wrapper):
+    """
+    Make end-of-life == end-of-episode, but only reset on true game over.
+    Done by DeepMind for the DQN and co. since it helps value estimation.
+
+    :param env: Environment to wrap
+    """
+
+    def __init__(self, env: gym.Env):
+        super().__init__(env)
+        self.lives = 0
+        self.was_real_done = True
+
+    def step(self, action: int):
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        self.was_real_done = terminated or truncated
+        # check current lives, make loss of life terminal,
+        # then update lives to handle bonus lives
+        lives = self.env.unwrapped.ale.lives()  # type: ignore[attr-defined]
+        if 0 < lives < self.lives:
+            # for Qbert sometimes we stay in lives == 0 condition for a few frames
+            # so its important to keep lives > 0, so that we only reset once
+            # the environment advertises done.
+            truncated = True
+        self.lives = lives
+        return obs, reward, terminated, truncated, info
+
+    def reset(self, seed=0, options=None):
+        """
+        Calls the Gym environment reset, only when lives are exhausted.
+        This way all states are still reachable even though lives are episodic,
+        and the learner need not know about any of this behind-the-scenes.
+
+        :param kwargs: Extra keywords passed to env.reset() call
+        :return: the first observation of the environment
+        """
+        if self.was_real_done:
+            obs, info = self.env.reset(seed=seed, options=options)
+        else:
+            # no-op step to advance from terminal/lost life state
+            obs, reward, terminated, truncated, info = self.env.step(0)
+        self.lives = self.env.unwrapped.ale.lives()
+        return obs, info
+
+
+class FrameStack2Numpy(gym.ObservationWrapper):
+    def __init__(self, env):
+        ''' reshape image observation [H, W, C] to [C, H, W] and normalize to [0, 1]
+        '''
+        super(FrameStack2Numpy, self).__init__(env)
+
+    def observation(self, observation):
+        return np.array(observation)
 
 class ReacherDistReward(gym.Wrapper):
     def __init__(self, env, dis_weight=0.5):
@@ -35,7 +105,9 @@ class BaseSkipFrame(gym.Wrapper):
             skip: int, 
             cut_slices: List[List[int]]=None,
             start_skip: int=None,
-            int_action_flag: bool=False
+            int_action_flag: bool=False,
+            terminal_done_flag: bool=False,
+            max_no_reward_count: Optional[int] = None
         ):
         """_summary_
         Args:
@@ -50,6 +122,9 @@ class BaseSkipFrame(gym.Wrapper):
         self.pic_cut_slices = cut_slices
         self.start_skip = start_skip
         self.int_action_flag = int_action_flag
+        self.terminal_done_flag = terminal_done_flag
+        self.max_no_reward_count = max_no_reward_count
+        self.no_reward_count = 0
 
     def _cut_slice(self, obs):
         slice_list = []
@@ -61,20 +136,29 @@ class BaseSkipFrame(gym.Wrapper):
 
     def step(self, action):
         tt_reward_list = []
-        done = False
         total_reward = 0
         if self.int_action_flag:
             action = action[0]
         for i in range(self._skip):
             obs, reward, terminated, truncated, info = self.env.step(action)
-            done_f = terminated or truncated
+            done_f = terminated if self.terminal_done_flag else (terminated or truncated)
             total_reward += reward
             tt_reward_list.append(reward)
-            if done:
-                break
+            if done_f:
+                obs = self._cut_slice(obs)  if self.pic_cut_slices is not None else obs
+                return obs, total_reward, terminated, truncated, info
+
+        # no reward max reset
+        self.no_reward_count += 1
+        if total_reward != 0:
+            self.no_reward_count = 0
+        if self.max_no_reward_count is not None and self.no_reward_count >= self.max_no_reward_count:
+            print(f"{self.max_no_reward_count=} {self.no_reward_count=}")
+            self.no_reward_count = 0
+            terminated = True
 
         obs = self._cut_slice(obs)  if self.pic_cut_slices is not None else obs
-        return obs, total_reward, done_f, truncated, info
+        return obs, total_reward, terminated, truncated, info
 
     def _start_skip(self):
         a = np.array([0.0, 0.0, 0.0]) if hasattr(self.env.action_space, 'low') else np.array(0) 

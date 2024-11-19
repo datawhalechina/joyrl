@@ -57,7 +57,11 @@ class Interactor(Moduler):
     def _put_exps(self):
         ''' put exps to collector
         '''
-        if len(self.exps) >= self.cfg.exps_trucation_size or self.terminated or self.truncated:
+        input_bool = len(self.exps) >= self.cfg.exps_trucation_size or self.terminated
+        if hasattr(self.cfg, "exps_trucation_size_input_only") and self.cfg.exps_trucation_size_input_only:
+            input_bool = len(self.exps) >= self.cfg.exps_trucation_size 
+
+        if input_bool:
             if self.cfg.is_learner_async:
                 exec_method(self.sample_data_que, 'put', 'get', self.exps)
                 # if self.sample_data_que.full():
@@ -112,7 +116,7 @@ class Interactor(Moduler):
             self.curr_obs, self.curr_info = obs, info
             self.ep_reward += reward
             self.ep_step += 1
-            if self.terminated or self.truncated or self.ep_step >= self.cfg.max_step > 0:
+            if self.terminated or self.ep_step >= self.cfg.max_step > 0:
                 exec_method(self.tracker, 'pub_msg', 'remote', Msg(MsgType.TRACKER_INCREASE_EPISODE))
                 global_episode = exec_method(self.tracker, 'pub_msg', 'get', Msg(type = MsgType.TRACKER_GET_EPISODE))
                 if global_episode % self.cfg.interact_summary_fre == 0: 

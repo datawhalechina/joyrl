@@ -15,6 +15,7 @@ from joyrl.algos.base.base_layer import create_layer, LayerConfig
 from joyrl.algos.base.action_layer import DiscreteActionLayer, ContinuousActionLayer, DPGActionLayer, DQNActionLayer
 from joyrl.framework.config import MergedConfig
 from joyrl.framework.core_types import ActionType
+import math 
 
 class BranchLayers(nn.Module):
     def __init__(self, branch_layers_cfg : list, input_size_list, **kwargs) -> None:
@@ -259,6 +260,53 @@ class ActorCriticNetwork(BaseNework):
             self.value_layer, _ = create_layer(self.merge_layer.output_size, LayerConfig(layer_type='linear', layer_size=[1], activation='none'))
             self.action_layers = ActionLayers(self.cfg, self.merge_layer.output_size)
         
+        self._weight_init()
+
+    def _weight_init(self):
+        if self.cfg.algo_name.lower() != 'ppo':
+            return
+        if getattr(self.cfg, 'independ_actor', False):
+            self._independ_actor_init()
+            return 
+        
+        for layer in [self.merge_layer, self.branch_layers]:
+            for name, p in layer.named_parameters():
+                if 'weight' in name and len(p.shape) >= 2: 
+                    torch.nn.init.orthogonal_(p, math.sqrt(2))
+                if 'bias' in name: 
+                    torch.nn.init.constant_(p, 0)
+
+        for name, p in self.value_layer.named_parameters():
+            if 'weight' in name and len(p.shape) >= 2: 
+                torch.nn.init.orthogonal_(p, 1.0)
+            if 'bias' in name: 
+                torch.nn.init.constant_(p, 0)
+
+        for name, p in self.action_layers.named_parameters():
+            if 'weight' in name and len(p.shape) >= 2: 
+                torch.nn.init.orthogonal_(p, 0.01)
+            if 'bias' in name: 
+                torch.nn.init.constant_(p, 0)
+
+    def _independ_actor_init(self):
+        for name, p in self.actor.named_parameters():
+            std_ = math.sqrt(2)
+            if "action_layers" in name:
+                std_ = 0.01
+            if 'weight' in name and len(p.shape) >= 2: 
+                torch.nn.init.orthogonal_(p, std_)
+            if 'bias' in name: 
+                torch.nn.init.constant_(p, 0)
+        
+        for name, p in self.critic.named_parameters():
+            std_ = math.sqrt(2)
+            if "value_layer" in name:
+                std_ = 1.0
+            if 'weight' in name and len(p.shape) >= 2: 
+                torch.nn.init.orthogonal_(p, std_)
+            if 'bias' in name: 
+                torch.nn.init.constant_(p, 0)
+
     def forward(self, x, pre_legal_actions = None):
         if getattr(self.cfg, 'independ_actor', False):
             # since input x is a list, need to deepcopy it to avoid changing the original x
