@@ -1,0 +1,62 @@
+general_cfg:
+  joyrl_version: 0.6.5.1
+  algo_name: PPO
+  device: cpu
+  env_name: gym
+  interactor device: cuda
+  learner device: cuda
+  mode: test
+  exps_trucation_size: 1024
+  is_learner_async: false
+  load_checkpoint: true
+  load_path: Train_MountainCarContinuous-v0_PPO_20240715-161812
+  load_model_step: best
+  n_interactors: 20
+  max_episode: -1
+  max_step: -1
+  seed: 1
+  reward_threshold: 90
+  online_eval: true
+  online_eval_episode: 20
+  model_save_fre: 10000
+  policy_summary_fre: 5000
+  interact_summary_fre: 5000
+algo_cfg:
+  actor_branch_layers:
+    - name: action
+      layers:
+      - layer_type: linear
+        layer_size: [256]
+        activation: tanh
+      - layer_type: linear
+        layer_size: [256]
+        activation: tanh
+
+  critic_branch_layers:
+    - name: critic
+      layers:
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+      - layer_type: linear
+        layer_size: [256]
+        activation: relu
+  buffer_type: REPLAY_QUE
+  max_buffer_size: 100000
+  action_type_list: continuous 
+  lr: 0.0003
+  actor_lr: 0.003
+  critic_lr: 0.005
+  entropy_coef: 0.003
+  critic_loss_coef: 0.5
+  eps_clip: 0.2
+  gamma: 0.99
+  return_form: mc
+  gae_lambda: 0.95
+  k_epochs: 4
+  batch_size: 64
+env_cfg:
+  id: MountainCarContinuous-v0
+  render_mode: human
+  wrappers:
+    - wrapper_name: MultiHeadObsWrapper
