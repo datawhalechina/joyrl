@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-22 13:16:59
 LastEditor: JiangJi
-LastEditTime: 2024-08-20 13:18:31
+LastEditTime: 2024-12-19 13:22:34
 Discription: 
 '''
 import os,copy
@@ -190,7 +190,7 @@ class Launcher(object):
             pass
         return state_type_list, state_size_list
 
-    def _check_obs_action_space_info(self, env):
+    def _check_action_space_info(self, env):
         action_type_list, action_size_list = [], []
         try:
             action_space = env.action_space
@@ -214,7 +214,7 @@ class Launcher(object):
             if len(self.cfg.obs_space.get('size',[])) != 0:
                 state_size_list = self.cfg.obs_space['size']
         self.cfg.obs_space_info = ObsSpaceInfo(size = state_size_list, type = state_type_list)
-        action_type_list, action_size_list = self._check_obs_action_space_info(env)
+        action_type_list, action_size_list = self._check_action_space_info(env)
         if hasattr(self.cfg, 'action_space'):
             if len(self.cfg.action_space.get('type',[])) != 0:
                 action_type_list = self.cfg.action_space['type']

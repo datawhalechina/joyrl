@@ -5,7 +5,7 @@ Author: JiangJi
 Email: johnjim0816@gmail.com
 Date: 2023-12-25 09:28:26
 LastEditor: JiangJi
-LastEditTime: 2024-07-21 16:46:03
+LastEditTime: 2024-12-19 13:27:09
 Discription: 
 '''
 import random
@@ -49,24 +49,37 @@ class DQNActionLayer(BaseActionLayer):
         super(DQNActionLayer, self).__init__(cfg=cfg, input_size=input_size, action_dim=action_size, id=id)
         self.action_dim = action_size[0]
         output_size = input_size
-        self.dueling = hasattr(cfg, 'dueling') and cfg.dueling
+        self.dueling = getattr(cfg, 'dueling', False)
+        self.distributional = getattr(cfg, 'distributional', False)
         if self.dueling:
             state_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[1], activation='none')
             self.state_value_layer, _ = create_layer(output_size, state_value_layer_cfg)
             action_value_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_dim], activation='none')
             self.action_value_layer, _ = create_layer(output_size, action_value_layer_cfg)
+        elif self.distributional:
+            self.n_atoms = getattr(cfg, 'n_atoms', 51)
+            self.atoms = torch.linspace(self.cfg.v_min, self.cfg.v_max, steps=self.n_atoms)
+            action_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_dim * self.n_atoms], activation='none')
+            self.action_value_layer, _ = create_layer(output_size, action_layer_cfg)
         else:
             action_layer_cfg = LayerConfig(layer_type='linear', layer_size=[self.action_dim], activation='none')
             self.action_value_layer, _ = create_layer(output_size, action_layer_cfg)
 
     def forward(self, x, **kwargs):
+        output = {}
         if self.dueling:
             state_value = self.state_value_layer(x)
             action_value = self.action_value_layer(x)
             q_value = state_value + action_value - action_value.mean(dim=1, keepdim=True)
+            output.update({"q_value": q_value})
+        elif self.distributional:
+            q_logits = self.action_value_layer(x)
+            q_dist = torch.softmax(q_logits.view(-1, self.action_dim, self.n_atoms), dim=2)
+            q_value = (q_dist * self.atoms).sum(2)
+            output.update({"q_dist": q_dist, "q_value": q_value})
         else:
             q_value = self.action_value_layer(x)
-        output = {"q_value": q_value}
+            output.update({"q_value": q_value})
         return output
     
     def sample_action(self, **kwargs):

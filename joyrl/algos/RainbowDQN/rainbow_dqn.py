@@ -163,7 +163,7 @@ class RainbowDQN(nn.Module):
         delta_z = float(self.Vmax - self.Vmin) / (self.n_atoms - 1)
         support = torch.linspace(self.Vmin, self.Vmax, self.n_atoms)
         
-        next_dist   = self.target_model(next_state).data.cpu() * support
+        next_dist   = self.target_model(next_state) * support
         next_action = next_dist.sum(2).max(1)[1]
         next_action = next_action.unsqueeze(1).unsqueeze(1).expand(next_dist.size(0), 1, next_dist.size(2))
         next_dist   = next_dist.gather(1, next_action).squeeze(1)
